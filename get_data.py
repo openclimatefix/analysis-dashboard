@@ -93,19 +93,21 @@ def get_metric_value(
     if forecast_horizon_minutes is not None:
         query = query.filter(MetricValueSQL.forecast_horizon_minutes == forecast_horizon_minutes)
     else:
-        # select forecast_horizon_minutes is Null, which gets the last forecast
-        query = query.filter(MetricValueSQL.forecast_horizon_minutes is None)
+        # select forecast_horizon_minutes is Null, which gets the last forecast. this has to be a double equals or it won't work 
+        query = query.filter(MetricValueSQL.forecast_horizon_minutes == None)
 
     # order by 'created_utc' desc, so we get the latest one
     query = query.order_by(
         DatetimeIntervalSQL.start_datetime_utc, MetricValueSQL.created_utc.desc()
     )
-
+  
+  
     # filter
     metric_values = query.all()
 
     return metric_values
 
+# return.query.limit(100).all()
 
 def get_datetime_interval(
     session: Session, start_datetime_utc: datetime, end_datetime_utc: datetime

@@ -58,7 +58,7 @@ with st.expander("*Mean Absolute Error"):
 
 
 
-url = "postgresql://main:lnOgnQV8b9le1liM@localhost:5433/forecastdevelopment"
+url = ""
 connection = DatabaseConnection(url=url, echo=True)
 # get gsp yields from database
 with connection.get_session() as session:
@@ -88,7 +88,6 @@ with connection.get_session() as session:
     )
 
     forecasts = [Forecast.from_orm_latest(forecast) for forecast in forecasts]
-    print(forecasts)
 
 
 x_forecast = [forecast_value.target_time for forecast_value in forecasts[0].forecast_values]
@@ -111,43 +110,46 @@ df2 = pd.DataFrame(
 )
 
 st.write('Attempts at visualizing data from the database')
-st.subheader('Dataframe with pv actual numbers')
+st.subheader('Dataframe with pv actual numbers and a chart')
 st.write(df2)
-
-
+st.line_chart(data=df2, x="x_pv_live", y="y_pv_live")
 st.area_chart(data=df, x="x_forecast", y="y_forecast")
 
-st.line_chart(data=df2, x="x_pv_live", y="y_pv_live")
-
 # got an error when I didn't connect to the database so am connecting here again
-url = "postgresql://main:lnOgnQV8b9le1liM@localhost:5433/forecastdevelopment"
-connection = DatabaseConnection(url=url, echo=True)
+# url = "postgresql://main:lnOgnQV8b9le1liM@localhost:5433/forecastdevelopment"
+# connection = DatabaseConnection(url=url, echo=True)
 
 with connection.get_session() as session:
-    # read database
+    # read database metric values 
+
     metric_values = get_metric_value(
         session=session,
         name="Daily Latest MAE",
-        gsp_id=range(0, 1),
-        start_datetime_utc=datetime(2022, 9, 11),
-        end_datetime_utc=datetime(2022, 11, 29),
+        gsp_id=0,
+        start_datetime_utc=datetime(2022, 12, 6),
+        end_datetime_utc=datetime(2022, 12, 25),
     )
 
+    #transform SQL object into something readable
+    metric_values = [MetricValue.from_orm(value) for value in metric_values]
 
-    values = [MetricValue.from_orm(value) for value in metric_values]
+    #select data to show in the chart mean absolute error and date from the above date range 
+    x_mae = [value.datetime_interval.start_datetime_utc for value in metric_values]
+    y_mae = [value.value for value in metric_values]
 
-    x_mae = [metric_value.created_utc for metric_value in values]
-    y_mae = [metric_value.value for metric_value in values]
-
-st.write('Should be MAE numbers but only get an empty dataframe')
+st.write('MAE numbers pulled from the database')
 df = pd.DataFrame(
-    {"y_mae_value": x_mae,
-     "x_mae_value": y_mae}
+    {
+    "y_mae_value": y_mae,
+     "x_mae_value": x_mae,
+     }
 )
 
 st.write(df)
 
-st.line_chart(data=df, x="x_mae_value", y="y_mae_value")
+st.title("Nowcasting Forecast MAE") 
+st.write("there seems to be something wrong with the data visualization, but at least there's data!")
+st.bar_chart(data=df, x="x_mae_value", y="y_mae_value")
 
 print(df)
 
