@@ -1,0 +1,10 @@
+nowcasting-datamodel==1.1.76
+nowcasting-dataset==3.7.12
+numpy==1.24.1
+pandas==1.5.2
+plotly==5.10.0
+psycopg2-binary==2.9.5
+SQLAlchemy==1.4.46
+streamlit==1.17.0
+uvicorn==0.17.6
+
