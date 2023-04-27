@@ -21,9 +21,9 @@ from nowcasting_datamodel.models.gsp import LocationSQL
 from nowcasting_datamodel.models.metric import MetricValueSQL, MetricSQL, MetricValue, DatetimeIntervalSQL
 from get_data import get_metric_value, get_metric, get_datetime_interval
 
-
+st.get_option("theme.primaryColor")
 # set up title and subheader
-st.title("OCF Dashboard")
+st.markdown(f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Dashboard"}</h1>', unsafe_allow_html=True)
 # set up sidebar
 st.sidebar.subheader("Select date range for charts")
 # select start and end date
@@ -82,24 +82,25 @@ with connection.get_session() as session:
         yesterday_rmse = y_rmse[len(y_rmse)-2] 
         today_rmse = y_rmse[len(y_rmse)-1] 
 
-# set up title and subheader
-st.title("Nowcasting Forecast Statistics") 
+st.markdown(f'<h1 style="color:#63BCAF;font-size:48px;">{"Nowcasting Forecast Statistics"}</h1>', unsafe_allow_html=True)
 
-st.subheader("Recent MAE")
-t = datetime.today()-timedelta(days=1)
-t2 = datetime.today()-timedelta(days=2)
-t3 = datetime.today()-timedelta(days=3)
-col1, col2, col3 = st.columns([1, 1, 1])
+with st.expander("Recent MAE Values"):
+    st.subheader("Recent MAE")
+    t = datetime.today()-timedelta(days=1)
+    t2 = datetime.today()-timedelta(days=2)
+    t3 = datetime.today()-timedelta(days=3)
+    col1, col2, col3 = st.columns([1, 1, 1])
 
-col1.metric(label=t3.strftime("%d/%m/%y"), value=day_before_yesterday_mae)
-col2.metric(label=t2.strftime("%d/%m/%y"), value=yesterday_mae)
-col3.metric(label=t.strftime("%d/%m/%y"), value=today_mae)
+    col1.metric(label=t3.strftime("%d/%m/%y"), value=day_before_yesterday_mae)
+    col2.metric(label=t2.strftime("%d/%m/%y"), value=yesterday_mae)
+    col3.metric(label=t.strftime("%d/%m/%y"), value=today_mae)
 
-st.subheader("Recent RMSE")
-col1, col2, col3 = st.columns([1, 1, 1])
-col1.metric(label=t3.strftime("%d/%m/%y"), value=day_before_yesterday_rmse)
-col2.metric(label=t2.strftime("%d/%m/%y"), value=yesterday_rmse)
-col3.metric(label=t.strftime("%d/%m/%y"), value=today_rmse)
+with st.expander("Recent RMSE Values"):
+    st.subheader("Recent RMSE")
+    col1, col2, col3 = st.columns([1, 1, 1])
+    col1.metric(label=t3.strftime("%d/%m/%y"), value=day_before_yesterday_rmse)
+    col2.metric(label=t2.strftime("%d/%m/%y"), value=yesterday_rmse)
+    col3.metric(label=t.strftime("%d/%m/%y"), value=today_rmse)
 
 df_mae = pd.DataFrame(
     {
@@ -123,17 +124,11 @@ forecast_horizon_selection = st.sidebar.multiselect("Select", [60, 120, 180, 240
 
 # set up title and subheader
 
-fig = px.bar(df_mae, x="datetime_utc", y="MAE", title='MAE Nowcasting', hover_data=['MAE'], color_discrete_sequence=['#FFD053'],)
+fig = px.bar(df_mae, x="datetime_utc", y="MAE", title='MAE Nowcasting', hover_data=['MAE'], color_discrete_sequence=['#FFAC5F'],)
 st.plotly_chart(fig, theme="streamlit")
 
 fig2 = px.line(df_mae, x="datetime_utc", y="MAE", title='MAE Nowcasting Forecast', hover_data=['MAE'], color_discrete_sequence=['#FFD053'],)
 
-
-        # fig = px.bar(df_mae, x="datetime_utc", y="MAE", title='MAE Nowcasting Forecast', hover_data=['MAE'], color_discrete_sequence=['#7BCDF3'],)
-        # st.plotly_chart(fig, theme="streamlit")
-    # fig2 = px.line(df_mae, x="datetime_utc", y="MAE", title='Nowcasting MAE with Forecast Horizons', hover_data=['MAE'], color_discrete_sequence=['#FCED4D'],)
-        
-        # st.plotly_chart(fig, theme="streamlit")
     
 with connection.get_session() as session:
     # read database metric values
