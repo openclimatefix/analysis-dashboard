@@ -1,8 +1,8 @@
-name: Build and publish to Docker Hub
+name: Bump version and auto-release (docker)
 #this is a pipeline. all pipelines have jobs in them. 
 #steps are the commands we give the file 
 on:
-  push:
+  push: 
 
 jobs:
   push-docker:
