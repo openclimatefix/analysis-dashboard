@@ -6,7 +6,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-
+import os
 
 from datetime import datetime, timezone, timedelta 
 from typing import List, Optional
@@ -32,7 +32,7 @@ endtime = st.sidebar.date_input("End Date", datetime.today())
 
 
 # set up database connection
-url = "postgresql://main:lnOgnQV8b9le1liM@localhost:5433/forecastdevelopment"
+url = os.environ["DB_URL"]
 connection = DatabaseConnection(url=url, echo=True)
 
 # get metrics for comparing MAE and RMSE without forecast horizon
