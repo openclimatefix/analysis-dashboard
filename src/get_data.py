@@ -10,7 +10,7 @@ from typing import List, Optional
 from sqlalchemy.orm.session import Session
 
 from nowcasting_datamodel.models.gsp import LocationSQL
-from nowcasting_datamodel.models.metric import DatetimeIntervalSQL, MetricSQL, MetricValueSQL, MetricValue
+from nowcasting_datamodel.models.metric import DatetimeIntervalSQL, MetricSQL, MetricValueSQL
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +93,8 @@ def get_metric_value(
     if forecast_horizon_minutes is not None:
         query = query.filter(MetricValueSQL.forecast_horizon_minutes == forecast_horizon_minutes)
     else:
-        # select forecast_horizon_minutes is Null, which gets the last forecast. this has to be a double equals or it won't work 
+        # select forecast_horizon_minutes is Null, which gets the last forecast. 
+        # !! This has to be a double equals or it won't work 
         query = query.filter(MetricValueSQL.forecast_horizon_minutes == None)
 
     # order by 'created_utc' desc, so we get the latest one

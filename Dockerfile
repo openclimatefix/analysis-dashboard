@@ -11,8 +11,8 @@ RUN pip3 install -r requirements.txt
 
 COPY src .
 # this the port that will be used in the container like here locally
-EXPOSE 8501
+EXPOSE 80
 
 EXPOSE 5433
 #runs the command I'd run to start the app -- these are called "flags" and they're like arguments but they're not
-ENTRYPOINT ["streamlit", "run", "main.py", "--server.port=8501", "--server.address=0.0.0.0","–server.enableCORS False"]
+ENTRYPOINT ["streamlit", "run", "main.py", "--server.port=80", "--server.address=0.0.0.0", "–server.enableCORS False"]
