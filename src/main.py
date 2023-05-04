@@ -7,7 +7,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from datetime import datetime, timezone, timedelta 
+from datetime import datetime, timedelta 
 from typing import List, Optional
 
 from sqlalchemy.orm.session import Session
