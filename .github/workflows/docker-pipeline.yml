@@ -19,6 +19,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Create and populate secrets.toml file
+        env:
+          APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
+        run: |
+          touch src/.streamlit/secrets.toml
+          echo "password = \"$APP_PASSWORD\"" >> src/.streamlit/secrets.toml
+
       - name: Log in to the Container registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:

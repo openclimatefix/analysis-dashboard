@@ -1,9 +1,10 @@
 # OCF Internal UI
-This will be a Streamlit app that serves as a dashboard for the OCF team that reports database statistics.
 
-## Installing Datamodels
-Currently you'll need to install the nowcasting datamodels:
-`pip install nowcasting_datamodel` or maybe `pip3 install nowcasting_datamodel`
+Streamlit app that serves as a dashboard for the OCF team that reports database statistics.
+
+## Installing Requirements
+
+Install all requirements with `pip install -r requirements.txt`
 
 ## Running Streamlit
 
@@ -13,7 +14,9 @@ Install streamlit: `pip install streamlit` or `pip3 install streamlit`
 
 Check that streamlit installed: `streamlit hello`
 
-Run the app: `streamlit run main.py`
+Create a login secret: `echo "password = example" > src/.streamlit/secrets.toml`
+
+Run the app: `cd src && streamlit run main.py`
 
 
 
