@@ -19,7 +19,12 @@ st.get_option("theme.primaryColor")
 
 
 def get_x_y(metric_values):
+    """
+    Extra x and y values from the metric values
 
+    x is the time
+    y is the metric value
+    """
     metric_values = [MetricValue.from_orm(value) for value in metric_values]
     # select data to show in the chart MAE and RMSE and date from the above date range
     x = [value.datetime_interval.start_datetime_utc for value in metric_values]
@@ -29,6 +34,9 @@ def get_x_y(metric_values):
 
 
 def get_recent_daily_values(values):
+    """
+    Get the recent daily values from the metric values
+    """
     if len(values) == 0:
         day_before_yesterday = None
         yesterday = None
@@ -61,7 +69,7 @@ if check_password():
     starttime = st.sidebar.date_input("Start Date", datetime.today() - timedelta(days=30))
     endtime = st.sidebar.date_input("End Date", datetime.today())
 
-    use_adjuster = st.sidebar.radio("Adjuster", [True, False], index=1)
+    use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
     # set up database connection
     url = os.environ["DB_URL"]
