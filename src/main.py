@@ -83,8 +83,8 @@ if check_password():
         name_mae = "Daily Latest MAE"
         name_rmse = "Daily Latest RMSE"
         if use_adjuster:
-            name_mae = "Daily Latest MAE with adjusted"
-            name_rmse = "Daily Latest RMSE with adjusted"
+            name_mae = "Daily Latest MAE with adjuster"
+            name_rmse = "Daily Latest RMSE with adjuster"
 
         metric_values_mae = get_metric_value(
             session=session,
