@@ -17,7 +17,6 @@ from auth import check_password
 
 st.get_option("theme.primaryColor")
 
-
 def get_x_y(metric_values):
     """
     Extra x and y values from the metric values
