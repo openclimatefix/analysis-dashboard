@@ -1,14 +1,13 @@
-import streamlit as st
-from datetime import datetime
-
 import os
-from nowcasting_datamodel.read.read import get_latest_status
+
+import streamlit as st
 from nowcasting_datamodel.connection import DatabaseConnection
-from nowcasting_datamodel.models.models import StatusSQL, Status
+from nowcasting_datamodel.models.models import Status
+from nowcasting_datamodel.read.read import get_latest_status
 
 
-# cache every two minutes
 def get_current_status():
+    """Get the current status from the database"""
 
     url = os.environ["DB_URL"]
     connection = DatabaseConnection(url=url, echo=True)
@@ -21,6 +20,7 @@ def get_current_status():
 
 # main page
 def status_page():
+    """Main page for status"""
 
     st.markdown(
         f'<h1 style="color:#FFD053;font-size:48px;">{"Status"}</h1>', unsafe_allow_html=True
@@ -29,9 +29,8 @@ def status_page():
     url = os.environ["DB_URL"]
     connection = DatabaseConnection(url=url, echo=True)
 
-    # get metrics for comparing MAE and RMSE without forecast horizon
-
     with connection.get_session() as session:
+        # get the status
         status = get_current_status()
 
         # show current status
