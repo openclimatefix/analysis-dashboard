@@ -56,7 +56,14 @@ def get_recent_daily_values(values):
     return day_before_yesterday, yesterday, today
 
 
-if check_password():
+def status_page():
+
+    st.markdown(
+        f'<h1 style="color:#FFD053;font-size:48px;">{"Status"}</h1>', unsafe_allow_html=True
+    )
+
+def metric_page():
+
 
     # set up title and subheader
     st.markdown(
@@ -244,3 +251,12 @@ if check_password():
     col2.write(df_rmse)
 
     # color_discrete_sequence=['#FFD053', '#FFAC5F', '#ff9736', "#7BCDF3", "#086788", "#63BCAF","#4C9A8E"]
+
+if check_password():
+    page_names_to_funcs = {
+        "Metrics": metric_page,
+        "Status": status_page,
+    }
+
+    demo_name = st.sidebar.selectbox("Choose a page", page_names_to_funcs.keys())
+    page_names_to_funcs[demo_name]()
