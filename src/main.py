@@ -14,6 +14,7 @@ from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.metric import MetricValue
 from get_data import get_metric_value
 from auth import check_password
+from status import status_page
 
 st.get_option("theme.primaryColor")
 
@@ -55,12 +56,6 @@ def get_recent_daily_values(values):
 
     return day_before_yesterday, yesterday, today
 
-
-def status_page():
-
-    st.markdown(
-        f'<h1 style="color:#FFD053;font-size:48px;">{"Status"}</h1>', unsafe_allow_html=True
-    )
 
 def metric_page():
 
@@ -119,7 +114,7 @@ def metric_page():
         )
 
     st.markdown(
-        f'<h1 style="color:#63BCAF;font-size:48px;">{"Nowcasting Forecast Statistics"}</h1>',
+        f'<h1 style="color:#63BCAF;font-size:48px;">{"Metrics"}</h1>',
         unsafe_allow_html=True,
     )
 
