@@ -114,7 +114,7 @@ def metric_page():
         )
 
     st.markdown(
-        f'<h1 style="color:#63BCAF;font-size:48px;">{"Nowcasting Forecast Statistics"}</h1>',
+        f'<h1 style="color:#63BCAF;font-size:48px;">{"Metrics"}</h1>',
         unsafe_allow_html=True,
     )
 
