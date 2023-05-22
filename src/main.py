@@ -326,7 +326,7 @@ def metric_page():
                 yaxis=dict(tickmode='linear', tick0=0, dtick=60),
             )
 
-        st.plotly_chart(fig32, theme="streamlit")
+        st.plotly_chart(fig4, theme="streamlit")
 
     # add chart with forecast horizons on x-axis and line for each day in the date range
 
@@ -369,7 +369,7 @@ def metric_page():
             
         fig5.add_traces(traces)
 
-        st.plotly_chart(fig4, theme="streamlit")
+        st.plotly_chart(fig5, theme="streamlit")
     
 
     # comparing MAE and RMSE
@@ -401,7 +401,7 @@ def metric_page():
         ]
     )
 
-    st.plotly_chart(fig5, theme="streamlit")
+    st.plotly_chart(fig6, theme="streamlit")
 
     st.subheader("Raw Data")
     col1, col2 = st.columns([1, 1])
