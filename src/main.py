@@ -279,7 +279,7 @@ def metric_page():
 
         st.plotly_chart(fig3, theme="streamlit")
 
-    fig32 = go.Figure(
+    fig4 = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(text="Nowcasting MAE by Forecast Horizon for Date Range"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="MAE (MW)")),
@@ -310,7 +310,7 @@ def metric_page():
                     }
                 )
            
-                fig32.add_traces(
+                fig4.add_traces(
                     [
                         go.Scatter(
                             x=df_mae_horizon["MAE"],
@@ -321,7 +321,7 @@ def metric_page():
                             ),
                     ]
                 )
-                fig32.update_layout(
+                fig4.update_layout(
                 xaxis=dict(tickmode='linear', tick0=0, dtick=50),
                 yaxis=dict(tickmode='linear', tick0=0, dtick=60),
             )
@@ -330,7 +330,7 @@ def metric_page():
 
     # add chart with forecast horizons on x-axis and line for each day in the date range
 
-    fig4 = go.Figure(
+    fig5 = go.Figure(
          layout=go.Layout(
             title=go.layout.Title(text="Nowcasting MAE Forecast Horizon Values by Date"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Forecast Horizon (minutes)")),
@@ -367,13 +367,13 @@ def metric_page():
                     )
                     )  
             
-        fig4.add_traces(traces)
+        fig5.add_traces(traces)
 
         st.plotly_chart(fig4, theme="streamlit")
     
 
     # comparing MAE and RMSE
-    fig5 = go.Figure(
+    fig6 = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(text="Nowcasting MAE with RMSE for Comparison"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
@@ -382,7 +382,7 @@ def metric_page():
         )
     )
 
-    fig5.add_traces(
+    fig6.add_traces(
         [
             go.Scatter(
                 x=df_mae["datetime_utc"],
