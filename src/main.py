@@ -169,7 +169,7 @@ def metric_page():
     )
     st.plotly_chart(fig, theme="streamlit")
 
-    line_color = ['#9EC8FA', '#9AA1F9', '#FFAC5F', '#9F973A', '#7BCDF3', '#086788', '#63BCAF', '#4C9A8E']
+    line_color = ['#9EC8FA', '#9AA1F9', '#FFAC5F', '#9F973A', '#7BCDF3', '#086788', '#63BCAF', '#4C9A8E', '#9EC8FA', '#9AA1F9', '#FFAC5F', '#9F973A', '#7BCDF3', '#086788', '#63BCAF', '#4C9A8E']
     # MAE by forecast horizon adding go.Figure 
     fig2 = go.Figure(
         layout=go.Layout(
@@ -335,10 +335,13 @@ def metric_page():
             title=go.layout.Title(text="Nowcasting MAE Forecast Horizon Values by Date"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Forecast Horizon (minutes)")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="MAE (MW)")),
-            legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
+            legend=go.layout.Legend(title=go.layout.legend.Title(text="Date")),
     )
     )
+    #make an empty array to capture data for each line
     traces =[]
+    #make an empty array to capture values for each forecast horizon in the date range
+    dfs = []
     # get data for each forecast horizon
     with connection.get_session() as session:
         # read database metric values
@@ -354,21 +357,38 @@ def metric_page():
                 metric_values = [MetricValue.from_orm(value) for value in metric_values]
                 dates = [value.datetime_interval.start_datetime_utc for value in metric_values]
                 mae_value = [round(float(value.value), 2) for value in metric_values]
+                forecast_horizons = [value.forecast_horizon_minutes for value in metric_values]
 
              #create dataframe for each date with a value for each forecast horizon
-                
-             # create a trace on the chart for each date
-                traces.append(go.Scatter(
-                        x=df["forecast_horizon"],
-                        y=df["MAE"],
-                        name=f"{date}",
-                        mode="lines",
-                        line=dict(color=line_color[dates.index(date)]),
-                    )
-                    )  
-            
-        fig5.add_traces(traces)
+                data = pd.DataFrame(
+                     {
+                    "MAE": mae_value,
+                    "datetime_utc": dates,
+                    "forecast_horizon": forecast_horizons,
+                     }
+                )
 
+                dfs.append(data)
+                # merge dataframes
+        result = pd.concat(dfs, axis=0).sort_values(by=['datetime_utc'], ascending=True)
+        #group by date
+        result = {result_.index[0]: result_ for _, result_ in result.groupby("datetime_utc")}
+        
+        for i in result:
+            traces.append(go.Scatter(
+                x=result[i]["forecast_horizon"].sort_values(ascending=True),
+                y=result[i]["MAE"],
+                name=result[i]["datetime_utc"].iloc[0].strftime("%Y-%m-%d"),
+                mode="lines+markers",
+                line=dict(color=line_color[i]),
+                    )
+                )
+
+        fig5.add_traces(traces)
+        fig5.update_layout(
+                xaxis=dict(tickmode='linear', tick0=0, dtick=60),
+                yaxis=dict(tickmode='linear', tick0=0, dtick=50),
+        )
         st.plotly_chart(fig5, theme="streamlit")
     
 
