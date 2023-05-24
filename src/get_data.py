@@ -9,6 +9,7 @@ from typing import List, Optional
 from sqlalchemy.orm.session import Session
 
 from nowcasting_datamodel.models.gsp import LocationSQL
+from nowcasting_datamodel.models import MLModelSQL
 from nowcasting_datamodel.models.metric import DatetimeIntervalSQL, MetricSQL, MetricValueSQL
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,7 @@ def get_metric_value(
     end_datetime_utc: Optional[datetime] = None,
     gsp_id: Optional[int] = None,
     forecast_horizon_minutes: Optional[int] = None,
+    model_name: Optional[str] = None,
 ) -> List[MetricValueSQL]:
     """
     Get Metric values, for example MAE for gsp_id 5 on 2023-01-01
@@ -64,6 +66,10 @@ def get_metric_value(
         # select forecast_horizon_minutes is Null, which gets the last forecast.
         # !! This has to be a double equals or it won't work
         query = query.filter(MetricValueSQL.forecast_horizon_minutes == None)
+
+    if model_name is not None:
+        query = query.join(MLModelSQL)
+        query = query.filter(MLModelSQL.name == model_name)
 
     # order by 'created_utc' desc, so we get the latest one
     query = query.order_by(

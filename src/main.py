@@ -18,6 +18,7 @@ from status import status_page
 
 st.get_option("theme.primaryColor")
 
+
 def get_x_y(metric_values):
     """
     Extra x and y values from the metric values
@@ -59,7 +60,6 @@ def get_recent_daily_values(values):
 
 def metric_page():
 
-
     # set up title and subheader
     st.markdown(
         f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Dashboard"}</h1>', unsafe_allow_html=True
@@ -71,6 +71,9 @@ def metric_page():
     endtime = st.sidebar.date_input("End Date", datetime.today())
 
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
+
+    st.sidebar.subheader("Select Forecast Model")
+    model_name = st.sidebar.selectbox("Select", ["cnn", "National_xg", "pvnet_v2"])
 
     # set up database connection
     url = os.environ["DB_URL"]
@@ -93,6 +96,7 @@ def metric_page():
             gsp_id=0,
             start_datetime_utc=starttime,
             end_datetime_utc=endtime,
+            model_name=model_name,
         )
 
         metric_values_rmse = get_metric_value(
@@ -101,6 +105,7 @@ def metric_page():
             gsp_id=0,
             start_datetime_utc=starttime,
             end_datetime_utc=endtime,
+            model_name=model_name,
         )
 
         # transform SQL object into something readable
@@ -136,28 +141,26 @@ def metric_page():
         col2.metric(label=t2.strftime("%d/%m/%y"), value=yesterday_rmse)
         col3.metric(label=t.strftime("%d/%m/%y"), value=today_rmse)
 
-   
-
     st.sidebar.subheader("Select Forecast Horizon")
     forecast_horizon_selection = st.sidebar.multiselect(
         "Select", [60, 120, 180, 240, 300, 360, 420]
     )
 
     df_mae = pd.DataFrame(
-            {
-                "MAE": y_mae,
-                "datetime_utc": x_mae,
-            }
-        )
-    
+        {
+            "MAE": y_mae,
+            "datetime_utc": x_mae,
+        }
+    )
+
     print(df_mae)
 
     df_rmse = pd.DataFrame(
-            {
-                "RMSE": y_rmse,
-                "datetime_utc": x_rmse,
-            }
-        )
+        {
+            "RMSE": y_rmse,
+            "datetime_utc": x_rmse,
+        }
+    )
     # set up title and subheader
     fig = px.bar(
         df_mae,
@@ -169,8 +172,25 @@ def metric_page():
     )
     st.plotly_chart(fig, theme="streamlit")
 
-    line_color = ['#9EC8FA', '#9AA1F9', '#FFAC5F', '#9F973A', '#7BCDF3', '#086788', '#63BCAF', '#4C9A8E', '#9EC8FA', '#9AA1F9', '#FFAC5F', '#9F973A', '#7BCDF3', '#086788', '#63BCAF', '#4C9A8E']
-    # MAE by forecast horizon adding go.Figure 
+    line_color = [
+        "#9EC8FA",
+        "#9AA1F9",
+        "#FFAC5F",
+        "#9F973A",
+        "#7BCDF3",
+        "#086788",
+        "#63BCAF",
+        "#4C9A8E",
+        "#9EC8FA",
+        "#9AA1F9",
+        "#FFAC5F",
+        "#9F973A",
+        "#7BCDF3",
+        "#086788",
+        "#63BCAF",
+        "#4C9A8E",
+    ]
+    # MAE by forecast horizon adding go.Figure
     fig2 = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(text="Nowcasting MAE by Forecast Horizon (see sidebar)"),
@@ -181,16 +201,16 @@ def metric_page():
     )
 
     fig2.add_trace(
-            go.Scatter(
-                x=df_mae["datetime_utc"],
-                y=df_mae["MAE"],
-                mode="lines",
-                name="Daily Total MAE",
-                line=dict(color='#FFD053'),
-            )
+        go.Scatter(
+            x=df_mae["datetime_utc"],
+            y=df_mae["MAE"],
+            mode="lines",
+            name="Daily Total MAE",
+            line=dict(color="#FFD053"),
+        )
     )
-        
 
+    metric_values_by_forecast_horizon = {}
     with connection.get_session() as session:
         # read database metric values
         for forecast_horizon in forecast_horizon_selection:
@@ -201,31 +221,35 @@ def metric_page():
                 forecast_horizon_minutes=forecast_horizon,
                 start_datetime_utc=starttime,
                 end_datetime_utc=endtime,
+                model_name=model_name,
             )
+            metric_values = [MetricValue.from_orm(value) for value in metric_values]
+            metric_values_by_forecast_horizon[forecast_horizon] = metric_values
 
-            x_mae_horizon, y_mae_horizon = get_x_y(metric_values=metric_values)
-            
-            df = pd.DataFrame(
-                {
-                    "MAE": y_mae_horizon,
-                    "datetime_utc": x_mae_horizon,
-                }
-            )
+    for forecast_horizon in forecast_horizon_selection:
+        metric_values = metric_values_by_forecast_horizon[forecast_horizon]
+        x_mae_horizon, y_mae_horizon = get_x_y(metric_values=metric_values)
 
-            fig2.add_traces(
-                [
-                    go.Scatter(
-                        x=df["datetime_utc"],
-                        y=df["MAE"],
-                        name=f"{forecast_horizon}-minute horizon",
-                        mode="lines",
-                        line=dict(color=line_color[forecast_horizon_selection.index(forecast_horizon)]),
-                    ) 
-                ]
-                
-            )
+        df = pd.DataFrame(
+            {
+                "MAE": y_mae_horizon,
+                "datetime_utc": x_mae_horizon,
+            }
+        )
 
-        st.plotly_chart(fig2, theme="streamlit")
+        fig2.add_traces(
+            [
+                go.Scatter(
+                    x=df["datetime_utc"],
+                    y=df["MAE"],
+                    name=f"{forecast_horizon}-minute horizon",
+                    mode="lines",
+                    line=dict(color=line_color[forecast_horizon_selection.index(forecast_horizon)]),
+                )
+            ]
+        )
+
+    st.plotly_chart(fig2, theme="streamlit")
 
     # add chart with forecast horizons on x-axis
     # # customize color scale for chart
@@ -238,46 +262,37 @@ def metric_page():
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
         )
     )
-    with connection.get_session() as session:
-        # read database metric values
-        for forecast_horizon in forecast_horizon_selection:
-                metric_values = get_metric_value(
-                    session=session,
-                    name=name_mae,
-                    gsp_id=0,
-                    forecast_horizon_minutes=forecast_horizon,
-                    start_datetime_utc=starttime,
-                    end_datetime_utc=endtime+timedelta(days=1),
-            )
-                metric_values = [MetricValue.from_orm(value) for value in metric_values]
-                x_mae_horizon = [value.datetime_interval.start_datetime_utc for value in metric_values]
-                y_mae_horizon = [round(float(value.value), 2) for value in metric_values]
-                # forecast_horizon = [value.forecast_horizon_minutes for value in metric_values]
+    for forecast_horizon in forecast_horizon_selection:
+        metric_values = metric_values_by_forecast_horizon[forecast_horizon]
 
-                df_mae_horizon = pd.DataFrame(
-                    {
-                    "MAE": y_mae_horizon,
-                    "datetime_utc": x_mae_horizon,
-                    }
-                )
-           
-                fig3.add_traces(
-                    [
-                        go.Scatter(
-                            x=df_mae_horizon["MAE"],
-                            y=df_mae_horizon["datetime_utc"],
-                            name=f"{forecast_horizon}-minute horizon",
-                            mode="markers",
-                            line=dict(color=line_color[forecast_horizon_selection.index(forecast_horizon)]),
-                        ),
-                    ]
-                )
+        x_mae_horizon = [value.datetime_interval.start_datetime_utc for value in metric_values]
+        y_mae_horizon = [round(float(value.value), 2) for value in metric_values]
+        # forecast_horizon = [value.forecast_horizon_minutes for value in metric_values]
 
-                fig3.update_layout(
-                xaxis=dict(tickmode='linear', tick0=0, dtick=50),
-            )
+        df_mae_horizon = pd.DataFrame(
+            {
+                "MAE": y_mae_horizon,
+                "datetime_utc": x_mae_horizon,
+            }
+        )
 
-        st.plotly_chart(fig3, theme="streamlit")
+        fig3.add_traces(
+            [
+                go.Scatter(
+                    x=df_mae_horizon["MAE"],
+                    y=df_mae_horizon["datetime_utc"],
+                    name=f"{forecast_horizon}-minute horizon",
+                    mode="markers",
+                    line=dict(color=line_color[forecast_horizon_selection.index(forecast_horizon)]),
+                ),
+            ]
+        )
+
+    fig3.update_layout(
+        xaxis=dict(tickmode="linear", tick0=0, dtick=50),
+    )
+
+    st.plotly_chart(fig3, theme="streamlit")
 
     fig4 = go.Figure(
         layout=go.Layout(
@@ -287,110 +302,93 @@ def metric_page():
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
         )
     )
-    with connection.get_session() as session:
-        # read database metric values
-        for forecast_horizon in forecast_horizon_selection:
-                metric_values = get_metric_value(
-                    session=session,
-                    name=name_mae,
-                    gsp_id=0,
-                    forecast_horizon_minutes=forecast_horizon,
-                    start_datetime_utc=starttime,
-                    end_datetime_utc=endtime+timedelta(days=1),
-            )
-                metric_values = [MetricValue.from_orm(value) for value in metric_values]
-                x_mae_horizon = [value.datetime_interval.start_datetime_utc for value in metric_values]
-                y_mae_horizon = [round(float(value.value), 2) for value in metric_values]
 
-                df_mae_horizon = pd.DataFrame(
-                    {
-                    "MAE": y_mae_horizon,
-                    "datetime_utc": x_mae_horizon,
-                    "forecast_horizon": forecast_horizon,
-                    }
-                )
-           
-                fig4.add_traces(
-                    [
-                        go.Scatter(
-                            x=df_mae_horizon["MAE"],
-                            y=df_mae_horizon["forecast_horizon"],
-                            name=f"{forecast_horizon}-minute horizon",
-                            mode="markers",
-                            line=dict(color=line_color[forecast_horizon_selection.index(forecast_horizon)]),
-                            ),
-                    ]
-                )
-                fig4.update_layout(
-                xaxis=dict(tickmode='linear', tick0=0, dtick=50),
-                yaxis=dict(tickmode='linear', tick0=0, dtick=60),
-            )
+    for forecast_horizon in forecast_horizon_selection:
+        metric_values = metric_values_by_forecast_horizon[forecast_horizon]
 
-        st.plotly_chart(fig4, theme="streamlit")
+        x_mae_horizon = [value.datetime_interval.start_datetime_utc for value in metric_values]
+        y_mae_horizon = [round(float(value.value), 2) for value in metric_values]
+
+        df_mae_horizon = pd.DataFrame(
+            {
+                "MAE": y_mae_horizon,
+                "datetime_utc": x_mae_horizon,
+                "forecast_horizon": forecast_horizon,
+            }
+        )
+
+        fig4.add_traces(
+            [
+                go.Scatter(
+                    x=df_mae_horizon["MAE"],
+                    y=df_mae_horizon["forecast_horizon"],
+                    name=f"{forecast_horizon}-minute horizon",
+                    mode="markers",
+                    line=dict(color=line_color[forecast_horizon_selection.index(forecast_horizon)]),
+                ),
+            ]
+        )
+        fig4.update_layout(
+            xaxis=dict(tickmode="linear", tick0=0, dtick=50),
+            yaxis=dict(tickmode="linear", tick0=0, dtick=60),
+        )
+
+    st.plotly_chart(fig4, theme="streamlit")
 
     # add chart with forecast horizons on x-axis and line for each day in the date range
 
     fig5 = go.Figure(
-         layout=go.Layout(
+        layout=go.Layout(
             title=go.layout.Title(text="Nowcasting MAE Forecast Horizon Values by Date"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Forecast Horizon (minutes)")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="MAE (MW)")),
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Date")),
+        )
     )
-    )
-    #make an empty array to capture data for each line
-    traces =[]
-    #make an empty array to capture values for each forecast horizon in the date range
+    # make an empty array to capture data for each line
+    traces = []
+    # make an empty array to capture values for each forecast horizon in the date range
     dfs = []
     # get data for each forecast horizon
-    with connection.get_session() as session:
-        # read database metric values
-        for forecast_horizon in forecast_horizon_selection:
-                metric_values = get_metric_value(
-                    session=session,
-                    name=name_mae,
-                    gsp_id=0,
-                    forecast_horizon_minutes=forecast_horizon,
-                    start_datetime_utc=starttime,
-                    end_datetime_utc=endtime+timedelta(days=1),
-            )
-                metric_values = [MetricValue.from_orm(value) for value in metric_values]
-                dates = [value.datetime_interval.start_datetime_utc for value in metric_values]
-                mae_value = [round(float(value.value), 2) for value in metric_values]
-                forecast_horizons = [value.forecast_horizon_minutes for value in metric_values]
+    for forecast_horizon in forecast_horizon_selection:
+        metric_values = metric_values_by_forecast_horizon[forecast_horizon]
 
-             #create dataframe for each date with a value for each forecast horizon
-                data = pd.DataFrame(
-                     {
-                    "MAE": mae_value,
-                    "datetime_utc": dates,
-                    "forecast_horizon": forecast_horizons,
-                     }
-                )
+        dates = [value.datetime_interval.start_datetime_utc for value in metric_values]
+        mae_value = [round(float(value.value), 2) for value in metric_values]
+        forecast_horizons = [value.forecast_horizon_minutes for value in metric_values]
 
-                dfs.append(data)
-                # merge dataframes
-        result = pd.concat(dfs, axis=0).sort_values(by=['datetime_utc'], ascending=True)
-        #group by date
-        result = {result_.index[0]: result_ for _, result_ in result.groupby("datetime_utc")}
-        
-        for i in result:
-            traces.append(go.Scatter(
+        # create dataframe for each date with a value for each forecast horizon
+        data = pd.DataFrame(
+            {
+                "MAE": mae_value,
+                "datetime_utc": dates,
+                "forecast_horizon": forecast_horizons,
+            }
+        )
+
+        dfs.append(data)
+        # merge dataframes
+    result = pd.concat(dfs, axis=0).sort_values(by=["datetime_utc"], ascending=True)
+    # group by date
+    result = {result_.index[0]: result_ for _, result_ in result.groupby("datetime_utc")}
+
+    for i in result:
+        traces.append(
+            go.Scatter(
                 x=result[i]["forecast_horizon"].sort_values(ascending=True),
                 y=result[i]["MAE"],
                 name=result[i]["datetime_utc"].iloc[0].strftime("%Y-%m-%d"),
                 mode="lines+markers",
                 line=dict(color=line_color[i]),
-                    )
-                )
-
-        fig5.add_traces(traces)
-        fig5.update_layout(
-                xaxis=dict(tickmode='linear', tick0=0, dtick=60),
-                yaxis=dict(tickmode='linear', tick0=0, dtick=50),
+            )
         )
-        st.plotly_chart(fig5, theme="streamlit")
-    
+
+    fig5.add_traces(traces)
+    fig5.update_layout(
+        xaxis=dict(tickmode="linear", tick0=0, dtick=60),
+        yaxis=dict(tickmode="linear", tick0=0, dtick=50),
+    )
+    st.plotly_chart(fig5, theme="streamlit")
 
     # comparing MAE and RMSE
     fig6 = go.Figure(
@@ -409,7 +407,7 @@ def metric_page():
                 y=df_mae["MAE"],
                 name="MAE",
                 mode="lines",
-                line=dict(color='#FFD053'),
+                line=dict(color="#FFD053"),
             ),
             go.Scatter(
                 x=df_rmse["datetime_utc"],
