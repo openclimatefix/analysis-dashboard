@@ -15,6 +15,7 @@ from nowcasting_datamodel.models.metric import MetricValue
 from get_data import get_metric_value
 from auth import check_password
 from status import status_page
+from forecast import forecast_page
 
 st.get_option("theme.primaryColor")
 
@@ -72,6 +73,9 @@ def metric_page():
 
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
+    st.sidebar.subheader("Select Forecast Model")
+    model_name = st.sidebar.selectbox("Select", ["cnn", "National_xg", "pvnet_v2"])
+
     # set up database connection
     url = os.environ["DB_URL"]
     connection = DatabaseConnection(url=url, echo=True)
@@ -93,6 +97,7 @@ def metric_page():
             gsp_id=0,
             start_datetime_utc=starttime,
             end_datetime_utc=endtime,
+            model_name=model_name,
         )
 
         metric_values_rmse = get_metric_value(
@@ -101,6 +106,7 @@ def metric_page():
             gsp_id=0,
             start_datetime_utc=starttime,
             end_datetime_utc=endtime,
+            model_name=model_name,
         )
 
         # transform SQL object into something readable
@@ -207,14 +213,13 @@ def metric_page():
                 forecast_horizon_minutes=forecast_horizon,
                 start_datetime_utc=starttime,
                 end_datetime_utc=endtime,
+                model_name=model_name,
             )
-
             metric_values = [MetricValue.from_orm(value) for value in metric_values]
             metric_values_by_forecast_horizon[forecast_horizon] = metric_values
 
     for forecast_horizon in forecast_horizon_selection:
         metric_values = metric_values_by_forecast_horizon[forecast_horizon]
-
         x_mae_horizon, y_mae_horizon = get_x_y(metric_values=metric_values)
 
         df = pd.DataFrame(
@@ -237,7 +242,6 @@ def metric_page():
         )
 
     st.plotly_chart(fig2, theme="streamlit")
-
    
     fig4 = go.Figure(
         layout=go.Layout(
@@ -267,6 +271,7 @@ def metric_page():
                 go.Scatter(
                     x=df_mae_horizon["MAE"],
                     y=df_mae_horizon["forecast_horizon"],
+                    name=f"{forecast_horizon}-minute horizon",
                     mode="markers",
                     line=dict(color=line_color[forecast_horizon_selection.index(forecast_horizon)]),
                 ),
@@ -381,6 +386,7 @@ if check_password():
     page_names_to_funcs = {
         "Metrics": metric_page,
         "Status": status_page,
+        "Forecast": forecast_page,
     }
 
     demo_name = st.sidebar.selectbox("Choose a page", page_names_to_funcs.keys())
