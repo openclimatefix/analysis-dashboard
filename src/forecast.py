@@ -28,10 +28,10 @@ def forecast_page():
     use_most_recent = st.sidebar.radio("Most recent", [True, False], index=0)
     if not use_most_recent:
         now = datetime.utcnow() - timedelta(days=1)
-        d = st.sidebar.date_input("Date of Forecast", now.date())
-        t = st.sidebar.time_input("Forecast time", time(12,00))
+        d = st.sidebar.date_input("Forecast creation date:", now.date())
+        t = st.sidebar.time_input("Forecast creation time", time(12,00))
         forecast_time = datetime.combine(d, t)
-        st.sidebar.write(f"Forecast time: {forecast_time}")
+        st.sidebar.write(f"Forecast creation time: {forecast_time}")
     else:
         forecast_time = datetime.utcnow()
 
