@@ -282,7 +282,6 @@ def metric_page():
             title=go.layout.Title(text="Nowcasting MAE by Forecast Horizon for Date Range"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="MAE (MW)")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="Forecast Horizon (minutes)")),
-            legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
         )
     )
     with connection.get_session() as session:
@@ -313,7 +312,6 @@ def metric_page():
                         go.Scatter(
                             x=df_mae_horizon["MAE"],
                             y=df_mae_horizon["forecast_horizon"],
-                            name=f"{forecast_horizon}-minute horizon",
                             mode="markers",
                             line=dict(color=line_color[forecast_horizon_selection.index(forecast_horizon)]),
                             ),
