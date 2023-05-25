@@ -154,8 +154,6 @@ def metric_page():
         }
     )
 
-    print(df_mae)
-
     df_rmse = pd.DataFrame(
         {
             "RMSE": y_rmse,
@@ -194,7 +192,7 @@ def metric_page():
     # MAE by forecast horizon adding go.Figure
     fig2 = go.Figure(
         layout=go.Layout(
-            title=go.layout.Title(text="Nowcasting MAE by Forecast Horizon (see sidebar)"),
+            title=go.layout.Title(text="Nowcasting MAE by Forecast Horizon (selected in sidebar)"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="MAE (MW)")),
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
@@ -297,10 +295,9 @@ def metric_page():
 
     fig4 = go.Figure(
         layout=go.Layout(
-            title=go.layout.Title(text="Nowcasting MAE by Forecast Horizon for Date Range"),
+            title=go.layout.Title(text="Nowcasting MAE by Forecast Horizon for Date Range(selected in sidebar)"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="MAE (MW)")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="Forecast Horizon (minutes)")),
-            legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
         )
     )
 
@@ -337,7 +334,6 @@ def metric_page():
     st.plotly_chart(fig4, theme="streamlit")
 
     # add chart with forecast horizons on x-axis and line for each day in the date range
-
     fig5 = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(text="Nowcasting MAE Forecast Horizon Values by Date"),
@@ -346,6 +342,7 @@ def metric_page():
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Date")),
         )
     )
+
     # make an empty array to capture data for each line
     traces = []
     # make an empty array to capture values for each forecast horizon in the date range
@@ -385,7 +382,7 @@ def metric_page():
                 y=results_for_day["MAE"],
                 name=results_for_day["datetime_utc"].iloc[0].strftime("%Y-%m-%d"),
                 mode="lines+markers",
-                line=dict(color=line_color[i]),
+                line=dict(color=line_color[i % len(line_color)])
             )
         )
 
