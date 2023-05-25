@@ -166,12 +166,12 @@ def metric_page():
     )
     st.plotly_chart(fig, theme="streamlit")
 
-    line_color = ['#9EC8FA', '#9AA1F9', '#FFAC5F', '#9F973A', '#7BCDF3', '#086788', '#63BCAF', '#4C9A8E', '#9EC8FA', '#9AA1F9', '#FFAC5F', '#9F973A', '#7BCDF3', '#086788', '#63BCAF', '#4C9A8E']
+    line_color = ['#9EC8FA', '#9AA1F9', '#FFAC5F', '#9F973A', '#7BCDF3', '#086788', '#63BCAF', '#4C9A8E']
     
     # MAE by forecast horizon adding go.Figure 
     fig2 = go.Figure(
         layout=go.Layout(
-            title=go.layout.Title(text="Nowcasting MAE by Forecast Horizon (see sidebar)"),
+            title=go.layout.Title(text="Nowcasting MAE by Forecast Horizon (selected in sidebar)"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="MAE (MW)")),
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
@@ -279,7 +279,7 @@ def metric_page():
 
     fig4 = go.Figure(
         layout=go.Layout(
-            title=go.layout.Title(text="Nowcasting MAE by Forecast Horizon for Date Range"),
+            title=go.layout.Title(text="Nowcasting MAE by Forecast Horizon for Date Range(selected in sidebar)"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="MAE (MW)")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="Forecast Horizon (minutes)")),
         )
@@ -335,10 +335,9 @@ def metric_page():
     )
     #make an empty array to capture data for each line
     traces =[]
+    forecast_horizons = [60, 120, 180, 240, 300, 360, 420]
     #make an empty array to capture values for each forecast horizon in the date range
     dfs = []
-    #forecast horizons to plot
-    forecast_horizons = [60, 120, 180, 240, 300, 360, 420]
     # get data for each forecast horizon
     with connection.get_session() as session:
         # read database metric values
