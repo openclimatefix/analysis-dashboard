@@ -9,6 +9,14 @@ from nowcasting_datamodel.models import ForecastValue, GSPYield
 import plotly.graph_objects as go
 
 
+colour_per_model = {
+    "cnn": "#9EC8FA",
+    "National_xg": "#9AA1F9",
+    "pvnet_v2": "#FFAC5F",
+    "PVLive Initial estimate": "#9F973A",
+    "PVLive Updated estimate": "#7BCDF3",
+}
+
 def forecast_page():
     """Main page for status"""
     st.markdown(
@@ -24,12 +32,11 @@ def forecast_page():
     )
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
-
     use_most_recent = st.sidebar.radio("Most recent", [True, False], index=0)
     if not use_most_recent:
         now = datetime.utcnow() - timedelta(days=1)
         d = st.sidebar.date_input("Forecast creation date:", now.date())
-        t = st.sidebar.time_input("Forecast creation time", time(12,00))
+        t = st.sidebar.time_input("Forecast creation time", time(12, 00))
         forecast_time = datetime.combine(d, t)
         st.sidebar.write(f"Forecast creation time: {forecast_time}")
     else:
@@ -64,13 +71,15 @@ def forecast_page():
                     model_name=model,
                     start_datetime=start_datetime,
                     created_utc_limit=start_datetime,
-                    only_return_latest=True
+                    only_return_latest=True,
                 )
 
             forecast_per_model[model] = [ForecastValue.from_orm(f) for f in forecast_values]
 
             if use_adjuster:
-                forecast_per_model[model] = [f.adjust(limit=1000) for f in forecast_per_model[model]]
+                forecast_per_model[model] = [
+                    f.adjust(limit=1000) for f in forecast_per_model[model]
+                ]
 
         # get pvlive values
         pvlive_inday = get_gsp_yield(
@@ -89,8 +98,8 @@ def forecast_page():
         )
 
         pvlive_data = {}
-        pvlive_data['PVLive Initial estimate'] = [GSPYield.from_orm(f) for f in pvlive_inday]
-        pvlive_data['PVLive Updated estimate'] = [GSPYield.from_orm(f) for f in pvlive_dayafter]
+        pvlive_data["PVLive Initial estimate"] = [GSPYield.from_orm(f) for f in pvlive_inday]
+        pvlive_data["PVLive Updated estimate"] = [GSPYield.from_orm(f) for f in pvlive_dayafter]
 
     # make plot
     fig = go.Figure(
@@ -107,16 +116,25 @@ def forecast_page():
         x = [i.target_time for i in v]
         y = [i.expected_power_generation_megawatts for i in v]
 
-        fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k))
+        fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, color=colour_per_model[k]))
 
     # pvlive on the chart
     for k, v in pvlive_data.items():
 
         x = [i.datetime_utc for i in v]
-        y = [i.solar_generation_kw/1000 for i in v]
+        y = [i.solar_generation_kw / 1000 for i in v]
 
-        fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k))
+        fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, color=colour_per_model[k]))
 
-    fig.add_trace(go.Scatter(x=[forecast_time,forecast_time], y=[0,10000], mode="lines", name='now', line=dict(color='red', width=4,dash='dash'), showlegend=False))
+    fig.add_trace(
+        go.Scatter(
+            x=[forecast_time, forecast_time],
+            y=[0, 10000],
+            mode="lines",
+            name="now",
+            line=dict(color="red", width=4, dash="dash"),
+            showlegend=False,
+        )
+    )
 
     st.plotly_chart(fig, theme="streamlit")
