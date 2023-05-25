@@ -15,6 +15,7 @@ from nowcasting_datamodel.models.metric import MetricValue
 from get_data import get_metric_value
 from auth import check_password
 from status import status_page
+from forecast import forecast_page
 
 st.get_option("theme.primaryColor")
 
@@ -433,6 +434,7 @@ if check_password():
     page_names_to_funcs = {
         "Metrics": metric_page,
         "Status": status_page,
+        "Forecast": forecast_page,
     }
 
     demo_name = st.sidebar.selectbox("Choose a page", page_names_to_funcs.keys())
