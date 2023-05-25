@@ -373,11 +373,16 @@ def metric_page():
     result = {result_.index[0]: result_ for _, result_ in result.groupby("datetime_utc")}
 
     for i in result:
+
+        # sort results by day
+        results_for_day = result[i]
+        results_for_day = results_for_day.sort_values(by=['forecast_horizon'], ascending=True)
+
         traces.append(
             go.Scatter(
-                x=result[i]["forecast_horizon"].sort_values(ascending=True),
-                y=result[i]["MAE"],
-                name=result[i]["datetime_utc"].iloc[0].strftime("%Y-%m-%d"),
+                x=results_for_day["forecast_horizon"].sort_values(ascending=True),
+                y=results_for_day["MAE"],
+                name=results_for_day["datetime_utc"].iloc[0].strftime("%Y-%m-%d"),
                 mode="lines+markers",
                 line=dict(color=line_color[i]),
             )
