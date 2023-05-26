@@ -59,6 +59,7 @@ def status_page():
         if st.button("Update status"):
             s = Status(status=status_level, message=value)
             s = s.to_orm()
+            s.id = status.id + 1
             session.add(s)
             session.commit()
 
