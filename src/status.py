@@ -57,14 +57,26 @@ def status_page():
             value = st.text_input("New status message")
 
         if st.button("Update status"):
-            s = Status(status=status_level, message=value)
-            s = s.to_orm()
-            s.id = status.id + 1
-            session.add(s)
-            session.commit()
+            write_new_status(session, status, status_level, value)
 
             # this reloads this page, so the new current status shown
             st.experimental_rerun()
+
+
+def write_new_status(session, status, status_level, value):
+    """Write a new status to the database"""
+    # make a new Pydanitc object, this gets validated
+    s = Status(status=status_level, message=value)
+
+    # change to sqlalchemy object
+    s = s.to_orm()
+
+    # bumpy the id
+    s.id = status.id + 1
+
+    # commit to database
+    session.add(s)
+    session.commit()
 
 
 def get_colour(status) -> str:
