@@ -10,11 +10,11 @@ import plotly.graph_objects as go
 
 
 colour_per_model = {
-    "cnn": "#9EC8FA",
-    "National_xg": "#9AA1F9",
-    "pvnet_v2": "#FFAC5F",
-    "PVLive Initial estimate": "#9F973A",
-    "PVLive Updated estimate": "#7BCDF3",
+    "cnn": "#FFD053",
+    "National_xg": "#7BCDF3",
+    "pvnet_v2": "#4c9a8e",
+    "PVLive Initial estimate": "#e4e4e4",
+    "PVLive Updated estimate": "#e4e4e4",
 }
 
 def forecast_page():
@@ -32,13 +32,22 @@ def forecast_page():
     )
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
-    use_most_recent = st.sidebar.radio("Most recent", [True, False], index=0)
-    if not use_most_recent:
+    forecast_type = st.sidebar.radio("Forecast Type", ["Now", "Creation Time","Forecast Horizon"], index=0)
+    if forecast_type == "Creation Time":
         now = datetime.utcnow() - timedelta(days=1)
         d = st.sidebar.date_input("Forecast creation date:", now.date())
         t = st.sidebar.time_input("Forecast creation time", time(12, 00))
         forecast_time = datetime.combine(d, t)
         st.sidebar.write(f"Forecast creation time: {forecast_time}")
+    elif forecast_type == "Forecast Horizon":
+        now = datetime.utcnow() - timedelta(days=1)
+        start_d = st.sidebar.date_input("Forecast start date:", now.date())
+        start_t = st.sidebar.time_input("Forecast start time", time(12, 00))
+
+        start_datetime = datetime.combine(start_d, start_t)
+        end_datetime = start_datetime + timedelta(days=2)
+
+        forecast_horizon = st.sidebar.selectbox("Forecast Horizon", list(range(0,480,30)),8)
     else:
         forecast_time = datetime.utcnow()
 
@@ -48,21 +57,32 @@ def forecast_page():
     with connection.get_session() as session:
 
         forecast_per_model = {}
-        if use_most_recent:
+        if forecast_type == "Now":
             now = datetime.utcnow()
             start_datetime = now.date() - timedelta(days=2)
             end_datetime = None
-        else:
+        elif forecast_type == "Creation Time":
             start_datetime = forecast_time
             end_datetime = forecast_time + timedelta(days=2)
+        else:
+            forecast_time = start_datetime
 
         for model in forecast_models:
-            if use_most_recent:
+            if forecast_type == "Now":
                 forecast_values = get_forecast_values_latest(
                     session=session,
                     gsp_id=0,
                     model_name=model,
                     start_datetime=start_datetime,
+                )
+            elif forecast_type == "Creation Time":
+                forecast_values = get_forecast_values(
+                    session=session,
+                    gsp_ids=[0],
+                    model_name=model,
+                    start_datetime=start_datetime,
+                    created_utc_limit=start_datetime,
+                    only_return_latest=True,
                 )
             else:
                 forecast_values = get_forecast_values(
@@ -70,8 +90,9 @@ def forecast_page():
                     gsp_id=0,
                     model_name=model,
                     start_datetime=start_datetime,
-                    created_utc_limit=start_datetime,
-                    only_return_latest=True,
+                    forecast_horizon_minutes=forecast_horizon,
+                    end_datetime=end_datetime,
+                    only_return_latest=True
                 )
 
             forecast_per_model[model] = [ForecastValue.from_orm(f) for f in forecast_values]
@@ -116,7 +137,7 @@ def forecast_page():
         x = [i.target_time for i in v]
         y = [i.expected_power_generation_megawatts for i in v]
 
-        fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, color=colour_per_model[k]))
+        fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=dict(color=colour_per_model[k])))
 
     # pvlive on the chart
     for k, v in pvlive_data.items():
@@ -124,7 +145,12 @@ def forecast_page():
         x = [i.datetime_utc for i in v]
         y = [i.solar_generation_kw / 1000 for i in v]
 
-        fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, color=colour_per_model[k]))
+        if k == "PVLive Initial estimate":
+            line = dict(color=colour_per_model[k],dash='dash')
+        else:
+            line = dict(color=colour_per_model[k])
+
+        fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
 
     fig.add_trace(
         go.Scatter(
