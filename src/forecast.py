@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta, time, timezone
 import streamlit as st
 import os
 from nowcasting_datamodel.connection import DatabaseConnection
@@ -34,13 +34,13 @@ def forecast_page():
 
     forecast_type = st.sidebar.radio("Forecast Type", ["Now", "Creation Time","Forecast Horizon"], index=0)
     if forecast_type == "Creation Time":
-        now = datetime.utcnow() - timedelta(days=1)
+        now = datetime.now(tz=timezone.utc) - timedelta(days=1)
         d = st.sidebar.date_input("Forecast creation date:", now.date())
         t = st.sidebar.time_input("Forecast creation time", time(12, 00))
         forecast_time = datetime.combine(d, t)
         st.sidebar.write(f"Forecast creation time: {forecast_time}")
     elif forecast_type == "Forecast Horizon":
-        now = datetime.utcnow() - timedelta(days=1)
+        now = datetime.now(tz=timezone.utc) - timedelta(days=1)
         start_d = st.sidebar.date_input("Forecast start date:", now.date())
         start_t = st.sidebar.time_input("Forecast start time", time(12, 00))
 
@@ -49,7 +49,7 @@ def forecast_page():
 
         forecast_horizon = st.sidebar.selectbox("Forecast Horizon", list(range(0,480,30)),8)
     else:
-        forecast_time = datetime.utcnow()
+        forecast_time = datetime.now(tz=timezone.utc)
 
     # get forecast results
     url = os.environ["DB_URL"]
@@ -58,7 +58,7 @@ def forecast_page():
 
         forecast_per_model = {}
         if forecast_type == "Now":
-            now = datetime.utcnow()
+            now = datetime.now(tz=timezone.utc)
             start_datetime = now.date() - timedelta(days=2)
             end_datetime = None
         elif forecast_type == "Creation Time":
