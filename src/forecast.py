@@ -2,9 +2,13 @@ from datetime import datetime, timedelta, time, timezone
 import streamlit as st
 import os
 from nowcasting_datamodel.connection import DatabaseConnection
-from nowcasting_datamodel.read.read import get_forecast_values_latest, get_forecast_values
+from nowcasting_datamodel.read.read import (
+    get_forecast_values_latest,
+    get_forecast_values,
+    get_all_locations,
+)
 from nowcasting_datamodel.read.read_gsp import get_gsp_yield
-from nowcasting_datamodel.models import ForecastValue, GSPYield
+from nowcasting_datamodel.models import ForecastValue, GSPYield, Location
 
 import plotly.graph_objects as go
 
@@ -17,6 +21,7 @@ colour_per_model = {
     "PVLive Updated estimate": "#e4e4e4",
 }
 
+
 def forecast_page():
     """Main page for status"""
     st.markdown(
@@ -25,14 +30,30 @@ def forecast_page():
     st.markdown(
         f'<h1 style="color:#63BCAF;font-size:48px;">{"Forecast"}</h1>', unsafe_allow_html=True
     )
+    # get locations
+    url = os.environ["DB_URL"]
+    connection = DatabaseConnection(url=url, echo=True)
+    with connection.get_session() as session:
+        locations = get_all_locations(session=session)
+        locations = [Location.from_orm(location) for location in locations if location.gsp_id < 318]
+    gsps = [f"{location.gsp_id}: {location.region_name}" for location in locations]
 
     st.sidebar.subheader("Select Forecast Model")
+    gsp_id = st.sidebar.selectbox("Select a region", gsps, index=0)
+    # format gsp_id and get capacity
+    gsp_id = int(gsp_id.split(":")[0])
+    capacity_mw = [
+        location.installed_capacity_mw for location in locations if location.gsp_id == gsp_id
+    ][0]
+
     forecast_models = st.sidebar.multiselect(
         "Select a model", ["cnn", "National_xg", "pvnet_v2"], ["cnn"]
     )
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
-    forecast_type = st.sidebar.radio("Forecast Type", ["Now", "Creation Time","Forecast Horizon"], index=0)
+    forecast_type = st.sidebar.radio(
+        "Forecast Type", ["Now", "Creation Time", "Forecast Horizon"], index=0
+    )
     if forecast_type == "Creation Time":
         now = datetime.now(tz=timezone.utc) - timedelta(days=1)
         d = st.sidebar.date_input("Forecast creation date:", now.date())
@@ -47,13 +68,11 @@ def forecast_page():
         start_datetime = datetime.combine(start_d, start_t)
         end_datetime = start_datetime + timedelta(days=2)
 
-        forecast_horizon = st.sidebar.selectbox("Forecast Horizon", list(range(0,480,30)),8)
+        forecast_horizon = st.sidebar.selectbox("Forecast Horizon", list(range(0, 480, 30)), 8)
     else:
         forecast_time = datetime.now(tz=timezone.utc)
 
     # get forecast results
-    url = os.environ["DB_URL"]
-    connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
 
         forecast_per_model = {}
@@ -71,14 +90,14 @@ def forecast_page():
             if forecast_type == "Now":
                 forecast_values = get_forecast_values_latest(
                     session=session,
-                    gsp_id=0,
+                    gsp_id=gsp_id,
                     model_name=model,
                     start_datetime=start_datetime,
                 )
             elif forecast_type == "Creation Time":
                 forecast_values = get_forecast_values(
                     session=session,
-                    gsp_ids=[0],
+                    gsp_ids=[gsp_id],
                     model_name=model,
                     start_datetime=start_datetime,
                     created_utc_limit=start_datetime,
@@ -87,12 +106,12 @@ def forecast_page():
             else:
                 forecast_values = get_forecast_values(
                     session=session,
-                    gsp_id=0,
+                    gsp_id=gsp_id,
                     model_name=model,
                     start_datetime=start_datetime,
                     forecast_horizon_minutes=forecast_horizon,
                     end_datetime=end_datetime,
-                    only_return_latest=True
+                    only_return_latest=True,
                 )
 
             forecast_per_model[model] = [ForecastValue.from_orm(f) for f in forecast_values]
@@ -105,14 +124,14 @@ def forecast_page():
         # get pvlive values
         pvlive_inday = get_gsp_yield(
             session=session,
-            gsp_ids=[0],
+            gsp_ids=[gsp_id],
             start_datetime_utc=start_datetime,
             end_datetime_utc=end_datetime,
             regime="in-day",
         )
         pvlive_dayafter = get_gsp_yield(
             session=session,
-            gsp_ids=[0],
+            gsp_ids=[gsp_id],
             start_datetime_utc=start_datetime,
             end_datetime_utc=end_datetime,
             regime="day-after",
@@ -137,7 +156,9 @@ def forecast_page():
         x = [i.target_time for i in v]
         y = [i.expected_power_generation_megawatts for i in v]
 
-        fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=dict(color=colour_per_model[k])))
+        fig.add_trace(
+            go.Scatter(x=x, y=y, mode="lines", name=k, line=dict(color=colour_per_model[k]))
+        )
 
     # pvlive on the chart
     for k, v in pvlive_data.items():
@@ -146,7 +167,7 @@ def forecast_page():
         y = [i.solar_generation_kw / 1000 for i in v]
 
         if k == "PVLive Initial estimate":
-            line = dict(color=colour_per_model[k],dash='dash')
+            line = dict(color=colour_per_model[k], dash="dash")
         else:
             line = dict(color=colour_per_model[k])
 
@@ -155,7 +176,7 @@ def forecast_page():
     fig.add_trace(
         go.Scatter(
             x=[forecast_time, forecast_time],
-            y=[0, 10000],
+            y=[0, capacity_mw],
             mode="lines",
             name="now",
             line=dict(color="red", width=4, dash="dash"),
