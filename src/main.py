@@ -19,6 +19,9 @@ from forecast import forecast_page
 
 st.get_option("theme.primaryColor")
 
+MAE_LIMIT_DEFAULT = 800
+MAE_LIMIT_DEFAULT_HORIZON_0 = 300
+
 
 def get_x_y(metric_values):
     """
@@ -169,6 +172,7 @@ def metric_page():
         hover_data=["MAE", "datetime_utc"],
         color_discrete_sequence=["#FFAC5F"],
     )
+    fig.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT_HORIZON_0])
     st.plotly_chart(fig, theme="streamlit")
 
     line_color = [
@@ -241,6 +245,7 @@ def metric_page():
             ]
         )
 
+    fig2.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
     st.plotly_chart(fig2, theme="streamlit")
    
     fig4 = go.Figure(
@@ -282,6 +287,7 @@ def metric_page():
             yaxis=dict(tickmode="linear", tick0=0, dtick=60),
         )
 
+    fig4.update_layout(xaxis_range=[0, MAE_LIMIT_DEFAULT])
     st.plotly_chart(fig4, theme="streamlit")
 
     # add chart with forecast horizons on x-axis and line for each day in the date range
@@ -343,6 +349,7 @@ def metric_page():
         xaxis=dict(tickmode="linear", tick0=0, dtick=60),
         yaxis=dict(tickmode="linear", tick0=0, dtick=50),
     )
+    fig5.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
     st.plotly_chart(fig5, theme="streamlit")
 
     # comparing MAE and RMSE
@@ -373,7 +380,7 @@ def metric_page():
             ),
         ]
     )
-
+    fig6.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
     st.plotly_chart(fig6, theme="streamlit")
 
     st.subheader("Raw Data")
