@@ -147,7 +147,7 @@ def metric_page():
 
     st.sidebar.subheader("Select Forecast Horizon")
     forecast_horizon_selection = st.sidebar.multiselect(
-        "Select", [60, 120, 180, 240, 300, 360, 420], [60, 120, 180, 240, 300, 360, 420]
+        "Select", [0, 60, 120, 180, 240, 300, 360, 420], [60, 120, 240, 420]
     )
 
     df_mae = pd.DataFrame(
@@ -323,9 +323,9 @@ def metric_page():
         dfs.append(data)
 
     # merge dataframes
-    result = pd.concat(dfs, axis=0).sort_values(by=["datetime_utc"], ascending=True)
+    all_forecast_horizons_df = pd.concat(dfs, axis=0).sort_values(by=["datetime_utc"], ascending=True)
     # group by date
-    result = {result_.index[0]: result_ for _, result_ in result.groupby("datetime_utc")}
+    result = {result_.index[0]: result_ for _, result_ in all_forecast_horizons_df.groupby("datetime_utc")}
     # loop through each date group in the dictionary and add to traces
     len_colours = len(line_color)
     # loop through each date group in the dictionary and add to traces
@@ -382,6 +382,15 @@ def metric_page():
     )
     fig6.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
     st.plotly_chart(fig6, theme="streamlit")
+
+    st.subheader("Data - forecast horizon averaged")
+    # get average MAE for each forecast horizon
+    df_mae_horizon_mean = all_forecast_horizons_df.groupby(["forecast_horizon"]).mean().reset_index()
+    df_mae_horizon_mean.rename(columns={"MAE": "mean"}, inplace=True)
+    df_mae_horizon_std = all_forecast_horizons_df.groupby(["forecast_horizon"]).std().reset_index()
+    df_mae_horizon_mean['std'] = df_mae_horizon_std['MAE']
+    st.write(df_mae_horizon_mean)
+
 
     st.subheader("Raw Data")
     col1, col2 = st.columns([1, 1])
