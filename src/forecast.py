@@ -7,7 +7,7 @@ from nowcasting_datamodel.read.read import (
     get_forecast_values,
     get_all_locations,
 )
-from nowcasting_datamodel.read.read_gsp import get_gsp_yield
+from nowcasting_datamodel.read.read_gsp import get_gsp_yield, get_gsp_yield_sum
 from nowcasting_datamodel.models import ForecastValue, GSPYield, Location
 
 import plotly.graph_objects as go
@@ -36,6 +36,7 @@ def forecast_page():
     with connection.get_session() as session:
         locations = get_all_locations(session=session)
         locations = [Location.from_orm(location) for location in locations if location.gsp_id < 318]
+       
     gsps = [f"{location.gsp_id}: {location.region_name}" for location in locations]
 
     st.sidebar.subheader("Select Forecast Model")
@@ -71,8 +72,13 @@ def forecast_page():
         forecast_horizon = st.sidebar.selectbox("Forecast Horizon", list(range(0, 480, 30)), 8)
     else:
         forecast_time = datetime.now(tz=timezone.utc)
-
+    
+    # with connection.get_session() as session:
+    #     gsp_yield_sum_list = get_gsp_yield_sum(session=session,start_datetime=start_datetime, end_datetime=end_datetime)
+    #     gsp_yield_sum_list = [GSPYield.from_orm(gsp_yield) for gsp_yield in gsp_yield_sum_list]
+    # print(gsp_yield_sum_list)
     # get forecast results
+
     with connection.get_session() as session:
 
         forecast_per_model = {}
@@ -137,11 +143,29 @@ def forecast_page():
             regime="day-after",
         )
 
+        pvlive_sum_gsps_inday = get_gsp_yield_sum(
+            session=session,
+            gsp_ids=[gsp_id],
+            start_datetime_utc=start_datetime,
+            end_datetime_utc=end_datetime,
+            regime="in-day",
+        )
+
+        pvlive_sum_gsps_dayafter = get_gsp_yield_sum(
+            session=session,
+            gsp_ids=[6,7,8,52],
+            start_datetime_utc=start_datetime,
+            end_datetime_utc=end_datetime,
+            regime="day-after",
+        )
+
         pvlive_data = {}
         pvlive_data["PVLive Initial estimate"] = [GSPYield.from_orm(f) for f in pvlive_inday]
         pvlive_data["PVLive Updated estimate"] = [GSPYield.from_orm(f) for f in pvlive_dayafter]
+        pvlive_data["PVLive Initial estimate GSP Sum"] = [GSPYield.from_orm(f) for f in pvlive_sum_gsps_inday]
+        pvlive_data["PVLive Updated GSP Sum"] = [GSPYield.from_orm(f) for f in pvlive_sum_gsps_dayafter]
 
-    # make plot
+        # make plot
     fig = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(text="Latest Forecast"),
@@ -168,8 +192,12 @@ def forecast_page():
 
         if k == "PVLive Initial estimate":
             line = dict(color=colour_per_model[k], dash="dash")
-        else:
+        elif k == "PVLive Updated estimate":
             line = dict(color=colour_per_model[k])
+        elif k == "PVLive Initial estimate GSP Sum":
+            line = dict(color="yellow", dash="dash") 
+        else: 
+            line = dict(color="yellow")
 
         fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
 
@@ -183,5 +211,6 @@ def forecast_page():
             showlegend=False,
         )
     )
+
 
     st.plotly_chart(fig, theme="streamlit")
