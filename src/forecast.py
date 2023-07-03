@@ -7,9 +7,9 @@ from nowcasting_datamodel.read.read import (
     get_forecast_values,
     get_all_locations,
 )
-from nowcasting_datamodel.read.read_gsp import get_gsp_yield, get_gsp_yield_sum
+from nowcasting_datamodel.read.read_gsp import get_gsp_yield
 from nowcasting_datamodel.models import ForecastValue, GSPYield, Location
-
+from get_data import get_gsp_yield_sum
 import plotly.graph_objects as go
 
 
@@ -72,12 +72,6 @@ def forecast_page():
         forecast_horizon = st.sidebar.selectbox("Forecast Horizon", list(range(0, 480, 30)), 8)
     else:
         forecast_time = datetime.now(tz=timezone.utc)
-    
-    # with connection.get_session() as session:
-    #     gsp_yield_sum_list = get_gsp_yield_sum(session=session,start_datetime=start_datetime, end_datetime=end_datetime)
-    #     gsp_yield_sum_list = [GSPYield.from_orm(gsp_yield) for gsp_yield in gsp_yield_sum_list]
-    # print(gsp_yield_sum_list)
-    # get forecast results
 
     with connection.get_session() as session:
 
@@ -143,27 +137,27 @@ def forecast_page():
             regime="day-after",
         )
 
-        pvlive_sum_gsps_inday = get_gsp_yield_sum(
+        pvlive_gsp_sum_inday = get_gsp_yield_sum(
             session=session,
-            gsp_ids=[gsp_id],
+            gsp_ids=list(range(1, 318)),
             start_datetime_utc=start_datetime,
             end_datetime_utc=end_datetime,
             regime="in-day",
         )
 
-        pvlive_sum_gsps_dayafter = get_gsp_yield_sum(
+        pvlive_gsp_sum_dayafter = get_gsp_yield_sum(
             session=session,
-            gsp_ids=[6,7,8,52],
+            gsp_ids=list(range(1, 318)),
             start_datetime_utc=start_datetime,
             end_datetime_utc=end_datetime,
             regime="day-after",
         )
 
         pvlive_data = {}
-        pvlive_data["PVLive Initial estimate"] = [GSPYield.from_orm(f) for f in pvlive_inday]
-        pvlive_data["PVLive Updated estimate"] = [GSPYield.from_orm(f) for f in pvlive_dayafter]
-        pvlive_data["PVLive Initial estimate GSP Sum"] = [GSPYield.from_orm(f) for f in pvlive_sum_gsps_inday]
-        pvlive_data["PVLive Updated GSP Sum"] = [GSPYield.from_orm(f) for f in pvlive_sum_gsps_dayafter]
+        pvlive_data["PVLive Initial Estimate"] = [GSPYield.from_orm(f) for f in pvlive_inday]
+        pvlive_data["PVLive Updated Estimate"] = [GSPYield.from_orm(f) for f in pvlive_dayafter]
+        pvlive_data["PVLive Sum GSPs Initial"] = [GSPYield.from_orm(f) for f in pvlive_gsp_sum_inday]
+        pvlive_data["PVLive Sum GSPs Updated"] = [GSPYield.from_orm(f) for f in pvlive_gsp_sum_dayafter]
 
         # make plot
     fig = go.Figure(
