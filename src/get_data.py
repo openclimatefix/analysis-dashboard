@@ -7,8 +7,9 @@ from datetime import datetime
 from typing import List, Optional
 
 from sqlalchemy.orm.session import Session
+from sqlalchemy.sql.expression import func
 
-from nowcasting_datamodel.models.gsp import LocationSQL
+from nowcasting_datamodel.models.gsp import LocationSQL, GSPYieldSQL, GSPYield
 from nowcasting_datamodel.models import MLModelSQL
 from nowcasting_datamodel.models.metric import DatetimeIntervalSQL, MetricSQL, MetricValueSQL
 
@@ -80,3 +81,69 @@ def get_metric_value(
     metric_values = query.all()
 
     return metric_values
+
+
+def get_gsp_yield_sum(
+    session: Session,
+    gsp_ids: List[int],
+    start_datetime_utc: datetime,
+    regime: Optional[str] = None,
+    end_datetime_utc: Optional[datetime] = None,
+) -> List[GSPYield]:
+    """
+    Get the sum of gsp yield values.
+
+    :param session: sqlalchemy sessions
+    :param gsp_ids: list of gsp ids that we filter on
+    :param start_datetime_utc: filter values on this start datetime
+    :param regime: filter query on this regim. Can be "in-day" or "day-after"
+    :param end_datetime_utc: optional end datetime filter
+
+    :return: list of GSPYield objects
+    """
+
+    logger.info(f"Getting gsp yield sum for {len(gsp_ids)} gsp systems")
+
+    if regime is None:
+        logger.debug("No regime given, defaulting to 'in-day'")
+        regime = "in-day"
+
+    # start main query
+    query = session.query(
+        GSPYieldSQL.datetime_utc,
+        func.sum(GSPYieldSQL.solar_generation_kw).label("solar_generation_kw"),
+    )
+
+    # join with location table
+    query = query.join(LocationSQL)
+
+    # select only the gsp systems we want
+    query = query.where(LocationSQL.gsp_id.in_(gsp_ids))
+
+    # filter on regime
+    query = query.where(GSPYieldSQL.regime == regime)
+
+    # filter on datetime
+    query = query.where(GSPYieldSQL.datetime_utc >= start_datetime_utc)
+    if end_datetime_utc is not None:
+        query = query.where(GSPYieldSQL.datetime_utc <= end_datetime_utc)
+    
+    query = query.where(GSPYieldSQL.solar_generation_kw+1 > GSPYieldSQL.solar_generation_kw)
+    
+    # group and order by datetime
+    query = query.group_by(GSPYieldSQL.datetime_utc)
+    query = query.order_by(GSPYieldSQL.datetime_utc)
+
+    results = query.all()
+
+    # format results
+    results = [
+        GSPYield(
+            datetime_utc=result.datetime_utc,
+            solar_generation_kw=result.solar_generation_kw,
+            regime=regime,
+        )
+        for result in results
+    ]
+
+    return results
