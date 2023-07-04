@@ -7,9 +7,8 @@ from nowcasting_datamodel.read.read import (
     get_forecast_values,
     get_all_locations,
 )
-from nowcasting_datamodel.read.read_gsp import get_gsp_yield
+from nowcasting_datamodel.read.read_gsp import get_gsp_yield, get_gsp_yield_sum
 from nowcasting_datamodel.models import ForecastValue, GSPYield, Location
-
 import plotly.graph_objects as go
 
 
@@ -17,25 +16,34 @@ colour_per_model = {
     "cnn": "#FFD053",
     "National_xg": "#7BCDF3",
     "pvnet_v2": "#4c9a8e",
-    "PVLive Initial estimate": "#e4e4e4",
-    "PVLive Updated estimate": "#e4e4e4",
+    "PVLive Initial Estimate": "#e4e4e4",
+    "PVLive Updated Estimate": "#e4e4e4",
+    "PVLive GSP Sum Estimate": "#FF9736",
+    "PVLive GSP Sum Updated": "#FF9736",
 }
 
 
 def forecast_page():
     """Main page for status"""
     st.markdown(
-        f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Dashboard"}</h1>', unsafe_allow_html=True
+        f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Dashboard"}</h1>',
+        unsafe_allow_html=True,
     )
     st.markdown(
-        f'<h1 style="color:#63BCAF;font-size:48px;">{"Forecast"}</h1>', unsafe_allow_html=True
+        f'<h1 style="color:#63BCAF;font-size:48px;">{"Forecast"}</h1>',
+        unsafe_allow_html=True,
     )
     # get locations
     url = os.environ["DB_URL"]
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         locations = get_all_locations(session=session)
-        locations = [Location.from_orm(location) for location in locations if location.gsp_id < 318]
+        locations = [
+            Location.from_orm(location)
+            for location in locations
+            if location.gsp_id < 318
+        ]
+
     gsps = [f"{location.gsp_id}: {location.region_name}" for location in locations]
 
     st.sidebar.subheader("Select Forecast Model")
@@ -43,7 +51,9 @@ def forecast_page():
     # format gsp_id and get capacity
     gsp_id = int(gsp_id.split(":")[0])
     capacity_mw = [
-        location.installed_capacity_mw for location in locations if location.gsp_id == gsp_id
+        location.installed_capacity_mw
+        for location in locations
+        if location.gsp_id == gsp_id
     ][0]
 
     forecast_models = st.sidebar.multiselect(
@@ -68,11 +78,12 @@ def forecast_page():
         start_datetime = datetime.combine(start_d, start_t)
         end_datetime = start_datetime + timedelta(days=2)
 
-        forecast_horizon = st.sidebar.selectbox("Forecast Horizon", list(range(0, 480, 30)), 8)
+        forecast_horizon = st.sidebar.selectbox(
+            "Forecast Horizon", list(range(0, 480, 30)), 8
+        )
     else:
         forecast_time = datetime.now(tz=timezone.utc)
 
-    # get forecast results
     with connection.get_session() as session:
 
         forecast_per_model = {}
@@ -114,7 +125,9 @@ def forecast_page():
                     only_return_latest=True,
                 )
 
-            forecast_per_model[model] = [ForecastValue.from_orm(f) for f in forecast_values]
+            forecast_per_model[model] = [
+                ForecastValue.from_orm(f) for f in forecast_values
+            ]
 
             if use_adjuster:
                 forecast_per_model[model] = [
@@ -137,9 +150,30 @@ def forecast_page():
             regime="day-after",
         )
 
+        pvlive_gsp_sum_inday = get_gsp_yield_sum(
+            session=session,
+            gsp_ids=list(range(1, 318)),
+            start_datetime_utc=start_datetime,
+            end_datetime_utc=end_datetime,
+            regime="in-day",
+        )
+
+        pvlive_gsp_sum_dayafter = get_gsp_yield_sum(
+            session=session,
+            gsp_ids=list(range(1, 318)),
+            start_datetime_utc=start_datetime,
+            end_datetime_utc=end_datetime,
+            regime="day-after",
+        )
+
         pvlive_data = {}
-        pvlive_data["PVLive Initial estimate"] = [GSPYield.from_orm(f) for f in pvlive_inday]
-        pvlive_data["PVLive Updated estimate"] = [GSPYield.from_orm(f) for f in pvlive_dayafter]
+        pvlive_data["PVLive Initial Estimate"] = [
+            GSPYield.from_orm(f) for f in pvlive_inday
+        ]
+        pvlive_data["PVLive Updated Estimate"] = [
+            GSPYield.from_orm(f) for f in pvlive_dayafter
+        ]
+
 
     # make plot
     fig = go.Figure(
@@ -157,7 +191,9 @@ def forecast_page():
         y = [i.expected_power_generation_megawatts for i in v]
 
         fig.add_trace(
-            go.Scatter(x=x, y=y, mode="lines", name=k, line=dict(color=colour_per_model[k]))
+            go.Scatter(
+                x=x, y=y, mode="lines", name=k, line=dict(color=colour_per_model[k])
+            )
         )
 
     # pvlive on the chart
@@ -166,12 +202,31 @@ def forecast_page():
         x = [i.datetime_utc for i in v]
         y = [i.solar_generation_kw / 1000 for i in v]
 
-        if k == "PVLive Initial estimate":
+        if k == "PVLive Initial Estimate":
             line = dict(color=colour_per_model[k], dash="dash")
-        else:
+        elif k == "PVLive Updated Estimate":
             line = dict(color=colour_per_model[k])
 
         fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
+
+    # pvlive gsp sum dictionary of values and chart for national forecast     
+    if gsp_id == 0:
+        pvlive_gsp_sum_data = {}
+        pvlive_gsp_sum_data["PVLive GSP Sum Estimate"] = [
+            GSPYield.from_orm(f) for f in pvlive_gsp_sum_inday]
+        pvlive_gsp_sum_data["PVLive GSP Sum Updated"] = [
+                GSPYield.from_orm(f) for f in pvlive_gsp_sum_dayafter]
+        
+        for k, v in pvlive_gsp_sum_data.items():
+            x = [i.datetime_utc for i in v]
+            y = [i.solar_generation_kw / 1000 for i in v]
+
+            if k == "PVLive GSP Sum Estimate":
+                line = dict(color=colour_per_model[k], dash="dash")
+            elif k == "PVLive GSP Sum Updated":
+                line = dict(color=colour_per_model[k])
+
+            fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
 
     fig.add_trace(
         go.Scatter(

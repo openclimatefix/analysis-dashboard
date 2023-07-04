@@ -7,8 +7,9 @@ from datetime import datetime
 from typing import List, Optional
 
 from sqlalchemy.orm.session import Session
+from sqlalchemy.sql.expression import func
 
-from nowcasting_datamodel.models.gsp import LocationSQL
+from nowcasting_datamodel.models.gsp import LocationSQL, GSPYieldSQL, GSPYield
 from nowcasting_datamodel.models import MLModelSQL
 from nowcasting_datamodel.models.metric import DatetimeIntervalSQL, MetricSQL, MetricValueSQL
 
