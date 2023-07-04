@@ -7,9 +7,8 @@ from nowcasting_datamodel.read.read import (
     get_forecast_values,
     get_all_locations,
 )
-from nowcasting_datamodel.read.read_gsp import get_gsp_yield
+from nowcasting_datamodel.read.read_gsp import get_gsp_yield, get_gsp_yield_sum
 from nowcasting_datamodel.models import ForecastValue, GSPYield, Location
-from get_data import get_gsp_yield_sum
 import plotly.graph_objects as go
 
 
@@ -175,15 +174,8 @@ def forecast_page():
             GSPYield.from_orm(f) for f in pvlive_dayafter
         ]
 
-        pvlive_gsp_sum_data = {}
-        pvlive_gsp_sum_data["PVLive GSP Sum Estimate"] = [
-            GSPYield.from_orm(f) for f in pvlive_gsp_sum_inday
-        ]
-        pvlive_gsp_sum_data["PVLive GSP Sum Updated"] = [
-            GSPYield.from_orm(f) for f in pvlive_gsp_sum_dayafter
-        ]
 
-        # make plot
+    # make plot
     fig = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(text="Latest Forecast"),
@@ -217,10 +209,15 @@ def forecast_page():
 
         fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
 
-    # pvlive gsp sum on the chart for national forecast
+    # pvlive gsp sum dictionary of values and chart for national forecast     
     if gsp_id == 0:
+        pvlive_gsp_sum_data = {}
+        pvlive_gsp_sum_data["PVLive GSP Sum Estimate"] = [
+            GSPYield.from_orm(f) for f in pvlive_gsp_sum_inday]
+        pvlive_gsp_sum_data["PVLive GSP Sum Updated"] = [
+                GSPYield.from_orm(f) for f in pvlive_gsp_sum_dayafter]
+        
         for k, v in pvlive_gsp_sum_data.items():
-
             x = [i.datetime_utc for i in v]
             y = [i.solar_generation_kw / 1000 for i in v]
 
