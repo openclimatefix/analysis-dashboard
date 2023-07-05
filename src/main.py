@@ -117,9 +117,9 @@ def metric_page():
         metric_values_mae_gsp_sum = get_metric_value(
             session=session,
             name=name_mae_gsp_sum,
-            gsp_id=0,
             start_datetime_utc=starttime,
             end_datetime_utc=endtime,
+            # gsp_id=0,
             model_name=model_name,
         )
 
