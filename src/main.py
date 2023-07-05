@@ -1,5 +1,5 @@
 """ 
-Internal UI for OCF 
+UK analysis dashboard for OCF 
 """
 
 import os
@@ -90,9 +90,11 @@ def metric_page():
         # read database metric values
         name_mae = "Daily Latest MAE"
         name_rmse = "Daily Latest RMSE"
+        name_mae_gsp_sum = "Daily Latest MAE All GSPs"
         if use_adjuster:
             name_mae = "Daily Latest MAE with adjuster"
             name_rmse = "Daily Latest RMSE with adjuster"
+            name_mae_gsp_sum = "Daily Latest MAE All GSPs"
 
         metric_values_mae = get_metric_value(
             session=session,
@@ -111,10 +113,21 @@ def metric_page():
             end_datetime_utc=endtime,
             model_name=model_name,
         )
+        # get metric value for mae with pvlive gsp sum truths for comparison
+        metric_values_mae_gsp_sum = get_metric_value(
+            session=session,
+            name=name_mae_gsp_sum,
+            gsp_id=0,
+            start_datetime_utc=starttime,
+            end_datetime_utc=endtime,
+            model_name=model_name,
+        )
 
         # transform SQL object into something readable
+        x_mae_all_gsp, y_mae_all_gsp = get_x_y(metric_values=metric_values_mae_gsp_sum)
         x_mae, y_mae = get_x_y(metric_values=metric_values_mae)
         x_rmse, y_rmse = get_x_y(metric_values=metric_values_rmse)
+
 
         # getting recent statistics for the dashboard
         day_before_yesterday_mae, yesterday_mae, today_mae = get_recent_daily_values(values=y_mae)
@@ -163,6 +176,13 @@ def metric_page():
             "datetime_utc": x_rmse,
         }
     )
+
+    df_mae_all_gsp = pd.DataFrame(
+        {
+            "MAE All GSPs": y_mae_all_gsp,
+            "datetime_utc": x_mae_all_gsp,
+        })
+ 
     # set up title and subheader
     fig = px.bar(
         df_mae,
@@ -172,6 +192,7 @@ def metric_page():
         hover_data=["MAE", "datetime_utc"],
         color_discrete_sequence=["#FFAC5F"],
     )
+
     fig.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT_HORIZON_0])
     st.plotly_chart(fig, theme="streamlit")
 
@@ -378,8 +399,16 @@ def metric_page():
                 mode="lines",
                 line=dict(color=line_color[0]),
             ),
+            go.Scatter(
+                x=df_mae_all_gsp["datetime_utc"],
+                y=df_mae_all_gsp["MAE All GSPs"],
+                mode="lines",
+                name="Daily Latest MAE All GSPs",
+                line=dict(color="#FFD053"),
+            ),
         ]
     )
+    
     fig6.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
     st.plotly_chart(fig6, theme="streamlit")
 
