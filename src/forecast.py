@@ -7,7 +7,7 @@ from nowcasting_datamodel.read.read import (
     get_forecast_values,
     get_all_locations,
 )
-from nowcasting_datamodel.read.read_gsp import get_gsp_yield
+from nowcasting_datamodel.read.read_gsp import get_gsp_yield, get_gsp_yield_sum
 from nowcasting_datamodel.models import ForecastValue, GSPYield, Location
 
 import plotly.graph_objects as go
@@ -19,6 +19,8 @@ colour_per_model = {
     "pvnet_v2": "#4c9a8e",
     "PVLive Initial estimate": "#e4e4e4",
     "PVLive Updated estimate": "#e4e4e4",
+    "PVLive GSP Sum Estimate": "#FF9736",
+    "PVLive GSP Sum Updated": "#FF9736",
 }
 
 
@@ -137,6 +139,22 @@ def forecast_page():
             regime="day-after",
         )
 
+        pvlive_gsp_sum_inday = get_gsp_yield_sum(
+            session=session,
+            gsp_ids=list(range(1, 318)),
+            start_datetime_utc=start_datetime,
+            end_datetime_utc=end_datetime,
+            regime="in-day",
+        )
+
+        pvlive_gsp_sum_dayafter = get_gsp_yield_sum(
+            session=session,
+            gsp_ids=list(range(1, 318)),
+            start_datetime_utc=start_datetime,
+            end_datetime_utc=end_datetime,
+            regime="day-after",
+        )
+
         pvlive_data = {}
         pvlive_data["PVLive Initial estimate"] = [GSPYield.from_orm(f) for f in pvlive_inday]
         pvlive_data["PVLive Updated estimate"] = [GSPYield.from_orm(f) for f in pvlive_dayafter]
@@ -172,6 +190,28 @@ def forecast_page():
             line = dict(color=colour_per_model[k])
 
         fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
+    #pvlive gsp sum dictionary of values and chart for national forecast     
+    if gsp_id == 0:
+
+        pvlive_gsp_sum_data = {}
+        pvlive_gsp_sum_data["PVLive GSP Sum Estimate"] = [
+            GSPYield.from_orm(f) for f in pvlive_gsp_sum_inday]
+        pvlive_gsp_sum_data["PVLive GSP Sum Updated"] = [
+                GSPYield.from_orm(f) for f in pvlive_gsp_sum_dayafter]
+        
+        print("DATA", pvlive_gsp_sum_data)
+        
+        for k, v in pvlive_gsp_sum_data.items():
+
+            x = [i.datetime_utc for i in v]
+            y = [i.solar_generation_kw / 1000 for i in v]
+
+            if k == "PVLive GSP Sum Estimate":
+                line = dict(color=colour_per_model[k], dash="dash")
+            elif k == "PVLive GSP Sum Updated":
+                line = dict(color=colour_per_model[k])
+
+            fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
 
     fig.add_trace(
         go.Scatter(
