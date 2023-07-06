@@ -119,7 +119,6 @@ def metric_page():
             name=name_mae_gsp_sum,
             start_datetime_utc=starttime,
             end_datetime_utc=endtime,
-            # gsp_id=0,
             model_name=model_name,
         )
 
