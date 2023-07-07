@@ -400,30 +400,32 @@ def metric_page():
             ),
         ]
     )
-    
-    fig6.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
-    st.plotly_chart(fig6, theme="streamlit")
 
+    fig6.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
+    
     fig7 = go.Figure(
         layout=go.Layout(
-            title=go.layout.Title(text="Daily Latest MAE All GSPs"),
-            xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
-            yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="Error Value (MW)")),
-            legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
+        title=go.layout.Title(text="Daily Latest MAE All GSPs"),
+        xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
+        yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="Error Value (MW)")),
+        legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
         )
     )
 
     fig7.add_traces(
         go.Scatter(
-                x=df_mae_all_gsp["datetime_utc"],
-                y=df_mae_all_gsp["MAE All GSPs"],
-                mode="lines",
-                name="Daily Latest MAE All GSPs",
-                line=dict(color=line_color[4]),
-            ),
-    )
+            x=df_mae_all_gsp["datetime_utc"],
+            y=df_mae_all_gsp["MAE All GSPs"],
+            mode="lines",
+            name="Daily Latest MAE All GSPs",
+            line=dict(color=line_color[4]),
+        ),
+        )
     
-    st.plotly_chart(fig7, theme="streamlit")
+    if model_name in ["pvnet_v2", "cnn"]:
+        
+        st.plotly_chart(fig6, theme="streamlit")
+        st.plotly_chart(fig7, theme="streamlit")
 
     st.subheader("Data - forecast horizon averaged")
     # get average MAE for each forecast horizon
