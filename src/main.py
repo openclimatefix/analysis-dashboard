@@ -187,7 +187,7 @@ def metric_page():
         df_mae,
         x="datetime_utc",
         y="MAE",
-        title="Nowcasting MAE",
+        title="Quartz Solar MAE",
         hover_data=["MAE", "datetime_utc"],
         color_discrete_sequence=["#FFAC5F"],
     )
@@ -209,7 +209,7 @@ def metric_page():
     # MAE by forecast horizon adding go.Figure
     fig2 = go.Figure(
         layout=go.Layout(
-            title=go.layout.Title(text="Nowcasting MAE by Forecast Horizon (selected in sidebar)"),
+            title=go.layout.Title(text="Quartz Solar MAE by Forecast Horizon (selected in sidebar)"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="MAE (MW)")),
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
@@ -271,7 +271,7 @@ def metric_page():
     fig4 = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(
-                text="Nowcasting MAE by Forecast Horizon for Date Range(selected in sidebar)"
+                text="Quartz Solar MAE by Forecast Horizon for Date Range(selected in sidebar)"
             ),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="MAE (MW)")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="Forecast Horizon (minutes)")),
@@ -313,7 +313,7 @@ def metric_page():
     # add chart with forecast horizons on x-axis and line for each day in the date range
     fig5 = go.Figure(
         layout=go.Layout(
-            title=go.layout.Title(text="Nowcasting MAE Forecast Horizon Values by Date"),
+            title=go.layout.Title(text="Quartz Solar MAE Forecast Horizon Values by Date"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Forecast Horizon (minutes)")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="MAE (MW)")),
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Date")),
@@ -375,7 +375,7 @@ def metric_page():
     # comparing MAE and RMSE
     fig6 = go.Figure(
         layout=go.Layout(
-            title=go.layout.Title(text="Nowcasting MAE with RMSE for Comparison"),
+            title=go.layout.Title(text="Quartz Solar MAE with RMSE for Comparison"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="Error Value (MW)")),
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
