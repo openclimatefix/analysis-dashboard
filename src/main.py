@@ -402,6 +402,7 @@ def metric_page():
     )
 
     fig6.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
+    st.plotly_chart(fig6, theme="streamlit")
     
     fig7 = go.Figure(
         layout=go.Layout(
@@ -424,7 +425,6 @@ def metric_page():
     
     if model_name in ["pvnet_v2", "cnn"]:
         
-        st.plotly_chart(fig6, theme="streamlit")
         st.plotly_chart(fig7, theme="streamlit")
 
     st.subheader("Data - forecast horizon averaged")
