@@ -1,18 +1,26 @@
-# OCF Internal UI
+# UK Analysis Dashboard
 
-Streamlit app that serves as a dashboard for the OCF team that reports database statistics.
+Internal dashboard for OCF to track forecast statistics for the UK. 
 
-## Installing Requirements
+The analysis dashboard is a tool that has been developed over the last three months for OCF’s internal use and continues to evolve. 
 
-Install all requirements with `pip install -r requirements.txt`
+Built with [Streamlit](https://streamlit.io/), a python-based framework made specifically for creating data apps, the dashboard tracks and displays Quartz Solar’s mean absolute error (MAE) on both the national and GSP level. 
 
-## Running Streamlit
+The database generates this statistic using PVLive day-after updated values as the baseline for measuring error --the larger the error, the less accurate the forecast. Thanks to the analysis dashboard, OCF has a valuable feedback tool for understanding the accuracy of both the Quartz Solar forecast and other models in production.
+
+``
+
+## Installing and running the app 
 
 First make sure you're in the main project folder: `internal_ui`
 
-Install streamlit: `pip install streamlit` or `pip3 install streamlit`
+Install Streamlit: `pip install streamlit` or `pip3 install streamlit`
 
-Check that streamlit installed: `streamlit hello`
+Check that Streamlit installed by running `streamlit hello`
+
+Install all requirements with `pip install -r requirements.txt`
+
+Check that Streamlit installed: `streamlit hello`
 
 Create a login secret: `echo "password = example" > src/.streamlit/secrets.toml`
 
