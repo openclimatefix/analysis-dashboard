@@ -208,6 +208,28 @@ def forecast_page():
             line = dict(color=colour_per_model[k])
 
         fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
+    #pvlive gsp sum dictionary of values and chart for national forecast     
+    if gsp_id == 0:
+
+        pvlive_gsp_sum_data = {}
+        pvlive_gsp_sum_data["PVLive GSP Sum Estimate"] = [
+            GSPYield.from_orm(f) for f in pvlive_gsp_sum_inday]
+        pvlive_gsp_sum_data["PVLive GSP Sum Updated"] = [
+                GSPYield.from_orm(f) for f in pvlive_gsp_sum_dayafter]
+        
+        print("DATA", pvlive_gsp_sum_data)
+        
+        for k, v in pvlive_gsp_sum_data.items():
+
+            x = [i.datetime_utc for i in v]
+            y = [i.solar_generation_kw / 1000 for i in v]
+
+            if k == "PVLive GSP Sum Estimate":
+                line = dict(color=colour_per_model[k], dash="dash")
+            elif k == "PVLive GSP Sum Updated":
+                line = dict(color=colour_per_model[k])
+
+            fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
 
     # pvlive gsp sum dictionary of values and chart for national forecast     
     if gsp_id == 0:

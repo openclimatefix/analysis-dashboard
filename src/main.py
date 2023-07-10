@@ -1,5 +1,5 @@
 """ 
-Internal UI for OCF 
+UK analysis dashboard for OCF 
 """
 
 import os
@@ -90,9 +90,11 @@ def metric_page():
         # read database metric values
         name_mae = "Daily Latest MAE"
         name_rmse = "Daily Latest RMSE"
+        name_mae_gsp_sum = "Daily Latest MAE All GSPs"
         if use_adjuster:
             name_mae = "Daily Latest MAE with adjuster"
             name_rmse = "Daily Latest RMSE with adjuster"
+            name_mae_gsp_sum = "Daily Latest MAE All GSPs"
 
         metric_values_mae = get_metric_value(
             session=session,
@@ -111,10 +113,20 @@ def metric_page():
             end_datetime_utc=endtime,
             model_name=model_name,
         )
+        # get metric value for mae with pvlive gsp sum truths for comparison
+        metric_values_mae_gsp_sum = get_metric_value(
+            session=session,
+            name=name_mae_gsp_sum,
+            start_datetime_utc=starttime,
+            end_datetime_utc=endtime,
+            model_name=model_name,
+        )
 
         # transform SQL object into something readable
+        x_mae_all_gsp, y_mae_all_gsp = get_x_y(metric_values=metric_values_mae_gsp_sum)
         x_mae, y_mae = get_x_y(metric_values=metric_values_mae)
         x_rmse, y_rmse = get_x_y(metric_values=metric_values_rmse)
+
 
         # getting recent statistics for the dashboard
         day_before_yesterday_mae, yesterday_mae, today_mae = get_recent_daily_values(values=y_mae)
@@ -163,15 +175,23 @@ def metric_page():
             "datetime_utc": x_rmse,
         }
     )
+
+    df_mae_all_gsp = pd.DataFrame(
+        {
+            "MAE All GSPs": y_mae_all_gsp,
+            "datetime_utc": x_mae_all_gsp,
+        })
+ 
     # set up title and subheader
     fig = px.bar(
         df_mae,
         x="datetime_utc",
         y="MAE",
-        title="Nowcasting MAE",
+        title="Quartz Solar MAE",
         hover_data=["MAE", "datetime_utc"],
         color_discrete_sequence=["#FFAC5F"],
     )
+
     fig.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT_HORIZON_0])
     st.plotly_chart(fig, theme="streamlit")
 
@@ -189,7 +209,7 @@ def metric_page():
     # MAE by forecast horizon adding go.Figure
     fig2 = go.Figure(
         layout=go.Layout(
-            title=go.layout.Title(text="Nowcasting MAE by Forecast Horizon (selected in sidebar)"),
+            title=go.layout.Title(text="Quartz Solar MAE by Forecast Horizon (selected in sidebar)"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="MAE (MW)")),
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
@@ -251,7 +271,7 @@ def metric_page():
     fig4 = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(
-                text="Nowcasting MAE by Forecast Horizon for Date Range(selected in sidebar)"
+                text="Quartz Solar MAE by Forecast Horizon for Date Range(selected in sidebar)"
             ),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="MAE (MW)")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="Forecast Horizon (minutes)")),
@@ -293,7 +313,7 @@ def metric_page():
     # add chart with forecast horizons on x-axis and line for each day in the date range
     fig5 = go.Figure(
         layout=go.Layout(
-            title=go.layout.Title(text="Nowcasting MAE Forecast Horizon Values by Date"),
+            title=go.layout.Title(text="Quartz Solar MAE Forecast Horizon Values by Date"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Forecast Horizon (minutes)")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="MAE (MW)")),
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Date")),
@@ -355,7 +375,7 @@ def metric_page():
     # comparing MAE and RMSE
     fig6 = go.Figure(
         layout=go.Layout(
-            title=go.layout.Title(text="Nowcasting MAE with RMSE for Comparison"),
+            title=go.layout.Title(text="Quartz Solar MAE with RMSE for Comparison"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="Error Value (MW)")),
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
@@ -380,8 +400,32 @@ def metric_page():
             ),
         ]
     )
+
     fig6.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
     st.plotly_chart(fig6, theme="streamlit")
+    
+    fig7 = go.Figure(
+        layout=go.Layout(
+        title=go.layout.Title(text="Daily Latest MAE All GSPs"),
+        xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
+        yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="Error Value (MW)")),
+        legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
+        )
+    )
+
+    fig7.add_traces(
+        go.Scatter(
+            x=df_mae_all_gsp["datetime_utc"],
+            y=df_mae_all_gsp["MAE All GSPs"],
+            mode="lines",
+            name="Daily Latest MAE All GSPs",
+            line=dict(color=line_color[4]),
+        ),
+        )
+    
+    if model_name in ["pvnet_v2", "cnn"]:
+        
+        st.plotly_chart(fig7, theme="streamlit")
 
     st.subheader("Data - forecast horizon averaged")
     # get average MAE for each forecast horizon
