@@ -46,22 +46,19 @@ Run app: `cd src && streamlit run main.py`.
 
 ## 🛠️ infrastructure
 
-`.github/workflows` contains a number of CI actions
-1. linters.yaml: Runs linting checks on the code
-2. release.yaml: Make and pushes docker files on a new code release
-3. test-docker.yaml': Runs tests on every push
+`.github/workflows` contains some CI actions
+1. `docker-pipeline.yml`: Creates and publishes a docker image. 
 
-The docker file is in the folder `infrastructure/docker/`
-
-The version is bumped automatically for any push to `main`.
+With any push to `main`, in order to deploy changes, the `Terraform Cloud` variable is updated with the commit reference and deployed to `AWS Elastic Beanstalk`. 
 
 ## Environmental Variables
 
-- DB_URL: The database url which the forecasts will be saved too
+- DB_URL: The database url which will be queried for  forecasts
+- password: The password for accessing the code 
 
 ## Contributors 
 
-The following folks have contributed to this repo. 
+The following folks have contributed to this repo. ([emoji key](https://allcontributors.org/docs/en/emoji-key))
 
 
 
