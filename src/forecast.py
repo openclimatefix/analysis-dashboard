@@ -194,28 +194,41 @@ def forecast_page():
         y = [i.expected_power_generation_megawatts for i in forecast]
 
         fig.add_trace(
-            go.Scatter(
-                x=x, y=y, mode="lines", name=model, line=dict(color=colour_per_model[model])
-            )
+            go.Scatter(x=x, y=y, mode="lines", name=model, line=dict(color=colour_per_model[model]))
         )
 
         try:
             properties_0 = forecast[0]._properties
             print(properties_0)
             if isinstance(properties_0, dict):
-                assert '10' in properties_0.keys() and '90' in properties_0.keys()
-                plevel_10 = [i._properties['10'] for i in forecast]
-                plevel_90 = [i._properties['90'] for i in forecast]
+                assert "10" in properties_0.keys() and "90" in properties_0.keys()
+                plevel_10 = [i._properties["10"] for i in forecast]
+                plevel_90 = [i._properties["90"] for i in forecast]
 
-                fig.add_trace(go.Scatter(
-                    x=x, y=plevel_10, mode="lines", name=model, line=dict(color=colour_per_model[model]), showlegend=False)
+                fig.add_trace(
+                    go.Scatter(
+                        x=x,
+                        y=plevel_10,
+                        mode="lines",
+                        name=model,
+                        line=dict(color=colour_per_model[model]),
+                        showlegend=False,
+                    )
                 )
-                fig.add_trace(go.Scatter(
-                    x=x, y=plevel_90, mode="lines", name=model, line=dict(color=colour_per_model[model]), fill='tonexty', showlegend=False)
+                fig.add_trace(
+                    go.Scatter(
+                        x=x,
+                        y=plevel_90,
+                        mode="lines",
+                        name=model,
+                        line=dict(color=colour_per_model[model]),
+                        fill="tonexty",
+                        showlegend=False,
+                    )
                 )
         except Exception as e:
             print(e)
-            print('Could not add plevel to chart')
+            print("Could not add plevel to chart")
             raise e
 
     # pvlive on the chart
