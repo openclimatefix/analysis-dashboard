@@ -78,8 +78,9 @@ def forecast_page():
         start_datetime = datetime.combine(start_d, start_t)
         end_datetime = start_datetime + timedelta(days=2)
 
+        # 0 8 hours in 30 mintue chunks, 8 to 36 hours in 3 hour chunks
         forecast_horizon = st.sidebar.selectbox(
-            "Forecast Horizon", list(range(0, 480, 30)), 8
+            "Forecast Horizon", list(range(0, 480, 30)) + list(range(480, 36*60, 180)), 8
         )
     else:
         forecast_time = datetime.now(tz=timezone.utc)
