@@ -125,9 +125,12 @@ def forecast_page():
                     only_return_latest=True,
                 )
 
-            forecast_per_model[model] = [
-                ForecastValue.from_orm(f) for f in forecast_values
-            ]
+            # make ForecastValue objects with _properties
+            forecast_per_model[model] = []
+            for f in forecast_values:
+                forecast_value = ForecastValue.from_orm(f)
+                forecast_value._properties = f.properties
+                forecast_per_model[model].append(forecast_value)
 
             if use_adjuster:
                 forecast_per_model[model] = [
@@ -185,16 +188,47 @@ def forecast_page():
         )
     )
     # forecasts on the chart
-    for k, v in forecast_per_model.items():
+    for model, forecast in forecast_per_model.items():
 
-        x = [i.target_time for i in v]
-        y = [i.expected_power_generation_megawatts for i in v]
+        x = [i.target_time for i in forecast]
+        y = [i.expected_power_generation_megawatts for i in forecast]
 
         fig.add_trace(
-            go.Scatter(
-                x=x, y=y, mode="lines", name=k, line=dict(color=colour_per_model[k])
-            )
+            go.Scatter(x=x, y=y, mode="lines", name=model, line=dict(color=colour_per_model[model]))
         )
+
+        try:
+            properties_0 = forecast[0]._properties
+            if isinstance(properties_0, dict):
+                assert "10" in properties_0.keys() and "90" in properties_0.keys()
+                plevel_10 = [i._properties["10"] for i in forecast]
+                plevel_90 = [i._properties["90"] for i in forecast]
+
+                fig.add_trace(
+                    go.Scatter(
+                        x=x,
+                        y=plevel_10,
+                        mode="lines",
+                        name='p10: ' + model,
+                        line=dict(color=colour_per_model[model], width=0),
+                        showlegend=False,
+                    )
+                )
+                fig.add_trace(
+                    go.Scatter(
+                        x=x,
+                        y=plevel_90,
+                        mode="lines",
+                        name='p90: ' + model,
+                        line=dict(color=colour_per_model[model], width=0),
+                        fill="tonexty",
+                        showlegend=False,
+                    )
+                )
+        except Exception as e:
+            print(e)
+            print("Could not add plevel to chart")
+            raise e
 
     # pvlive on the chart
     for k, v in pvlive_data.items():
