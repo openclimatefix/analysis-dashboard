@@ -63,7 +63,7 @@ def forecast_page():
     if gsp_id != 0:
         if "National_xg" in forecast_models:
             forecast_models.remove("National_xg")
-            st.sidebar.warning("National_xg not available for GSP forecasts.")
+            st.sidebar.warning("National_xg only available for National forecast.")
 
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
