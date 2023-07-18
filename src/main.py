@@ -159,7 +159,9 @@ def metric_page():
 
     st.sidebar.subheader("Select Forecast Horizon")
     forecast_horizon_selection = st.sidebar.multiselect(
-        "Select", [0, 60, 120, 180, 240, 300, 360, 420], [60, 120, 240, 420]
+        "Select",
+        [0, 60, 120, 180, 240, 300, 360, 420, 8*60, 12*60, 15*60, 18*60, 21*60, 24*60, 30*60, 35*60],
+        [60, 120, 240, 420]
     )
 
     df_mae = pd.DataFrame(
