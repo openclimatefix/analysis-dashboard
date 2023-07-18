@@ -199,7 +199,6 @@ def forecast_page():
 
         try:
             properties_0 = forecast[0]._properties
-            print(properties_0)
             if isinstance(properties_0, dict):
                 assert "10" in properties_0.keys() and "90" in properties_0.keys()
                 plevel_10 = [i._properties["10"] for i in forecast]
@@ -210,8 +209,8 @@ def forecast_page():
                         x=x,
                         y=plevel_10,
                         mode="lines",
-                        name=model,
-                        line=dict(color=colour_per_model[model]),
+                        name='p10: ' + model,
+                        line=dict(color=colour_per_model[model], width=0),
                         showlegend=False,
                     )
                 )
@@ -220,8 +219,8 @@ def forecast_page():
                         x=x,
                         y=plevel_90,
                         mode="lines",
-                        name=model,
-                        line=dict(color=colour_per_model[model]),
+                        name='p90: ' + model,
+                        line=dict(color=colour_per_model[model], width=0),
                         fill="tonexty",
                         showlegend=False,
                     )
