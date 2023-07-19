@@ -60,6 +60,15 @@ With any push to `main`, in order to deploy changes, the `Terraform Cloud` varia
 ## Contributors 
 
 The following folks have contributed to this repo.
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
 
 
 
