@@ -59,6 +59,12 @@ def forecast_page():
     forecast_models = st.sidebar.multiselect(
         "Select a model", ["cnn", "National_xg", "pvnet_v2"], ["cnn"]
     )
+
+    if gsp_id != 0:
+        if "National_xg" in forecast_models:
+            forecast_models.remove("National_xg")
+            st.sidebar.warning("National_xg only available for National forecast.")
+
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
     forecast_type = st.sidebar.radio(
@@ -80,7 +86,9 @@ def forecast_page():
 
         # 0 8 hours in 30 mintue chunks, 8 to 36 hours in 3 hour chunks
         forecast_horizon = st.sidebar.selectbox(
-            "Forecast Horizon", list(range(0, 480, 30)) + list(range(480, 36*60, 180)), 8
+            "Forecast Horizon",
+            list(range(0, 480, 30)) + list(range(480, 36 * 60, 180)),
+            8,
         )
     else:
         forecast_time = datetime.now(tz=timezone.utc)
@@ -178,7 +186,6 @@ def forecast_page():
             GSPYield.from_orm(f) for f in pvlive_dayafter
         ]
 
-
     # make plot
     fig = go.Figure(
         layout=go.Layout(
@@ -195,7 +202,13 @@ def forecast_page():
         y = [i.expected_power_generation_megawatts for i in forecast]
 
         fig.add_trace(
-            go.Scatter(x=x, y=y, mode="lines", name=model, line=dict(color=colour_per_model[model]))
+            go.Scatter(
+                x=x,
+                y=y,
+                mode="lines",
+                name=model,
+                line=dict(color=colour_per_model[model]),
+            )
         )
 
         try:
@@ -210,7 +223,7 @@ def forecast_page():
                         x=x,
                         y=plevel_10,
                         mode="lines",
-                        name='p10: ' + model,
+                        name="p10: " + model,
                         line=dict(color=colour_per_model[model], width=0),
                         showlegend=False,
                     )
@@ -220,7 +233,7 @@ def forecast_page():
                         x=x,
                         y=plevel_90,
                         mode="lines",
-                        name='p90: ' + model,
+                        name="p90: " + model,
                         line=dict(color=colour_per_model[model], width=0),
                         fill="tonexty",
                         showlegend=False,
@@ -244,14 +257,16 @@ def forecast_page():
 
         fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
 
-    # pvlive gsp sum dictionary of values and chart for national forecast     
+    # pvlive gsp sum dictionary of values and chart for national forecast
     if gsp_id == 0:
         pvlive_gsp_sum_data = {}
         pvlive_gsp_sum_data["PVLive GSP Sum Estimate"] = [
-            GSPYield.from_orm(f) for f in pvlive_gsp_sum_inday]
+            GSPYield.from_orm(f) for f in pvlive_gsp_sum_inday
+        ]
         pvlive_gsp_sum_data["PVLive GSP Sum Updated"] = [
-                GSPYield.from_orm(f) for f in pvlive_gsp_sum_dayafter]
-        
+            GSPYield.from_orm(f) for f in pvlive_gsp_sum_dayafter
+        ]
+
         for k, v in pvlive_gsp_sum_data.items():
             x = [i.datetime_utc for i in v]
             y = [i.solar_generation_kw / 1000 for i in v]
