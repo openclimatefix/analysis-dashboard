@@ -34,14 +34,18 @@ def pvsite_forecast_page():
         unsafe_allow_html=True,
     )
     # get site_uuids from database
-    url = "postgresql://main:7o5geKryjWVnVVfu@localhost:5434/pvsitedevelopment"
+    url = os.env("SITES_DB_URL")
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         site_uuids = get_all_sites(session=session)
         site_uuids = [
-            SiteSQL.from_orm(site) for site in site_uuids
+            sites.site_uuid for sites in site_uuids if sites.site_uuid is not None
         ]
-    
+        print(site_uuids)
+    site_selection = st.sidebar.selectbox("Select sites", site_uuids, index=0)
+    st.write(site_selection)
+
+
     # get pv generation by site and plot
       #   pv_generation = get_pv_generation_by_sites(
       #       session=session, 
