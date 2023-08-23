@@ -26,7 +26,7 @@ colour_per_model = {
 def pvsite_forecast_page():
     """Main page for pvsite forecast"""
     st.markdown(
-        f'<h1 style="color:#FFD053;font-size:48px;">{"OCF UK Analysis Dashboard"}</h1>',
+        f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Analysis Dashboard"}</h1>',
         unsafe_allow_html=True,
     )
     st.markdown(
@@ -34,6 +34,7 @@ def pvsite_forecast_page():
         unsafe_allow_html=True,
     )
     # get site_uuids from database
+
     url = os.env("SITES_DB_URL")
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
@@ -41,31 +42,112 @@ def pvsite_forecast_page():
         site_uuids = [
             sites.site_uuid for sites in site_uuids if sites.site_uuid is not None
         ]
-        print(site_uuids)
-    site_selection = st.sidebar.selectbox("Select sites", site_uuids, index=0)
-    st.write(site_selection)
+      
+    site_selection = st.sidebar.selectbox("Select sites by site_uuid", site_uuids, index=0)
+    starttime = st.sidebar.date_input("Start Date", datetime.today() - timedelta(days=3))
+    st.write("Forecast for", site_selection)
+    # get forecast values for selected sites and plot
+    with connection.get_session() as session:
+        forecasts = get_latest_forecast_values_by_site(
+            session=session,
+            site_uuids=[site_selection],
+            start_utc=starttime,
+        )
+
+        forecasts = forecasts.values()
+        for forecast in forecasts:
+            for i in forecast: 
+                print(i.forecast_power_kw, i.created_utc)
+
+    with connection.get_session() as session:
+        generations = get_pv_generation_by_sites(
+            session=session,
+            site_uuids=[site_selection],
+            start_utc=starttime,
+        )
+        # generations = [int(generation.generation_power_kw) for generation in generations if generation is not None]
+        # print("generations", generations)
+
+        yy = [generation.generation_power_kw for generation in generations if generation is not None]
+        xx = [generation.created_utc for generation in generations]
+        
+    fig = go.Figure(
+        layout=go.Layout(
+            title=go.layout.Title(text="Latest Forecast for Selected Site"),
+            xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
+            yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="KW")),
+            legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
+        )
+    )
+
+    x = [i.created_utc for i in forecast]
+    y = [i.forecast_power_kw for i in forecast]
+    
+
+    fig.add_trace(
+        go.Scatter(
+            x=x,
+            y=y,
+            mode="lines",
+            name="selected site forecast",
+            line=dict(color="#4c9a8e"),
+        )
+        )
+    fig.add_trace(
+        go.Scatter(
+            x=xx,
+            y=yy,
+            mode="markers",
+            name="selected site generation",
+            line=dict(color="#FF9736"),
+    )
+    )
+
+    st.plotly_chart(fig, theme="streamlit")
+                
+        # forecast_values = [forecasts.values() for forecast in forecasts]
+        # forecast_values = forecasts.values()
+
+        # def forecast_values(forecasts):
+        #     for forecast in forecasts:
+        # forecast_values = [forecasts.values() for forecast in forecasts]
+        #     for i in forecast:
+        #         forecast_values.append(i.forecast_power_kw)
+        
+        # print("forecastvalues", forecast_values)
+        
+        
+        
+        #         for i in forecast:
+        #         forecast_values.append(i.forecast_power_kw)
+        # print("forecastvalues", forecast_values)
+
+
+        # forecast_values = list(forecasts.values(forecasts) for forecast in forecasts)
+       
+        
+
+       
+      
+      
+      
+
+   
 
 
     # get pv generation by site and plot
-      #   pv_generation = get_pv_generation_by_sites(
-      #       session=session, 
-      #       site_uuids=site_uuids,
-      #       start_utc=datetime(2023, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
-      #       end_utc=datetime(2023-01-01 00:00:00+00:00),  
-      #                             )
+    #     pv_generation = get_pv_generation_by_sites(
+    #         session=session, 
+    #         site_uuids=site_uuids,
+    #         start_utc=datetime(2023, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
+    #         end_utc=datetime(2023-01-01 00:00:00+00:00),  
+    #                               )
       
       #   selected_sites = st.multiselect("Select sites", ["00c65674-f9bd-4841-8a8e-fdec24cd837b", "00c50aa6-bf38-4482-b0f9-01aa1402a143"], default=site_uuids[0])
       #   start_utc = st.date_input("Start date", datetime(2023, 1, 1, 0, 0, 0, tzinfo=timezone.utc))
       
       
-      # # get forecast values for selected sites and plot 
-      #   forecasts = get_latest_forecast_values_by_site(
-      #       session=session,
-      #       site_uuids=selected_sites,
-      #       start_utc=datetime(2023, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
-      #  )
     
-      #   forecast_values = [ForecastValueSQL.from_orm(forecast) for forecast in forecasts]
 
         
 
