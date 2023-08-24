@@ -2,7 +2,6 @@ from datetime import datetime, timedelta, time, timezone
 import streamlit as st
 import os
 from pvsite_datamodel.connection import DatabaseConnection
-from pvsite_datamodel.sqlmodels import SiteSQL, ForecastSQL, ForecastValueSQL, GenerationSQL
 from pvsite_datamodel.read import (
     get_all_sites,
     get_pv_generation_by_sites,
@@ -33,7 +32,6 @@ def pvsite_forecast_page():
       
     site_selection = st.sidebar.selectbox("Select sites by site_uuid", site_uuids, index=0)
     starttime = st.sidebar.date_input("Start Date", datetime.today() - timedelta(days=3), max_value=datetime.today())
-    # endtime = st.sidebar.date_input("End Date", datetime.today() + timedelta(days=1))
     st.write("Forecast for", site_selection)
 
     # get forecast values for selected sites and plot
@@ -42,7 +40,6 @@ def pvsite_forecast_page():
             session=session,
             site_uuids=[site_selection],
             start_utc=starttime,
-            # end_utc=endtime,
         )
 
         forecasts = forecasts.values()
@@ -57,7 +54,6 @@ def pvsite_forecast_page():
             session=session,
             site_uuids=[site_selection],
             start_utc=starttime,
-            # end_utc=endtime
         )
 
         yy = [generation.generation_power_kw for generation in generations if generation is not None]
