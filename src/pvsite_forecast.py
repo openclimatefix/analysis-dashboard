@@ -32,7 +32,7 @@ def pvsite_forecast_page():
         ]
       
     site_selection = st.sidebar.selectbox("Select sites by site_uuid", site_uuids,)
-    starttime = st.sidebar.date_input("Start Date", min_value=datetime.today - timedelta(days=3), max_value=datetime.today())
+    starttime = st.sidebar.date_input("Start Date", min_value=datetime.today() - timedelta(days=3), max_value=datetime.today())
     st.write("Forecast for", site_selection, "starting on", starttime)
 
     # get forecast values for selected sites and plot
