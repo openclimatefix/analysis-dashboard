@@ -22,7 +22,8 @@ def pvsite_forecast_page():
         unsafe_allow_html=True,
     )
     # get site_uuids from database
-    url = os.environ["SITES_DB_URL"]
+    url = "postgresql://main:7o5geKryjWVnVVfu@localhost:5434/pvsitedevelopment"
+    # url = os.environ["SITES_DB_URL"]
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         site_uuids = get_all_sites(session=session)
@@ -30,9 +31,9 @@ def pvsite_forecast_page():
             sites.site_uuid for sites in site_uuids if sites.site_uuid is not None
         ]
       
-    site_selection = st.sidebar.selectbox("Select sites by site_uuid", site_uuids, index=0)
+    site_selection = st.sidebar.selectbox("Select sites by site_uuid", site_uuids,)
     starttime = st.sidebar.date_input("Start Date", datetime.today() - timedelta(days=3), max_value=datetime.today())
-    st.write("Forecast for", site_selection)
+    st.write("Forecast for", site_selection, "starting on", starttime)
 
     # get forecast values for selected sites and plot
     with connection.get_session() as session:
