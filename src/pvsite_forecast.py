@@ -1,12 +1,13 @@
-from datetime import datetime, timedelta, time, timezone
-import streamlit as st
 import os
+import streamlit as st
+from datetime import datetime, timedelta, time, timezone
 from pvsite_datamodel.connection import DatabaseConnection
 from pvsite_datamodel.read import (
     get_all_sites,
     get_pv_generation_by_sites,
     get_latest_forecast_values_by_site
 )
+
 
 import plotly.graph_objects as go
 
@@ -22,8 +23,7 @@ def pvsite_forecast_page():
         unsafe_allow_html=True,
     )
     # get site_uuids from database
-    url = "postgresql://main:7o5geKryjWVnVVfu@localhost:5434/pvsitedevelopment"
-    # url = os.environ["SITES_DB_URL"]
+    url = os.environ["SITES_DB_URL"]
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         site_uuids = get_all_sites(session=session)
@@ -32,7 +32,7 @@ def pvsite_forecast_page():
         ]
       
     site_selection = st.sidebar.selectbox("Select sites by site_uuid", site_uuids,)
-    starttime = st.sidebar.date_input("Start Date", datetime.today() - timedelta(days=3), max_value=datetime.today())
+    starttime = st.sidebar.date_input("Start Date", min_value=datetime.today - timedelta(days=3), max_value=datetime.today())
     st.write("Forecast for", site_selection, "starting on", starttime)
 
     # get forecast values for selected sites and plot

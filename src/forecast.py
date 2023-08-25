@@ -211,7 +211,7 @@ def forecast_page():
             )
         )
 
-    if model != "cnn":
+    if model != "cnn" and len(forecast) > 0:
         try:
             properties_0 = forecast[0]._properties
             if isinstance(properties_0, dict):
