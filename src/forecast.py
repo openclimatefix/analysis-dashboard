@@ -26,11 +26,11 @@ colour_per_model = {
 def forecast_page():
     """Main page for status"""
     st.markdown(
-        f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Dashboard"}</h1>',
+        f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Analysis Dashboard"}</h1>',
         unsafe_allow_html=True,
     )
     st.markdown(
-        f'<h1 style="color:#63BCAF;font-size:48px;">{"Forecast"}</h1>',
+        f'<h1 style="color:#63BCAF;font-size:48px;">{"National and GSP Forecasts"}</h1>',
         unsafe_allow_html=True,
     )
     # get locations
@@ -211,6 +211,7 @@ def forecast_page():
             )
         )
 
+    if model != "cnn" and len(forecast) > 0:
         try:
             properties_0 = forecast[0]._properties
             if isinstance(properties_0, dict):

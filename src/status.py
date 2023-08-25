@@ -22,7 +22,7 @@ def get_current_status():
 def status_page():
     """Main page for status"""
     st.markdown(
-        f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Dashboard"}</h1>', unsafe_allow_html=True
+        f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Analysis Dashboard"}</h1>', unsafe_allow_html=True
     )
     st.markdown(
         f'<h1 style="color:#63BCAF;font-size:48px;">{"Status"}</h1>', unsafe_allow_html=True

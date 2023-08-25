@@ -16,6 +16,7 @@ from get_data import get_metric_value
 from auth import check_password
 from status import status_page
 from forecast import forecast_page
+from pvsite_forecast import pvsite_forecast_page
 
 st.get_option("theme.primaryColor")
 
@@ -66,7 +67,7 @@ def metric_page():
 
     # set up title and subheader
     st.markdown(
-        f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Dashboard"}</h1>', unsafe_allow_html=True
+        f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Analysis Dashboard"}</h1>', unsafe_allow_html=True
     )
     # set up sidebar
     st.sidebar.subheader("Select date range for charts")
@@ -449,6 +450,7 @@ if check_password():
         "Metrics": metric_page,
         "Status": status_page,
         "Forecast": forecast_page,
+        "PV Site Forecast": pvsite_forecast_page,
     }
 
     demo_name = st.sidebar.selectbox("Choose a page", page_names_to_funcs.keys())
