@@ -1,6 +1,6 @@
 # code from a streamlit app Peter made. the commands should be relevant to what I'm doing but stuff inside
 
-FROM python:3.9-slim
+FROM python:3.10-slim
 
 WORKDIR /app
 # copy everything in to the app folder (which we're already in)
