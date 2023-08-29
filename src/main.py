@@ -398,7 +398,7 @@ def metric_page():
     # comparing MAE and RMSE
     fig6 = go.Figure(
         layout=go.Layout(
-            title=go.layout.Title(text="Quartz Solar MAE with RMSE for Comparison"),
+            title=go.layout.Title(text="Quartz Solar and PVlive MAE with RMSE for Comparison"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="Error Value (MW)")),
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
@@ -439,8 +439,8 @@ def metric_page():
     )
 
     fig6.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
-    st.plotly_chart(fig6, theme="streamlit")\
-
+    st.plotly_chart(fig6, theme="streamlit")
+    st.text("PV live if the different between the intraday and day after PV Live values.")
     
     fig7 = go.Figure(
         layout=go.Layout(
