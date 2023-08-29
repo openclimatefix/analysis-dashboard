@@ -97,6 +97,9 @@ def metric_page():
             name_rmse = "Daily Latest RMSE with adjuster"
             name_mae_gsp_sum = "Daily Latest MAE All GSPs"
 
+        name_pvlive_mae = "PVLive MAE"
+        name_pvlive_rmse = "PVLive RMSE"
+
         metric_values_mae = get_metric_value(
             session=session,
             name=name_mae,
@@ -123,11 +126,28 @@ def metric_page():
             model_name=model_name,
         )
 
+        # pvlive
+        metric_values_pvlive_mae = get_metric_value(
+            session=session,
+            name=name_pvlive_mae,
+            start_datetime_utc=starttime,
+            end_datetime_utc=endtime,
+            gsp_id=0,
+        )
+        metric_values_pvlive_rmse = get_metric_value(
+            session=session,
+            name=name_pvlive_rmse,
+            start_datetime_utc=starttime,
+            end_datetime_utc=endtime,
+            gsp_id=0,
+        )
+
         # transform SQL object into something readable
         x_mae_all_gsp, y_mae_all_gsp = get_x_y(metric_values=metric_values_mae_gsp_sum)
         x_mae, y_mae = get_x_y(metric_values=metric_values_mae)
         x_rmse, y_rmse = get_x_y(metric_values=metric_values_rmse)
-
+        x_plive_mae, y_plive_mae = get_x_y(metric_values=metric_values_pvlive_mae)
+        x_plive_rmse, y_plive_rmse = get_x_y(metric_values=metric_values_pvlive_rmse)
 
         # getting recent statistics for the dashboard
         day_before_yesterday_mae, yesterday_mae, today_mae = get_recent_daily_values(values=y_mae)
@@ -392,20 +412,35 @@ def metric_page():
                 y=df_mae["MAE"],
                 name="MAE",
                 mode="lines",
-                line=dict(color="#FFD053"),
+                line=dict(color=line_color[0]),
             ),
             go.Scatter(
                 x=df_rmse["datetime_utc"],
                 y=df_rmse["RMSE"],
                 name="RMSE",
                 mode="lines",
-                line=dict(color=line_color[0]),
+                line=dict(color=line_color[1]),
             ),
+            go.Scatter(
+                x=x_plive_mae,
+                y=y_plive_mae,
+                name="MAE PVLive",
+                mode="lines",
+                line=dict(color=line_color[0],dash='dash'),
+            ),
+        go.Scatter(
+            x=x_plive_rmse,
+            y=y_plive_rmse,
+            name="RMSE PVLive",
+            mode="lines",
+            line=dict(color=line_color[1],dash='dash'),
+        ),
         ]
     )
 
     fig6.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
-    st.plotly_chart(fig6, theme="streamlit")
+    st.plotly_chart(fig6, theme="streamlit")\
+
     
     fig7 = go.Figure(
         layout=go.Layout(
