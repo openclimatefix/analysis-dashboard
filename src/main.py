@@ -5,6 +5,7 @@ UK analysis dashboard for OCF
 import os
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -471,8 +472,9 @@ def metric_page():
     df_mae_horizon_mean.rename(columns={"MAE": "mean"}, inplace=True)
     df_mae_horizon_std = all_forecast_horizons_df.groupby(["forecast_horizon"]).std().reset_index()
     df_mae_horizon_mean['std'] = df_mae_horizon_std['MAE']
+    pv_live_mae = np.round(np.mean(y_plive_mae),2)
+    st.write(f"PV LIVE Mae {pv_live_mae} MW (intraday - day after)")
     st.write(df_mae_horizon_mean)
-
 
     st.subheader("Raw Data")
     col1, col2 = st.columns([1, 1])
