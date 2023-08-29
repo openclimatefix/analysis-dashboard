@@ -12,6 +12,8 @@ from sqlalchemy.sql.expression import func
 from nowcasting_datamodel.models.gsp import LocationSQL, GSPYieldSQL, GSPYield
 from nowcasting_datamodel.models import MLModelSQL
 from nowcasting_datamodel.models.metric import DatetimeIntervalSQL, MetricSQL, MetricValueSQL
+from pvsite_datamodel.sqlmodels import UserSQL, SiteGroupSQL
+from pvsite_datamodel.read import get_site_group_by_name
 
 logger = logging.getLogger(__name__)
 
@@ -81,3 +83,51 @@ def get_metric_value(
     metric_values = query.all()
 
     return metric_values
+
+
+def get_all_users(session: Session) -> List[UserSQL]:
+
+    """Get all users from the database.
+     :param session: database session
+    """
+    query = session.query(UserSQL)
+    
+    query = query.order_by(UserSQL.email.asc())
+    
+    users = query.all()
+
+    return users
+
+
+def get_all_site_groups(session: Session) -> List[SiteGroupSQL]:
+
+    """Get all users from the database.
+     :param session: database session
+    """
+    query = session.query(SiteGroupSQL)
+    
+    query = query.order_by(SiteGroupSQL.site_group_name.asc())
+    
+    site_groups = query.all()
+
+    return site_groups
+
+
+def attach_site_group_to_user(session: Session, email: str, site_group_name: str) -> UserSQL:
+    """Attach a site group to a user.
+    :param session: database session
+    :param email: email of user
+    :param site_group_name: name of site group
+    """
+    user = session.query(UserSQL)
+    user = user.filter(UserSQL.email == email)
+    site_group = get_site_group_by_name(session=session, site_group_name=site_group_name)
+    user.site_group_uuid = site_group.site_group_uuid
+    session.commit()
+
+    
+      
+
+  
+
+   
