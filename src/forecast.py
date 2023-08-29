@@ -16,6 +16,7 @@ colour_per_model = {
     "cnn": "#FFD053",
     "National_xg": "#7BCDF3",
     "pvnet_v2": "#4c9a8e",
+    "blend": "#FF9736",
     "PVLive Initial Estimate": "#e4e4e4",
     "PVLive Updated Estimate": "#e4e4e4",
     "PVLive GSP Sum Estimate": "#FF9736",
@@ -57,7 +58,7 @@ def forecast_page():
     ][0]
 
     forecast_models = st.sidebar.multiselect(
-        "Select a model", ["cnn", "National_xg", "pvnet_v2"], ["cnn"]
+        "Select a model", ["cnn", "National_xg", "pvnet_v2", "blend"], ["cnn"]
     )
 
     if gsp_id != 0:
