@@ -441,7 +441,7 @@ def metric_page():
 
     fig6.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
     st.plotly_chart(fig6, theme="streamlit")
-    st.write("PV live if the different between the intraday and day after PV Live values.")
+    st.write("PVLive is the difference between the intraday and day after PVLive values.")
     
     fig7 = go.Figure(
         layout=go.Layout(
