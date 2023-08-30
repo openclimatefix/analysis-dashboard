@@ -10,7 +10,11 @@ from pvsite_datamodel.read import (
     get_site_by_uuid,
     get_site_group_by_name,
 )
-from get_data import get_all_users, get_all_site_groups, attach_site_group_to_user
+from get_data import (
+    get_all_users, 
+    get_all_site_groups, 
+    attach_site_group_to_user,
+    attach_site_to_site_group)
 
 
 import plotly.graph_objects as go
@@ -48,8 +52,11 @@ def site_user_page():
       users = get_all_users(session=session)
       user_list = [user.email for user in users]
       email = st.selectbox("Enter email of user you want to know about.", user_list)
+      sites = get_all_sites(session=session)
+      sites = [str(site.site_uuid) for site in sites]
       site_groups = get_all_site_groups(session=session)
       site_groups = [site_groups.site_group_name for site_groups in site_groups]
+
       def get_user_details(): 
         """Get the user details from the database"""
         user_details = get_user_by_email(session=session,
@@ -83,11 +90,17 @@ def site_user_page():
       
       def add_site_group_to_user():
         """Add a site group to a user"""
+        group_for_user = get_user_by_email(session=session, email=email)
+        group_for_user = group_for_user.site_group.site_group_name
+        st.write("The user", email, "is in the site group", group_for_user)
         new_group_for_user = attach_site_group_to_user(session=session, email=email, site_group_name=site_group_selection)
-        new_group_for_user = new_group_for_user.site_group_uuid
         print(new_group_for_user)
-        st.write("The site group has been added to the user.")
-
+        st.write("The user", email, "is now in the site group", site_group_selection)
+      
+      def add_site_to_sitegroup():
+          """Add a site to a site group"""
+          site_group = attach_site_to_site_group(session=session, site_uuid=site_selection, site_group_name=site_group_selection)
+          st.write("The site group", site_group_selection, "contains the sites", site_group.sites)
 
     if st.button("Get user details"):
         get_user_details()
@@ -100,7 +113,7 @@ def site_user_page():
         f'<h1 style="color:#63BCAF;font-size:32px;">{"Get Site Details"}</h1>',
         unsafe_allow_html=True,
     )
-    site_selection = st.text_input("Enter site uuid of site you want to know about.",)
+    site_selection = st.selectbox("Enter site uuid of site you want to know about.", sites )
     if st.button("Get site details"):
         get_site_details()
         if st.button("Clear site details"):
@@ -133,9 +146,10 @@ def site_user_page():
         f'<h1 style="color:#63BCAF;font-size:32px;">{"Add Site to Site Group"}</h1>',
         unsafe_allow_html=True,
     )
-
+    site_selection = st.selectbox("Select site you'd like to add to a group.", sites )
+    site_group_selection = st.selectbox("Select the group you'd like to add the site to.", site_groups)
     if st.button("Add site to site group"):
-        print("the site has been added")
+        add_site_to_sitegroup()
         if st.button("Clear user details"):
             st.empty()
     

@@ -12,8 +12,7 @@ from sqlalchemy.sql.expression import func
 from nowcasting_datamodel.models.gsp import LocationSQL, GSPYieldSQL, GSPYield
 from nowcasting_datamodel.models import MLModelSQL
 from nowcasting_datamodel.models.metric import DatetimeIntervalSQL, MetricSQL, MetricValueSQL
-from pvsite_datamodel.sqlmodels import UserSQL, SiteGroupSQL
-from pvsite_datamodel.read import get_site_group_by_name
+from pvsite_datamodel.sqlmodels import UserSQL, SiteGroupSQL, SiteSQL
 
 logger = logging.getLogger(__name__)
 
@@ -119,11 +118,35 @@ def attach_site_group_to_user(session: Session, email: str, site_group_name: str
     :param email: email of user
     :param site_group_name: name of site group
     """
-    user = session.query(UserSQL)
-    user = user.filter(UserSQL.email == email)
-    site_group = get_site_group_by_name(session=session, site_group_name=site_group_name)
-    user.site_group_uuid = site_group.site_group_uuid
+    site_group = session.query(SiteGroupSQL).filter(SiteGroupSQL.site_group_name == site_group_name).first()
+
+    user = session.query(UserSQL).filter(UserSQL.email == email)
+
+    user = user.update({"site_group_uuid": site_group.site_group_uuid})
+
     session.commit()
+
+
+def attach_site_to_site_group(session: Session, site_uuid: str, site_group_name: str) -> SiteGroupSQL:
+    """Attach a site to a site group.
+    :param session: database session
+    :param site_uuid: uuid of site
+    :param site_group_name: name of site group
+    """
+  site_group = session.query(SiteGroupSQL).filter(SiteGroupSQL.site_group_name == site_group_name).first()
+
+  site = session.query(SiteSQL).filter(SiteSQL.site_uuid == site_uuid)
+
+  if site not in site_group:
+    site_group.add(site)
+
+  session.commit()
+ 
+
+
+
+
+    
 
     
       
