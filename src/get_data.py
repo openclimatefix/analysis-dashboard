@@ -133,17 +133,41 @@ def attach_site_to_site_group(session: Session, site_uuid: str, site_group_name:
     :param site_uuid: uuid of site
     :param site_group_name: name of site group
     """
-  site_group = session.query(SiteGroupSQL).filter(SiteGroupSQL.site_group_name == site_group_name).first()
+    site_group = session.query(SiteGroupSQL).filter(SiteGroupSQL.site_group_name == site_group_name).first()
 
-  site = session.query(SiteSQL).filter(SiteSQL.site_uuid == site_uuid)
+    site = session.query(SiteSQL).filter(SiteSQL.site_uuid == site_uuid).one()
+    print(site_group_name)
+    print(site_group.site_group_name)
+    print(site.site_uuid)
 
-  if site not in site_group:
-    site_group.add(site)
+    if site not in site_group.sites:
 
-  session.commit()
+      site_group.sites.append(site)
+
+    session.commit()
+
+    return site_group
+ 
+
+# query the thing and then thing.delete()
+def delete_site(session: Session, site_uuid: str) -> SiteGroupSQL:
+    """Delete a site group.
+    :param session: database session
+    :param site_group_name: name of site group
+    """
+    site = session.query(SiteSQL).filter(SiteSQL.site_uuid == site_uuid).first()
+
+    session.delete(site)
+
+    session.commit()
+
+
+
  
 
 
+
+    
 
 
     
