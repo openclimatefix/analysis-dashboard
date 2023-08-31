@@ -14,14 +14,22 @@ from get_data import (
     get_all_users, 
     get_all_site_groups, 
     attach_site_group_to_user,
-    attach_site_to_site_group)
+    attach_site_to_site_group, 
+    delete_site,
+    )
 
 
 import plotly.graph_objects as go
 
 
 # get_user_details(): select user and show details for that user => user_uuid, email, sitegroups attached
- 
+def get_user_details(session, email):
+  """Get the user details from the database"""
+  user_details = get_user_by_email(session=session,
+                                         email=email)
+  user_site_group = user_details.site_group.site_group_name
+  user_sites = [str(site.site_uuid) for site in user_details.site_group.sites]
+  return user_sites, user_site_group
 
 # add_site_group_to_user(): attach a sitegorup to a user/ use my name as a testuser and add sitegroup 
 # add_site_to_sitegroup(): attach a site to a sitegroup
@@ -57,19 +65,7 @@ def site_user_page():
       site_groups = get_all_site_groups(session=session)
       site_groups = [site_groups.site_group_name for site_groups in site_groups]
 
-      def get_user_details(): 
-        """Get the user details from the database"""
-        user_details = get_user_by_email(session=session,
-                                         email=email)
-        user_site_group = user_details.site_group.site_group_name
-        user_sites = [str(site.site_uuid) for site in user_details.site_group.sites]
         
-        st.markdown(
-          f'<h1 style="color:#63BCAF;font-size:48px;">{"site group: "}{user_site_group}</h1>',
-          unsafe_allow_html=True,
-        )
-        st.write("Here are the sites in the", user_site_group, "group:", user_sites, "This site group contains", len(user_sites), "sites.")
-
         # get details for a single site
       def get_site_details():
         """Get the site details from the database"""
@@ -102,8 +98,22 @@ def site_user_page():
           site_group = attach_site_to_site_group(session=session, site_uuid=site_selection, site_group_name=site_group_selection)
           st.write("The site group", site_group_selection, "contains the sites", site_group.sites)
 
+      def delete_site():
+          """Delete a site"""
+          site_uuid = delete_site(session=session, site_uuid=site_selection)
+          st.write("The site", site_uuid, "has been deleted.")
+      
+      def delete_site_group_function():
+          """Delete a site group"""
+          site_group_name = delete_site_group(session=session, site_group_name=site_group_selection)
+          st.write("The site group", site_group_name, "has been deleted.")
+    st.markdown(
+          f'<h1 style="color:#63BCAF;font-size:48px;">{"site group: "}{user_site_group}</h1>',
+          unsafe_allow_html=True,
+        )
     if st.button("Get user details"):
-        get_user_details()
+        user_sites, user_site_group = get_user_details(session=session, email=email)
+        st.write("Here are the sites in the", user_site_group, "group:", user_sites, "This site group contains", len(user_sites), "sites.")
         if st.button("Clear user details"):
             st.empty()
     
@@ -113,7 +123,7 @@ def site_user_page():
         f'<h1 style="color:#63BCAF;font-size:32px;">{"Get Site Details"}</h1>',
         unsafe_allow_html=True,
     )
-    site_selection = st.selectbox("Enter site uuid of site you want to know about.", sites )
+    site_selection = st.selectbox("Enter site uuid of site you want to know about.", sites, key="site details")
     if st.button("Get site details"):
         get_site_details()
         if st.button("Clear site details"):
@@ -134,7 +144,7 @@ def site_user_page():
         unsafe_allow_html=True,
     )
     
-    site_group_selection = st.selectbox("Select site group you'll add to user", site_groups)
+    # site_group_selection = st.selectbox("Select site group you'll add to user", site_groups)
     email = st.selectbox("Select user you'll add site group to", user_list)
 
     if st.button("Add site group to user"):
@@ -146,22 +156,24 @@ def site_user_page():
         f'<h1 style="color:#63BCAF;font-size:32px;">{"Add Site to Site Group"}</h1>',
         unsafe_allow_html=True,
     )
-    site_selection = st.selectbox("Select site you'd like to add to a group.", sites )
-    site_group_selection = st.selectbox("Select the group you'd like to add the site to.", site_groups)
+    site_selection = st.selectbox("Select site you'd like to add to a group.", sites, key="add" )
+    site_group_selection = st.selectbox("Select site group you'd like to add site to.", site_groups)
     if st.button("Add site to site group"):
         add_site_to_sitegroup()
         if st.button("Clear user details"):
             st.empty()
     
-    st.markdown(
-        f'<h1 style="color:#63BCAF;font-size:32px;">{"Delete a Site"}</h1>',
-        unsafe_allow_html=True,
-    )
-
-    if st.button("Delete site"):
-        print("the site has been deleted")
-        if st.button("Clear user details"):
-            st.empty()
+    # st.markdown(
+    #     f'<h1 style="color:#F05D0E;font-size:32px;">{"Delete a Site Group"}</h1>',
+    #     unsafe_allow_html=True,
+    # )
+    # site_selection = st.selectbox("Select site  you'd like to delete.", sites, key="delete")
+    # if st.button("Delete group"):
+    #     delete_site()
+    #     if st.button("Clear user details"):
+    #         st.empty()
+    # if st.button("Clear user details"):
+    #         st.empty()
         
       
             
