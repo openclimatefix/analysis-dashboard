@@ -26,9 +26,8 @@ def get_user_details(session, email):
                                          email=email)
   user_site_group = user_details.site_group.site_group_name
   user_site_count = len(user_details.site_group.sites)
-  user_sites = [str(site.site_uuid) for site in user_details.site_group.sites]
-  user_site_names = [str(site.client_site_id) for site in user_details.site_group.sites]
-  return user_sites, user_site_group, user_site_count, user_site_names
+  user_sites= [{"site_uuid": str(site.site_uuid), "client_site_id": str(site.client_site_id)} for site in user_details.site_group.sites]
+  return user_sites, user_site_group, user_site_count
 
 def sites_toolbox_page():
   st.markdown(
@@ -58,9 +57,8 @@ def sites_toolbox_page():
   email = st.selectbox("Enter email of user you want to know about.", user_list)
   
   if st.button("Get user details"):
-    user_sites, user_site_group, user_site_count, user_site_names = get_user_details(session=session, email=email)
-    st.write("User site group:", user_site_group)
-    st.write("User site count:", user_site_count)
-    st.write("User sites by site_uuid:", user_sites)
+    user_sites, user_site_group, user_site_count = get_user_details(session=session, email=email)
+    st.write("This user is part of the", user_site_group, "site group, which contains", user_site_count, "sites.")
+    st.write("Here are the site_uuids and client_site_ids for this group:", user_sites)
     if st.button("Close user details"):
             st.empty()
