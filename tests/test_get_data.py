@@ -1,5 +1,5 @@
 """tests for get_data.py"""
-from get_data import get_all_users, get_all_site_groups, attach_site_group_to_user, attach_site_to_site_group
+from get_data import get_all_users
 
 #get all users 
 def test_get_all_users(db_session):
@@ -8,6 +8,10 @@ def test_get_all_users(db_session):
     assert len(users) == 0
 
 # get all site groups
+# def test_get_all_sites(db_session):
+#     sites = get_all_sites(session=db_session)
+#     # assert
+#     assert len(sites) == 0
 
 # get all sites
 
