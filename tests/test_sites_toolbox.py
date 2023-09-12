@@ -28,7 +28,7 @@ def test_get_site_details(db_session):
   assert site_details == {"site_uuid": str(site.site_uuid),
                           "client_site_id": str(site.client_site_id),
                           "client_site_name": str(site.client_site_name),
-                          "site_group_name": str(site.site_groups[0].site_group_name),
+                          "site_group_names": [site_group.site_group_name for site_group in site.site_groups],
                           "latitude": str(site.latitude),
                           "longitude": str(site.longitude),
                           "DNO": str(site.dno),
@@ -44,9 +44,9 @@ def test_select_site_id(db_session):
   """Test the select site id function"""
   site = make_site(db_session=db_session, ml_id=1)
  
-  selected_id = select_site_id(dbsession=db_session, query_method="site_uuid")
+  site_uuid= select_site_id(dbsession=db_session, query_method="site_uuid")
 
-  assert selected_id == str(site.site_uuid)
+  assert site_uuid == str(site.site_uuid)
 
-  selected_id = select_site_id(dbsession=db_session, query_method="client_site_id")
-  assert selected_id == str(site.site_uuid)
+  site_uuid = select_site_id(dbsession=db_session, query_method="client_site_id")
+  assert site_uuid == str(site.site_uuid)
