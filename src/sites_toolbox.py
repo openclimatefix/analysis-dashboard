@@ -34,31 +34,36 @@ def get_user_details(session, email):
 
 def get_site_details(session, site_selection):
   """Get the site details for one site"""
-  site_uuid = get_site_by_uuid(session=session, site_uuid=site_selection)
-  site_details = {"site_uuid": str(site_uuid.site_uuid), 
-                  "client_site_id": str(site_uuid.client_site_id),
-                  "client_site_name": str(site_uuid.client_site_name),
-                  "site_group_name": str(site_uuid.site_groups[0].site_group_name),
-                  "latitude": str(site_uuid.latitude),
-                  "longitude": str(site_uuid.longitude),
-                  "DNO": str(site_uuid.dno),
-                  "GSP": str(site_uuid.gsp),
-                  "tilt": str(site_uuid.tilt),
-                  "orientation": str(site_uuid.orientation),
-                  "capacity": (f'{site_uuid.capacity_kw} kw'),
-                  "date_added": (site_uuid.created_utc.strftime("%Y-%m-%d"))}
+  site = get_site_by_uuid(session=session, site_uuid=site_selection)
+  site_details = {"site_uuid": str(site.site_uuid), 
+                  "client_site_id": str(site.client_site_id),
+                  "client_site_name": str(site.client_site_name),
+                  "site_group_names" : [site_group.site_group_name for site_group in site.site_groups],
+                  "latitude": str(site.latitude),
+                  "longitude": str(site.longitude),
+                  "DNO": str(site.dno),
+                  "GSP": str(site.gsp),
+                  "tilt": str(site.tilt),
+                  "orientation": str(site.orientation),
+                  "capacity": (f'{site.capacity_kw} kw'),
+                  "date_added": (site.created_utc.strftime("%Y-%m-%d"))}
   return site_details
+
+# user selects site by site_uuid or client_site_id
 
 def select_site_id(dbsession, query_method):
         if query_method == "site_uuid":
-            site_list = [str(site.site_uuid) for site in get_all_sites(session=dbsession)]
-            selected_id = st.selectbox("Sites by site_uuid", site_list)
+            site_uuids = [str(site.site_uuid) for site in get_all_sites(session=dbsession)]
+            selected_uuid = st.selectbox("Sites by site_uuid", site_uuids)
         elif query_method == "client_site_id":
-            site_list= [str(site.client_site_id) for site in get_all_sites(session=dbsession)]
-            selected_id = st.selectbox("Sites by client_site_id", site_list)
-            selected_id = get_site_by_client_site_id(session=dbsession, client_site_id = selected_id)
-            selected_id = str(selected_id.site_uuid)
-        return selected_id
+            client_site_ids= [str(site.client_site_id) for site in get_all_sites(session=dbsession)]
+            client_site_id= st.selectbox("Sites by client_site_id", client_site_ids)
+            site = get_site_by_client_site_id(session=dbsession, client_site_id = client_site_id)
+            selected_uuid = str(site.site_uuid)
+        elif query_method not in ["site_uuid", "client_site_id"]:
+            raise ValueError ("Please select a valid query_method")
+           
+        return selected_uuid
 
 
 def sites_toolbox_page():
