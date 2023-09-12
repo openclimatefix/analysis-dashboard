@@ -15,7 +15,7 @@ from sqlalchemy.sql.expression import func
 from nowcasting_datamodel.models.gsp import LocationSQL, GSPYieldSQL, GSPYield
 from nowcasting_datamodel.models import MLModelSQL
 from nowcasting_datamodel.models.metric import DatetimeIntervalSQL, MetricSQL, MetricValueSQL
-from pvsite_datamodel.sqlmodels import UserSQL, SiteGroupSQL
+from pvsite_datamodel.sqlmodels import UserSQL, SiteGroupSQL, SiteSQL
 from pvsite_datamodel.read import get_site_group_by_name
 
 logger = logging.getLogger(__name__)
@@ -126,3 +126,13 @@ def update_user_site_group(session: Session, email: str, site_group_name: str) -
     site_group = get_site_group_by_name(session=session, site_group_name=site_group_name)
     user.site_group_uuid = site_group.site_group_uuid
     session.commit()
+
+def get_site_by_client_site_id(session: Session, client_site_id: str) -> List[SiteSQL]:
+    """Get site by client site id.
+    :param session: database session
+    :param client_site_id: client site id
+    """
+    query = session.query(SiteSQL)
+    query = query.filter(SiteSQL.client_site_id == client_site_id)
+    site = query.one_or_none()
+    return site
