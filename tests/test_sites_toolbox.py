@@ -1,5 +1,5 @@
 """Test the toolbox functions"""
-from sites_toolbox import get_user_details, get_site_details, select_site_id
+from sites_toolbox import get_user_details, get_site_details, select_site_id, get_site_group_details
 from pvsite_datamodel.write.user_and_site import make_site, make_site_group, make_user
 
 def test_get_user_details(db_session):
@@ -50,3 +50,18 @@ def test_select_site_id(db_session):
 
   site_uuid = select_site_id(dbsession=db_session, query_method="client_site_id")
   assert site_uuid == str(site.site_uuid)
+
+# test for get_site_group_details
+def test_get_site_group_details(db_session):
+  """Test the get site group details function"""
+  site_group = make_site_group(db_session=db_session)
+  site_1 = make_site(db_session=db_session, ml_id=1)
+  site_2 = make_site(db_session=db_session, ml_id=2)
+  site_group.sites.append(site_1)
+  site_group.sites.append(site_2)
+
+  site_group_sites, site_group_users = get_site_group_details(session=db_session, site_group_name="test_site_group")
+
+  assert site_group_sites == [{"site_uuid": str(site.site_uuid), "client_site_id": str(site.client_site_id)}for site in site_group.sites]
+  assert site_group_users == [user.email for user in site_group.users]
+  
