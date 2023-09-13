@@ -1,5 +1,5 @@
 """Test the toolbox functions"""
-from sites_toolbox import get_user_details
+from sites_toolbox import get_user_details, get_site_details, select_site_id
 from pvsite_datamodel.write.user_and_site import make_site, make_site_group, make_user
 
 def test_get_user_details(db_session):
@@ -17,3 +17,36 @@ def test_get_user_details(db_session):
   assert user_sites == [{"site_uuid": str(site.site_uuid), "client_site_id": str(site.client_site_id)}for site in user.site_group.sites]
   assert user_site_group == "test_site_group"
   assert user_site_count == 2
+
+# test for get_site_details
+def test_get_site_details(db_session):
+  """Test the get site details function"""
+  site = make_site(db_session=db_session, ml_id=1)
+
+  site_details = get_site_details(session=db_session, site_uuid=str(site.site_uuid))
+
+  assert site_details == {"site_uuid": str(site.site_uuid),
+                          "client_site_id": str(site.client_site_id),
+                          "client_site_name": str(site.client_site_name),
+                          "site_group_names": [site_group.site_group_name for site_group in site.site_groups],
+                          "latitude": str(site.latitude),
+                          "longitude": str(site.longitude),
+                          "DNO": str(site.dno),
+                          "GSP": str(site.gsp),
+                          "tilt": str(site.tilt),
+                          "orientation": str(site.orientation),
+                          "capacity": (f'{site.capacity_kw} kw'),
+                          "date_added": (site.created_utc.strftime("%Y-%m-%d"))}
+
+
+# test for select_site_id
+def test_select_site_id(db_session):
+  """Test the select site id function"""
+  site = make_site(db_session=db_session, ml_id=1)
+ 
+  site_uuid= select_site_id(dbsession=db_session, query_method="site_uuid")
+
+  assert site_uuid == str(site.site_uuid)
+
+  site_uuid = select_site_id(dbsession=db_session, query_method="client_site_id")
+  assert site_uuid == str(site.site_uuid)
