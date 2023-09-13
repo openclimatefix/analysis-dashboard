@@ -31,10 +31,9 @@ def get_user_details(session, email):
     return user_sites, user_site_group, user_site_count
 
 # get details for one site
-
-def get_site_details(session, site_selection):
+def get_site_details(session, site_uuid):
   """Get the site details for one site"""
-  site = get_site_by_uuid(session=session, site_uuid=site_selection)
+  site = get_site_by_uuid(session=session, site_uuid=site_uuid)
   site_details = {"site_uuid": str(site.site_uuid), 
                   "client_site_id": str(site.client_site_id),
                   "client_site_name": str(site.client_site_name),
@@ -50,7 +49,6 @@ def get_site_details(session, site_selection):
   return site_details
 
 # user selects site by site_uuid or client_site_id
-
 def select_site_id(dbsession, query_method):
         if query_method == "site_uuid":
             site_uuids = [str(site.site_uuid) for site in get_all_sites(session=dbsession)]
@@ -61,8 +59,7 @@ def select_site_id(dbsession, query_method):
             site = get_site_by_client_site_id(session=dbsession, client_site_id = client_site_id)
             selected_uuid = str(site.site_uuid)
         elif query_method not in ["site_uuid", "client_site_id"]:
-            raise ValueError ("Please select a valid query_method")
-           
+            raise ValueError("Please select a valid query_method.")
         return selected_uuid
 
 
@@ -121,7 +118,7 @@ def sites_toolbox_page():
     site_id = select_site_id(dbsession=session, query_method=query_method)
 
     if st.button("Get site details"):
-        site_details = get_site_details(session=session, site_selection=site_id)
+        site_details = get_site_details(session=session, site_uuid=site_id)
         site_id = site_details["client_site_id"] if query_method == "client_site_id" else site_details["site_uuid"]
         st.write("Here are the site details for site", site_id, ":", site_details)
         if st.button("Close site details"):

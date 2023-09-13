@@ -23,7 +23,7 @@ def test_get_site_details(db_session):
   """Test the get site details function"""
   site = make_site(db_session=db_session, ml_id=1)
 
-  site_details = get_site_details(session=db_session, site_selection=str(site.site_uuid))
+  site_details = get_site_details(session=db_session, site_uuid=str(site.site_uuid))
 
   assert site_details == {"site_uuid": str(site.site_uuid),
                           "client_site_id": str(site.client_site_id),
