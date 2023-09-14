@@ -85,6 +85,21 @@ def get_site_group_details(session, site_group_name):
     site_group_users = [user.email for user in site_group_uuid.users]
     return site_group_sites, site_group_users
 
+# change site group for user
+def change_user_site_group(session, email, site_group_name):
+        update_user_site_group(session=session, email=email, site_group_name=site_group_name)
+        user = get_user_by_email(session=session, email=email)
+        user_site_group = user.site_group.site_group_name
+        user = user.email
+        return user, user_site_group
+# def change_user_site_group(session, email, site_group):
+#     """Update the user site group"""
+#     user = get_user_by_email(session=session, email=email)
+#     user_name = user.email
+#     new_user_site_group = update_user_site_group(session=session, email=email, site_group_name=site_group)
+#     session.commit()
+#     new_user_site_group = get_user_by_email(session=session, email=email).site_group.site_group_name
+#     return user_name, new_user_site_group
 
 # sites toolbox page
 def sites_toolbox_page():
@@ -164,6 +179,20 @@ def sites_toolbox_page():
         st.write("Site group", site_group_name, "contains the following", len(site_group_sites), "sites:", site_group_sites)
         st.write("The following", len(site_group_users), "users are part of this group:", site_group_users)
         if st.button("Close site group details"):
+            st.empty()
+    
+    # update user site group
+    st.markdown(
+        f'<h1 style="color:#63BCAF;font-size:32px;">{"Change User Site Group"}</h1>',
+        unsafe_allow_html=True,
+    )
+    email = st.selectbox("Select user whose site group will change.", user_list)
+    site_group_name = st.selectbox("Select the site group the user will join.", site_groups)
+    
+    if st.button("Change user's site group"):
+        user, user_site_group = change_user_site_group(session=session, email=email, site_group_name=site_group_name)
+        st.write(user, "is now in the", user_site_group, "site group.")
+        if st.button("Close"):
             st.empty()
 
   
