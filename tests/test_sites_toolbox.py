@@ -72,6 +72,7 @@ def test_change_user_site_group(db_session):
 
 
   user = make_user(db_session=db_session, email="test_user@gmail.com", site_group=site_group1)
-  change_user_site_group(session=db_session, email="test_user@gmail.com", site_group_name=site_group2.site_group_name)
+  user, user_site_group = change_user_site_group(session=db_session, email="test_user@gmail.com", site_group_name=site_group2.site_group_name)
   
-  assert user.site_group.site_group_name == "test_site_group2"
+  assert user_site_group == site_group2.site_group_name
+  assert user == "test_user@gmail.com"
