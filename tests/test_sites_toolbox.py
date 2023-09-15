@@ -64,4 +64,19 @@ def test_get_site_group_details(db_session):
 
   assert site_group_sites == [{"site_uuid": str(site.site_uuid), "client_site_id": str(site.client_site_id)}for site in site_group.sites]
   assert site_group_users == [user.email for user in site_group.users]
+
+# test update site group
+def test_update_site_group(db_session):
+  """Test the update site group function"""
+  site_group = make_site_group(db_session=db_session)
+  site_1 = make_site(db_session=db_session, ml_id=1)
+  site_2 = make_site(db_session=db_session, ml_id=2)
+  site_group.sites.append(site_1)
+  site_group.sites.append(site_2)
+
+  site_group, site_group_sites, site_site_groups = update_site_group(session=db_session, site_uuid=str(site_1.site_uuid), site_group_name="test_site_group"
+  assert site_group.sites == [site_1, site_2]
+  assert site_group_sites == [{"site_uuid": str(site.site_uuid), "client_site_id": str(site.client_site_id)}for site in site_group.sites]
+  assert site_site_groups == [site_group.site_group_name for site_group in site.site_groups]
+  
   

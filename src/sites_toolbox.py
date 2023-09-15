@@ -13,7 +13,7 @@ from get_data import (
     get_all_users,
     get_all_site_groups,
     get_site_by_client_site_id,
-    update_user_site_group,
+    add_site_to_site_group,
 )
 
 
@@ -85,6 +85,18 @@ def get_site_group_details(session, site_group_name):
     site_group_users = [user.email for user in site_group_uuid.users]
     return site_group_sites, site_group_users
 
+def update_site_group(session, site_uuid, site_group_name):
+          """Add a site to a site group"""
+          site_group = get_site_group_by_name(session=session, site_group_name=site_group_name)
+          site_group_sites = add_site_to_site_group(session=session, site_uuid=site_uuid, site_group_name=site_group_name)
+          site_group_sites = [
+              {"site_uuid": str(site.site_uuid), "client_site_id": str(site.client_site_id)}
+              for site in site_group.sites]
+          site = get_site_by_uuid(session=session, site_uuid=site_uuid)
+          site_site_groups= [site_group.site_group_name for site_group in site.site_groups]
+          return site_group, site_group_sites, site_site_groups
+
+
 
 # sites toolbox page
 def sites_toolbox_page():
@@ -108,7 +120,9 @@ def sites_toolbox_page():
         users = get_all_users(session=session)
         user_list = [user.email for user in users]
         site_groups = get_all_site_groups(session=session)
-        site_groups = [site_groups.site_group_name for site_groups in site_groups]
+        site_groups = [site_group.site_group_name for site_group in site_groups]
+        site_uuids = get_all_sites(session=session)
+        site_uuid_list = [site.site_uuid for site in site_uuids]
 
     st.markdown(
         f'<h1 style="color:#63BCAF;font-size:32px;">{"Get User Details"}</h1>',
@@ -165,5 +179,18 @@ def sites_toolbox_page():
         st.write("The following", len(site_group_users), "users are part of this group:", site_group_users)
         if st.button("Close site group details"):
             st.empty()
-
+    
+    # add site to site group
+    st.markdown(
+        f'<h1 style="color:#63BCAF;font-size:32px;">{"Add Site to Site Group"}</h1>',
+        unsafe_allow_html=True,
+    )
+    site_uuid = st.selectbox("Select site", site_uuid_list, key="add" )
+    site_group= st.selectbox("Select site group", site_groups)
+    if st.button("Add site to site group"):
+        site_group, site_group_sites, site_site_groups = update_site_group(session=session, site_uuid=site_uuid, site_group_name=site_group)
+        st.write("Site", site_uuid, "has been added to site group", site_group.site_group_name, "and now contains", len(site_group_sites), "sites.")
+        st.write("This site is part of the following site groups:", site_site_groups )
+        if st.button("Close details"):
+            st.empty()
   

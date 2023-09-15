@@ -116,16 +116,20 @@ def get_all_site_groups(session: Session) -> List[SiteGroupSQL]:
 
 
 def update_user_site_group(session: Session, email: str, site_group_name: str) -> UserSQL:
-    """Attach a site group to a user.
+      """Change site group for user.
     :param session: database session
     :param email: email of user
     :param site_group_name: name of site group
     """
-    user = session.query(UserSQL)
-    user = user.filter(UserSQL.email == email)
-    site_group = get_site_group_by_name(session=session, site_group_name=site_group_name)
-    user.site_group_uuid = site_group.site_group_uuid
-    session.commit()
+      site_group = session.query(SiteGroupSQL).filter(SiteGroupSQL.site_group_name == site_group_name).first()
+
+      user = session.query(UserSQL).filter(UserSQL.email == email)
+
+      user = user.update({"site_group_uuid": site_group.site_group_uuid})
+
+      session.commit()
+      
+      return user
 
 def get_site_by_client_site_id(session: Session, client_site_id: str) -> List[SiteSQL]:
     """Get site by client site id.
@@ -134,5 +138,27 @@ def get_site_by_client_site_id(session: Session, client_site_id: str) -> List[Si
     """
     query = session.query(SiteSQL)
     query = query.filter(SiteSQL.client_site_id == client_site_id)
-    site = query.one_or_none()
+    site = query.first()
     return site
+
+def add_site_to_site_group(session: Session, site_uuid: str, site_group_name: str) -> SiteGroupSQL:
+    """Attach a site to a site group.
+    :param session: database session
+    :param site_uuid: uuid of site
+    :param site_group_name: name of site group
+    """
+    site_group = session.query(SiteGroupSQL).filter(SiteGroupSQL.site_group_name == site_group_name).first()
+
+    site = session.query(SiteSQL).filter(SiteSQL.site_uuid == site_uuid).one()
+    print(site_group_name)
+    print(site_group.site_group_name)
+    print(site.site_uuid)
+
+    if site not in site_group.sites:
+
+      site_group.sites.append(site)
+
+    session.commit()
+
+    return site_group.sites
+ 
