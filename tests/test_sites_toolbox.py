@@ -1,5 +1,11 @@
 """Test the toolbox functions"""
-from sites_toolbox import get_user_details, get_site_details, select_site_id, get_site_group_details
+from sites_toolbox import (get_user_details,
+                          get_site_details, 
+                          select_site_id, 
+                          get_site_group_details, 
+                          get_all_sites, 
+                          add_all_sites_to_ocf_group)
+
 from pvsite_datamodel.write.user_and_site import make_site, make_site_group, make_user
 
 def test_get_user_details(db_session):
@@ -64,4 +70,22 @@ def test_get_site_group_details(db_session):
 
   assert site_group_sites == [{"site_uuid": str(site.site_uuid), "client_site_id": str(site.client_site_id)}for site in site_group.sites]
   assert site_group_users == [user.email for user in site_group.users]
+
+# test for add_all_sites_to_ocf_group
+def test_add_all_sites_to_ocf_group(db_session, site_group_name="ocf"):
+  """Test the add all sites to ocf group function"""
+  ocf_site_group = make_site_group(db_session=db_session, site_group_name="ocf")
+  site_1 = make_site(db_session=db_session, ml_id=1)
+  site_2 = make_site(db_session=db_session, ml_id=2)
+  ocf_site_group.sites.append(site_1)
+  ocf_site_group.sites.append(site_2)
+  site_3 = make_site(db_session=db_session, ml_id=3)
+  site_4 = make_site(db_session=db_session, ml_id=4)
+  
+
+  message, sites_added = add_all_sites_to_ocf_group(session=db_session, site_group_name="ocf")
+
+  assert len(ocf_site_group.sites) == 4
+  assert sites_added == [str(site_3.site_uuid), str(site_4.site_uuid)]
+  assert message == f'Added {sites_added} sites to group {site_group_name}.'
   
