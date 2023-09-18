@@ -94,10 +94,9 @@ def add_all_sites_to_ocf_group(session, site_group_name="ocf"):
     ocf_site_group = get_site_group_by_name(session=session, site_group_name=site_group_name)
     
     site_uuids = [site.site_uuid for site in ocf_site_group.sites]
-
-    sites_added = []
     
     for site in all_sites:
+        sites_added = []
         if site.site_uuid not in site_uuids:
             ocf_site_group.sites.append(site)
             sites_added.append(str(site.site_uuid))
