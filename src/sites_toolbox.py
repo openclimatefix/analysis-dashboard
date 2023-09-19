@@ -18,7 +18,7 @@ from get_data import (
 
 
 # get details for one user
-def get_user_details(session, email):
+def get_user_details(session, email:str):
     """Get the user details from the database"""
     user_details = get_user_by_email(session=session, email=email)
     user_site_group = user_details.site_group.site_group_name
@@ -31,7 +31,7 @@ def get_user_details(session, email):
 
 
 # get details for one site
-def get_site_details(session, site_uuid):
+def get_site_details(session, site_uuid:str):
     """Get the site details for one site"""
     site = get_site_by_uuid(session=session, site_uuid=site_uuid)
     site_details = {
@@ -54,7 +54,7 @@ def get_site_details(session, site_uuid):
 
 
 # select site by site_uuid or client_site_id
-def select_site_id(dbsession, query_method):
+def select_site_id(dbsession, query_method:str):
     """Select site by site_uuid or client_site_id"""
     if query_method == "site_uuid":
         site_uuids = [str(site.site_uuid) for site in get_all_sites(session=dbsession)]
@@ -74,7 +74,7 @@ def select_site_id(dbsession, query_method):
 
 
 # get details for one site group
-def get_site_group_details(session, site_group_name):
+def get_site_group_details(session, site_group_name:str):
     """Get the site group details from the database"""
     site_group_uuid = get_site_group_by_name(
         session=session, site_group_name=site_group_name
@@ -87,7 +87,7 @@ def get_site_group_details(session, site_group_name):
     return site_group_sites, site_group_users
 
 
-def update_site_group(session, site_uuid, site_group_name):
+def update_site_group(session, site_uuid: str, site_group_name: str):
     """Add a site to a site group"""
     site_group = get_site_group_by_name(
         session=session, site_group_name=site_group_name
