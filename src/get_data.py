@@ -150,9 +150,6 @@ def add_site_to_site_group(session: Session, site_uuid: str, site_group_name: st
     site_group = session.query(SiteGroupSQL).filter(SiteGroupSQL.site_group_name == site_group_name).first()
 
     site = session.query(SiteSQL).filter(SiteSQL.site_uuid == site_uuid).one()
-    print(site_group_name)
-    print(site_group.site_group_name)
-    print(site.site_uuid)
 
     if site not in site_group.sites:
 
