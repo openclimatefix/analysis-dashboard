@@ -27,7 +27,7 @@ colour_per_model = {
 def forecast_page():
     """Main page for status"""
     st.markdown(
-        f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Analysis Dashboard"}</h1>',
+        f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Dashboard"}</h1>',
         unsafe_allow_html=True,
     )
     st.markdown(
@@ -95,7 +95,6 @@ def forecast_page():
         forecast_time = datetime.now(tz=timezone.utc)
 
     with connection.get_session() as session:
-
         forecast_per_model = {}
         if forecast_type == "Now":
             now = datetime.now(tz=timezone.utc)
@@ -198,7 +197,6 @@ def forecast_page():
     )
     # forecasts on the chart
     for model, forecast in forecast_per_model.items():
-
         x = [i.target_time for i in forecast]
         y = [i.expected_power_generation_megawatts for i in forecast]
 
@@ -248,7 +246,6 @@ def forecast_page():
 
     # pvlive on the chart
     for k, v in pvlive_data.items():
-
         x = [i.datetime_utc for i in v]
         y = [i.solar_generation_kw / 1000 for i in v]
 

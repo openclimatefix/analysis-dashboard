@@ -123,22 +123,29 @@ def change_user_site_group(session, email: str, site_group_name: str):
 
 # add all sites to the ocf site group
 def add_all_sites_to_ocf_group(session, site_group_name="ocf"):
-    """Add all sites to the ocf site group"""
+    """Add all sites to the ocf site group
+    :param session: the database session
+    :param site_group_name: the name of the site group"""
     all_sites = get_all_sites(session=session)
 
-    ocf_site_group = get_site_group_by_name(session=session, site_group_name=site_group_name)
-    
+    ocf_site_group = get_site_group_by_name(
+        session=session, site_group_name=site_group_name
+    )
+
     site_uuids = [site.site_uuid for site in ocf_site_group.sites]
-    
+
+    sites_added = []
+
     for site in all_sites:
-        sites_added = []
         if site.site_uuid not in site_uuids:
             ocf_site_group.sites.append(site)
             sites_added.append(str(site.site_uuid))
             session.commit()
-            message = f'Added {sites_added} sites to group {site_group_name}.'
-        elif site.site_uuid in site_uuids:
-            message = f'There are no new sites to be added to the {site_group_name} group.'
+            message = f"Added {len(sites_added)} sites to group {site_group_name}."
+
+    if len(sites_added) == 0:
+        message = f"There are no new sites to be added to {site_group_name}."
+
     return message, sites_added
 
 
@@ -264,8 +271,7 @@ def sites_toolbox_page():
         if st.button("Close details"):
             st.empty()
 
-
-     # getting site group details
+    # getting site group details
     st.markdown(
         f'<h1 style="color:#63BCAF;font-size:32px;">{"Add All Sites to OCF Group"}</h1>',
         unsafe_allow_html=True,
