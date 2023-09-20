@@ -1,18 +1,13 @@
 """Test the toolbox functions"""
 from sites_toolbox import (
-    (get_user_details,
-   
-                          get_site_details,
-    
-                          select_site_id,
-    
-                          get_site_group_details,
+    get_user_details,
+    get_site_details,
+    select_site_id,
+    get_site_group_details,
     change_user_site_group,
     update_site_group,
+    add_all_sites_to_ocf_group,
 )
-, 
-                          get_all_sites, 
-                          add_all_sites_to_ocf_group)
 
 from pvsite_datamodel.write.user_and_site import make_site, make_site_group, make_user
 
@@ -146,22 +141,22 @@ def test_change_user_site_group(db_session):
     assert user_site_group == site_group2.site_group_name
     assert user == "test_user@gmail.com"
 
-  assert site_group_users == [user.email for user in site_group.users]
 
 # test for add_all_sites_to_ocf_group
 def test_add_all_sites_to_ocf_group(db_session, site_group_name="ocf"):
-  """Test the add all sites to ocf group function"""
-  ocf_site_group = make_site_group(db_session=db_session, site_group_name="ocf")
-  site_1 = make_site(db_session=db_session, ml_id=1)
-  site_2 = make_site(db_session=db_session, ml_id=2)
-  ocf_site_group.sites.append(site_1)
-  ocf_site_group.sites.append(site_2)
-  site_3 = make_site(db_session=db_session, ml_id=3)
-  site_4 = make_site(db_session=db_session, ml_id=4)
-  
-  message, sites_added = add_all_sites_to_ocf_group(session=db_session, site_group_name="ocf")
+    """Test the add all sites to ocf group function"""
+    ocf_site_group = make_site_group(db_session=db_session, site_group_name="ocf")
+    site_1 = make_site(db_session=db_session, ml_id=1)
+    site_2 = make_site(db_session=db_session, ml_id=2)
+    ocf_site_group.sites.append(site_1)
+    ocf_site_group.sites.append(site_2)
+    site_3 = make_site(db_session=db_session, ml_id=3)
+    site_4 = make_site(db_session=db_session, ml_id=4)
 
-  assert len(ocf_site_group.sites) == 4
-  assert len(sites_added) >= 0
-  assert message == f'Added {sites_added} sites to group {site_group_name}.'
-  
+    message, sites_added = add_all_sites_to_ocf_group(
+        session=db_session, site_group_name="ocf"
+    )
+
+    assert len(ocf_site_group.sites) == 4
+    assert len(sites_added) >= 0
+    assert message == f"Added {len(sites_added)} sites to group {site_group_name}."
