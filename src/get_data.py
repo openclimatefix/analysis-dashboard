@@ -10,13 +10,16 @@ from datetime import datetime
 from typing import List, Optional
 
 from sqlalchemy.orm.session import Session
-from sqlalchemy.sql.expression import func
 
-from nowcasting_datamodel.models.gsp import LocationSQL, GSPYieldSQL, GSPYield
+from nowcasting_datamodel.models.gsp import LocationSQL
 from nowcasting_datamodel.models import MLModelSQL
-from nowcasting_datamodel.models.metric import DatetimeIntervalSQL, MetricSQL, MetricValueSQL
+from nowcasting_datamodel.models.metric import (
+    DatetimeIntervalSQL,
+    MetricSQL,
+    MetricValueSQL,
+)
 from pvsite_datamodel.sqlmodels import UserSQL, SiteGroupSQL, SiteSQL
-from pvsite_datamodel.read import get_site_group_by_name
+
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +57,9 @@ def get_metric_value(
 
     # filter on start time
     if start_datetime_utc is not None:
-        query = query.filter(DatetimeIntervalSQL.start_datetime_utc >= start_datetime_utc)
+        query = query.filter(
+            DatetimeIntervalSQL.start_datetime_utc >= start_datetime_utc
+        )
 
     # filter on end time
     if end_datetime_utc is not None:
@@ -67,7 +72,9 @@ def get_metric_value(
 
     # filter forecast_horizon_minutes
     if forecast_horizon_minutes is not None:
-        query = query.filter(MetricValueSQL.forecast_horizon_minutes == forecast_horizon_minutes)
+        query = query.filter(
+            MetricValueSQL.forecast_horizon_minutes == forecast_horizon_minutes
+        )
     else:
         # select forecast_horizon_minutes is Null, which gets the last forecast.
         # !! This has to be a double equals or it won't work
@@ -87,10 +94,10 @@ def get_metric_value(
 
     return metric_values
 
+# get all users 
 def get_all_users(session: Session) -> List[UserSQL]:
-
     """Get all users from the database.
-     :param session: database session
+    :param session: database session
     """
     query = session.query(UserSQL)
 
@@ -100,11 +107,10 @@ def get_all_users(session: Session) -> List[UserSQL]:
 
     return users
 
-
+# get all site groups
 def get_all_site_groups(session: Session) -> List[SiteGroupSQL]:
-
     """Get all users from the database.
-     :param session: database session
+    :param session: database session
     """
     query = session.query(SiteGroupSQL)
 
@@ -114,25 +120,63 @@ def get_all_site_groups(session: Session) -> List[SiteGroupSQL]:
 
     return site_groups
 
-
-def update_user_site_group(session: Session, email: str, site_group_name: str) -> UserSQL:
-    """Attach a site group to a user.
+# update user site group; users only belong to one site group
+def update_user_site_group(
+    session: Session, email: str, site_group_name: str
+) -> UserSQL:
+    """Change site group for user.
     :param session: database session
     :param email: email of user
     :param site_group_name: name of site group
     """
-    user = session.query(UserSQL)
-    user = user.filter(UserSQL.email == email)
-    site_group = get_site_group_by_name(session=session, site_group_name=site_group_name)
-    user.site_group_uuid = site_group.site_group_uuid
+    site_group = (
+        session.query(SiteGroupSQL)
+        .filter(SiteGroupSQL.site_group_name == site_group_name)
+        .first()
+    )
+
+    user = session.query(UserSQL).filter(UserSQL.email == email)
+
+    user = user.update({"site_group_uuid": site_group.site_group_uuid})
+
     session.commit()
 
+    return user
+
+# get site group by name
 def get_site_by_client_site_id(session: Session, client_site_id: str) -> List[SiteSQL]:
     """Get site by client site id.
     :param session: database session
     :param client_site_id: client site id
     """
     query = session.query(SiteSQL)
+
     query = query.filter(SiteSQL.client_site_id == client_site_id)
-    site = query.one_or_none()
+
+    site = query.first()
+
     return site
+
+# add site to site group; sites can belong to many groups
+def add_site_to_site_group(
+    session: Session, site_uuid: str, site_group_name: str
+) -> SiteGroupSQL:
+    """Add a site to a site group.
+    :param session: database session
+    :param site_uuid: uuid of site
+    :param site_group_name: name of site group
+    """
+    site_group = (
+        session.query(SiteGroupSQL)
+        .filter(SiteGroupSQL.site_group_name == site_group_name)
+        .first()
+    )
+
+    site = session.query(SiteSQL).filter(SiteSQL.site_uuid == site_uuid).one()
+
+    if site not in site_group.sites:
+        site_group.sites.append(site)
+
+    session.commit()
+
+    return site_group.sites
