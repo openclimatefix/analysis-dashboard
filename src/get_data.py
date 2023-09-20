@@ -94,7 +94,7 @@ def get_metric_value(
 
     return metric_values
 
-
+# get all users 
 def get_all_users(session: Session) -> List[UserSQL]:
     """Get all users from the database.
     :param session: database session
@@ -107,7 +107,7 @@ def get_all_users(session: Session) -> List[UserSQL]:
 
     return users
 
-
+# get all site groups
 def get_all_site_groups(session: Session) -> List[SiteGroupSQL]:
     """Get all users from the database.
     :param session: database session
@@ -120,7 +120,7 @@ def get_all_site_groups(session: Session) -> List[SiteGroupSQL]:
 
     return site_groups
 
-
+# update user site group; users only belong to one site group
 def update_user_site_group(
     session: Session, email: str, site_group_name: str
 ) -> UserSQL:
@@ -143,7 +143,7 @@ def update_user_site_group(
 
     return user
 
-
+# get site group by name
 def get_site_by_client_site_id(session: Session, client_site_id: str) -> List[SiteSQL]:
     """Get site by client site id.
     :param session: database session
@@ -157,11 +157,11 @@ def get_site_by_client_site_id(session: Session, client_site_id: str) -> List[Si
 
     return site
 
-
+# add site to site group; sites can belong to many groups
 def add_site_to_site_group(
     session: Session, site_uuid: str, site_group_name: str
 ) -> SiteGroupSQL:
-    """Attach a site to a site group.
+    """Add a site to a site group.
     :param session: database session
     :param site_uuid: uuid of site
     :param site_group_name: name of site group
