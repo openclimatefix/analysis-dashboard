@@ -1,5 +1,13 @@
 """Test the toolbox functions"""
-from sites_toolbox import get_user_details, get_site_details, select_site_id, get_site_group_details
+from sites_toolbox import (
+    get_user_details,
+    get_site_details,
+    select_site_id,
+    get_site_group_details,
+    change_user_site_group,
+    update_site_group,
+)
+
 from pvsite_datamodel.write.user_and_site import make_site, make_site_group, make_user
 
 
@@ -28,7 +36,9 @@ def test_get_user_details(db_session):
 
 # test for get_site_details
 def test_get_site_details(db_session):
-    """Test the get site details function"""
+    """Test the get site details function
+    :param db_session: the database session
+    """
     site = make_site(db_session=db_session, ml_id=1)
 
     site_details = get_site_details(session=db_session, site_uuid=str(site.site_uuid))
@@ -77,6 +87,55 @@ def test_get_site_group_details(db_session):
         session=db_session, site_group_name="test_site_group"
     )
 
-  assert site_group_sites == [{"site_uuid": str(site.site_uuid), "client_site_id": str(site.client_site_id)}for site in site_group.sites]
-  assert site_group_users == [user.email for user in site_group.users]
-  
+    assert site_group_sites == [
+        {"site_uuid": str(site.site_uuid), "client_site_id": str(site.client_site_id)}
+        for site in site_group.sites
+    ]
+    assert site_group_users == [user.email for user in site_group.users]
+
+
+# test update site group
+def test_update_site_group(db_session):
+    """Test the update site group function"""
+    site_group = make_site_group(db_session=db_session)
+    site_1 = make_site(db_session=db_session, ml_id=1)
+    site_2 = make_site(db_session=db_session, ml_id=2)
+    site_3 = make_site(db_session=db_session, ml_id=3)
+    site_group.sites.append(site_1)
+    site_group.sites.append(site_2)
+
+    site_group, site_group_sites, site_site_groups = update_site_group(
+        session=db_session,
+        site_uuid=str(site_3.site_uuid),
+        site_group_name="test_site_group",
+    )
+
+    assert site_group.sites == [site_1, site_2, site_3]
+    assert site_group_sites == [
+        {"site_uuid": str(site.site_uuid), "client_site_id": str(site.client_site_id)}
+        for site in site_group.sites
+    ]
+    assert site_site_groups == [
+        site_group.site_group_name for site_group in site_3.site_groups
+    ]
+
+
+# test change user site group
+def test_change_user_site_group(db_session):
+    """Test the change user site group function
+    :param db_session: the database session"""
+    site_group = make_site_group(db_session=db_session)
+    user = make_user(
+        db_session=db_session, email="test_user@gmail.com", site_group=site_group
+    )
+    site_group2 = make_site_group(
+        db_session=db_session, site_group_name="test_site_group2"
+    )
+    user, user_site_group = change_user_site_group(
+        session=db_session,
+        email="test_user@gmail.com",
+        site_group_name=site_group2.site_group_name,
+    )
+
+    assert user_site_group == site_group2.site_group_name
+    assert user == "test_user@gmail.com"
