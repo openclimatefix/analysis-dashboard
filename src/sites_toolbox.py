@@ -1,7 +1,7 @@
 """This module contains the sites toolbox for the OCF dashboard"""
 import os
 import streamlit as st
-
+from datetime import datetime, timezone
 from pvsite_datamodel.connection import DatabaseConnection
 from pvsite_datamodel.read import (
     get_all_sites,
@@ -9,12 +9,15 @@ from pvsite_datamodel.read import (
     get_site_by_uuid,
     get_site_group_by_name,
 )
+
 from get_data import (
+    create_new_site,
     get_all_users,
     get_all_site_groups,
     get_site_by_client_site_id,
     add_site_to_site_group,
     update_user_site_group,
+    create_new_site,
 )
 
 
@@ -297,3 +300,30 @@ def sites_toolbox_page():
         st.write(user, "is now in the", user_site_group, "site group.")
         if st.button("Close"):
             st.empty()
+
+    # create a new site
+    st.markdown(
+        f'<h1 style="color:#63BCAF;font-size:32px;">{"Create New Site"}</h1>',
+        unsafe_allow_html=True,
+    )
+    if st.button("Input new site data"):
+        with connection.get_session() as session:
+            client_site_id = st.text_input("Enter client_site_id")
+            client_site_name = st.text_input("Enter client_site_name")
+            latitude = st.text_input("Enter latitude")
+            longitude = st.text_input("Enter longitude")
+            capacity_kw = st.text_input("Enter capacity_kw")
+            created_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+            if st.button("Create site"):
+                site, message = create_new_site(
+                    session=session,
+                    ml_id=len(site_uuid_list) + 1,
+                    client_site_id=client_site_id,
+                    client_site_name=client_site_name,
+                    latitude=latitude,
+                    longitude=longitude,
+                    capacity_kw=capacity_kw,
+                    created_utc=created_utc,
+                )
+                st.write(message)
+                st.wrtie("New site details:", site)
