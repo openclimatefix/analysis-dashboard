@@ -66,6 +66,7 @@ def forecast_page():
             forecast_models.remove("National_xg")
             st.sidebar.warning("National_xg only available for National forecast.")
 
+    show_prob = st.sidebar.checkbox('Show Probabilities', value=False)
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
     forecast_type = st.sidebar.radio(
@@ -210,7 +211,7 @@ def forecast_page():
             )
         )
 
-    if model != "cnn" and len(forecast) > 0:
+    if model != "cnn" and len(forecast) > 0 and show_prob:
         try:
             properties_0 = forecast[0]._properties
             if isinstance(properties_0, dict):
