@@ -306,7 +306,7 @@ def sites_toolbox_page():
         f'<h1 style="color:#63BCAF;font-size:32px;">{"Create New Site"}</h1>',
         unsafe_allow_html=True,
     )
-    if st.button("Input new site data"):
+    with st.expander("Input new site data"):
         with connection.get_session() as session:
             client_site_id = st.text_input("Enter client_site_id")
             client_site_name = st.text_input("Enter client_site_name")
