@@ -66,7 +66,8 @@ def forecast_page():
             forecast_models.remove("National_xg")
             st.sidebar.warning("National_xg only available for National forecast.")
 
-    show_prob = st.sidebar.checkbox('Show Probabilities', value=False)
+    if gsp_id == 0:
+        show_prob = st.sidebar.checkbox('Show Probabilities Forecast', value=False)
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
     forecast_type = st.sidebar.radio(
