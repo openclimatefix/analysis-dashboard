@@ -275,7 +275,7 @@ def forecast_page():
             elif k == "PVLive GSP Sum Updated":
                 line = dict(color=colour_per_model[k])
 
-            fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
+            fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line, visible="legendonly"))
 
     fig.add_trace(
         go.Scatter(
