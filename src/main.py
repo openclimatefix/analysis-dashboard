@@ -20,6 +20,8 @@ from forecast import forecast_page
 from pvsite_forecast import pvsite_forecast_page
 from sites_toolbox import sites_toolbox_page
 
+from plots.make_pinball_and_exceedance_plots import make_pinball_or_exceedance_plot
+
 st.get_option("theme.primaryColor")
 
 MAE_LIMIT_DEFAULT = 800
@@ -466,6 +468,28 @@ def metric_page():
     if model_name in ["pvnet_v2", "cnn"]:
         
         st.plotly_chart(fig7, theme="streamlit")
+
+    if model_name in ["pvnet_v2", "National_xg"]:
+        with connection.get_session() as session:
+            fig8 = make_pinball_or_exceedance_plot(
+                session=session,
+                model_name=model_name,
+                starttime=starttime,
+                endtime=endtime,
+                forecast_horizon_selection=forecast_horizon_selection,
+                metric_name="Pinball loss",
+            )
+            st.plotly_chart(fig8, theme="streamlit")
+
+            fig9 = make_pinball_or_exceedance_plot(
+                session=session,
+                model_name=model_name,
+                starttime=starttime,
+                endtime=endtime,
+                forecast_horizon_selection=forecast_horizon_selection,
+                metric_name="Exceedance",
+            )
+            st.plotly_chart(fig9, theme="streamlit")
 
     st.subheader("Data - forecast horizon averaged")
     # get average MAE for each forecast horizon
