@@ -21,6 +21,7 @@ from pvsite_forecast import pvsite_forecast_page
 from sites_toolbox import sites_toolbox_page
 
 from plots.make_pinball_and_exceedance_plots import make_pinball_or_exceedance_plot
+from plots.utils import line_color
 
 st.get_option("theme.primaryColor")
 
@@ -221,17 +222,6 @@ def metric_page():
 
     fig.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT_HORIZON_0])
     st.plotly_chart(fig, theme="streamlit")
-
-    line_color = [
-        "#9EC8FA",
-        "#9AA1F9",
-        "#FFAC5F",
-        "#9F973A",
-        "#7BCDF3",
-        "#086788",
-        "#63BCAF",
-        "#4C9A8E",
-    ]
 
     # MAE by forecast horizon adding go.Figure
     fig2 = go.Figure(
