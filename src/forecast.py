@@ -66,6 +66,8 @@ def forecast_page():
             forecast_models.remove("National_xg")
             st.sidebar.warning("National_xg only available for National forecast.")
 
+    if gsp_id == 0:
+        show_prob = st.sidebar.checkbox('Show Probabilities Forecast', value=False)
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
     forecast_type = st.sidebar.radio(
@@ -210,7 +212,7 @@ def forecast_page():
             )
         )
 
-    if model != "cnn" and len(forecast) > 0:
+    if model != "cnn" and len(forecast) > 0 and show_prob:
         try:
             properties_0 = forecast[0]._properties
             if isinstance(properties_0, dict):
@@ -275,7 +277,7 @@ def forecast_page():
             elif k == "PVLive GSP Sum Updated":
                 line = dict(color=colour_per_model[k])
 
-            fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
+            fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line, visible="legendonly"))
 
     fig.add_trace(
         go.Scatter(
