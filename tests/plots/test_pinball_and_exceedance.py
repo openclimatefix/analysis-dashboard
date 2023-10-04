@@ -1,4 +1,4 @@
-from plots.make_pinball_and_exceedance_plots import make_pinball_or_exceedance_plot
+from plots.pinball_and_exceedance_plots import make_pinball_or_exceedance_plot
 
 from datetime import datetime
 
