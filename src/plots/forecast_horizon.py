@@ -7,6 +7,7 @@ from plots.utils import line_color, get_x_y, MAE_LIMIT_DEFAULT
 def make_mae_by_forecast_horizon(
     df_mae, forecast_horizon_selection, metric_values_by_forecast_horizon
 ):
+    """Make MAE vs Time for each forecast horizon"""
     # MAE by forecast horizon adding go.Figure
     fig2 = go.Figure(
         layout=go.Layout(
@@ -56,6 +57,7 @@ def make_mae_by_forecast_horizon(
 def make_mae_forecast_horizon_group_by_forecast_horizon(
     forecast_horizon_selection, metric_values_by_forecast_horizon
 ):
+    """Make a plot with is MAE vs Forecast horizon"""
     fig = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(
@@ -97,11 +99,14 @@ def make_mae_forecast_horizon_group_by_forecast_horizon(
     return fig
 
 
-def make_mae_vs_froecast_horizon_group_by_date(
+def make_mae_vs_forecast_horizon_group_by_date(
     forecast_horizon_selection, metric_values_by_forecast_horizon
 ):
+    """
+    Make a plot with is MAE vs Forecast horizon for each date in the date
+    """
     # add chart with forecast horizons on x-axis and line for each day in the date range
-    fig5 = go.Figure(
+    fig = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(text="Quartz Solar MAE Forecast Horizon Values by Date"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Forecast Horizon (minutes)")),
@@ -155,10 +160,10 @@ def make_mae_vs_froecast_horizon_group_by_date(
                 line=dict(color=line_color[i % len_colours]),
             )
         )
-    fig5.add_traces(traces)
-    fig5.update_layout(
+    fig.add_traces(traces)
+    fig.update_layout(
         xaxis=dict(tickmode="linear", tick0=0, dtick=60),
         yaxis=dict(tickmode="linear", tick0=0, dtick=50),
     )
-    fig5.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
-    return all_forecast_horizons_df, fig5
+    fig.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
+    return all_forecast_horizons_df, fig

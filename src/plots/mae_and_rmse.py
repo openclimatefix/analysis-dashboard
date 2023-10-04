@@ -4,7 +4,7 @@ from plots.utils import line_color, MAE_LIMIT_DEFAULT_HORIZON_0, MAE_LIMIT_DEFAU
 
 
 def make_rmse_and_mae_plot(df_mae, df_rmse, x_plive_mae, x_plive_rmse, y_plive_mae, y_plive_rmse):
-    fig6 = go.Figure(
+    fig = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(text="Quartz Solar and PVlive MAE with RMSE for Comparison"),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
@@ -12,7 +12,7 @@ def make_rmse_and_mae_plot(df_mae, df_rmse, x_plive_mae, x_plive_rmse, y_plive_m
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
         )
     )
-    fig6.add_traces(
+    fig.add_traces(
         [
             go.Scatter(
                 x=df_mae["datetime_utc"],
@@ -44,8 +44,8 @@ def make_rmse_and_mae_plot(df_mae, df_rmse, x_plive_mae, x_plive_rmse, y_plive_m
             ),
         ]
     )
-    fig5.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
-    return fig6
+    fig.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
+    return fig
 
 
 def make_mae_plot(df_mae):
