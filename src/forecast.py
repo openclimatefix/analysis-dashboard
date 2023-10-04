@@ -11,17 +11,7 @@ from nowcasting_datamodel.read.read_gsp import get_gsp_yield, get_gsp_yield_sum
 from nowcasting_datamodel.models import ForecastValue, GSPYield, Location
 import plotly.graph_objects as go
 
-
-colour_per_model = {
-    "cnn": "#FFD053",
-    "National_xg": "#7BCDF3",
-    "pvnet_v2": "#4c9a8e",
-    "blend": "#FF9736",
-    "PVLive Initial Estimate": "#e4e4e4",
-    "PVLive Updated Estimate": "#e4e4e4",
-    "PVLive GSP Sum Estimate": "#FF9736",
-    "PVLive GSP Sum Updated": "#FF9736",
-}
+from plots.utils import colour_per_model
 
 
 def forecast_page():

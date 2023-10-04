@@ -45,6 +45,18 @@ Run app: `cd src && streamlit run main.py`.
 
 `auth.py` contains code for the basic authenticaion that's been put in place. 
 
+## pvsite_forecast.py
+
+TODO
+
+## site_toolbox.py
+
+TODO
+
+## plots/make_pinball_and_exceedance_plots.py
+
+Function to make `pinball` and exceedance plots. This shows how good the probabilistic forecasts are doing. 
+
 ## 🛠️ infrastructure
 
 `.github/workflows` contains some CI actions.
