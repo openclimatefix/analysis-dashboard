@@ -1,7 +1,6 @@
 from plotly import graph_objects as go, express as px
 
-from main import MAE_LIMIT_DEFAULT_HORIZON_0
-from plots.utils import line_color
+from plots.utils import line_color, MAE_LIMIT_DEFAULT_HORIZON_0, MAE_LIMIT_DEFAULT
 
 
 def make_rmse_and_mae_plot(df_mae, df_rmse, x_plive_mae, x_plive_rmse, y_plive_mae, y_plive_rmse):
@@ -34,17 +33,18 @@ def make_rmse_and_mae_plot(df_mae, df_rmse, x_plive_mae, x_plive_rmse, y_plive_m
                 y=y_plive_mae,
                 name="MAE PVLive",
                 mode="lines",
-                line=dict(color=line_color[0], dash='dash'),
+                line=dict(color=line_color[0], dash="dash"),
             ),
             go.Scatter(
                 x=x_plive_rmse,
                 y=y_plive_rmse,
                 name="RMSE PVLive",
                 mode="lines",
-                line=dict(color=line_color[1], dash='dash'),
+                line=dict(color=line_color[1], dash="dash"),
             ),
         ]
     )
+    fig5.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
     return fig6
 
 

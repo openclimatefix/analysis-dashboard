@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
 
+import numpy as np
 import streamlit as st
 
 
-def make_recent_summary_stats(values, title:str = "Recent MAE"):
+def make_recent_summary_stats(values, title: str = "Recent MAE"):
     day_before_yesterday, today, yesterday = get_recent_daily_values(values)
 
     with st.expander(title):
@@ -40,3 +41,17 @@ def get_recent_daily_values(values):
         today = values[len(values) - 1]
 
     return day_before_yesterday, yesterday, today
+
+
+def make_forecast_horizon_table(all_forecast_horizons_df, y_plive_mae):
+    st.subheader("Data - forecast horizon averaged")
+    # get average MAE for each forecast horizon
+    df_mae_horizon_mean = (
+        all_forecast_horizons_df.groupby(["forecast_horizon"]).mean().reset_index()
+    )
+    df_mae_horizon_mean.rename(columns={"MAE": "mean"}, inplace=True)
+    df_mae_horizon_std = all_forecast_horizons_df.groupby(["forecast_horizon"]).std().reset_index()
+    df_mae_horizon_mean["std"] = df_mae_horizon_std["MAE"]
+    pv_live_mae = np.round(np.mean(y_plive_mae), 2)
+    st.write(f"PV LIVE Mae {pv_live_mae} MW (intraday - day after)")
+    st.write(df_mae_horizon_mean)

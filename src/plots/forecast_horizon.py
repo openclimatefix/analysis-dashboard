@@ -1,15 +1,18 @@
 import pandas as pd
 from plotly import graph_objects as go
 
-from main import get_x_y, MAE_LIMIT_DEFAULT
-from plots.utils import line_color
+from plots.utils import line_color, get_x_y, MAE_LIMIT_DEFAULT
 
 
-def make_mae_by_forecast_horizon(df_mae, forecast_horizon_selection, metric_values_by_forecast_horizon):
+def make_mae_by_forecast_horizon(
+    df_mae, forecast_horizon_selection, metric_values_by_forecast_horizon
+):
     # MAE by forecast horizon adding go.Figure
     fig2 = go.Figure(
         layout=go.Layout(
-            title=go.layout.Title(text="Quartz Solar MAE by Forecast Horizon (selected in sidebar)"),
+            title=go.layout.Title(
+                text="Quartz Solar MAE by Forecast Horizon (selected in sidebar)"
+            ),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="MAE (MW)")),
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
@@ -50,8 +53,10 @@ def make_mae_by_forecast_horizon(df_mae, forecast_horizon_selection, metric_valu
     return fig2
 
 
-def make_mae_forecast_horizon_group_by_forecast_horizon(forecast_horizon_selection, metric_values_by_forecast_horizon):
-    fig4 = go.Figure(
+def make_mae_forecast_horizon_group_by_forecast_horizon(
+    forecast_horizon_selection, metric_values_by_forecast_horizon
+):
+    fig = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(
                 text="Quartz Solar MAE by Forecast Horizon for Date Range(selected in sidebar)"
@@ -73,7 +78,7 @@ def make_mae_forecast_horizon_group_by_forecast_horizon(forecast_horizon_selecti
             }
         )
 
-        fig4.add_traces(
+        fig.add_traces(
             [
                 go.Scatter(
                     x=df_mae_horizon["MAE"],
@@ -84,14 +89,17 @@ def make_mae_forecast_horizon_group_by_forecast_horizon(forecast_horizon_selecti
                 ),
             ]
         )
-        fig4.update_layout(
+        fig.update_layout(
             xaxis=dict(tickmode="linear", tick0=0, dtick=50),
             yaxis=dict(tickmode="linear", tick0=0, dtick=60),
         )
-    return fig4
+        fig.update_layout(xaxis_range=[0, MAE_LIMIT_DEFAULT])
+    return fig
 
 
-def make_mae_vs_froecast_horizon_group_by_date(forecast_horizon_selection, metric_values_by_forecast_horizon):
+def make_mae_vs_froecast_horizon_group_by_date(
+    forecast_horizon_selection, metric_values_by_forecast_horizon
+):
     # add chart with forecast horizons on x-axis and line for each day in the date range
     fig5 = go.Figure(
         layout=go.Layout(
@@ -124,9 +132,13 @@ def make_mae_vs_froecast_horizon_group_by_date(forecast_horizon_selection, metri
 
         dfs.append(data)
     # merge dataframes
-    all_forecast_horizons_df = pd.concat(dfs, axis=0).sort_values(by=["datetime_utc"], ascending=True)
+    all_forecast_horizons_df = pd.concat(dfs, axis=0).sort_values(
+        by=["datetime_utc"], ascending=True
+    )
     # group by date
-    result = {result_.index[0]: result_ for _, result_ in all_forecast_horizons_df.groupby("datetime_utc")}
+    result = {
+        result_.index[0]: result_ for _, result_ in all_forecast_horizons_df.groupby("datetime_utc")
+    }
     # loop through each date group in the dictionary and add to traces
     len_colours = len(line_color)
     # loop through each date group in the dictionary and add to traces
