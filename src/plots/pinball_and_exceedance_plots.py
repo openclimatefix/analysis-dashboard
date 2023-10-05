@@ -30,7 +30,7 @@ def make_pinball_or_exceedance_plot(
     # make plot
     fig = go.Figure(
         layout=go.Layout(
-            title=go.layout.Title(text=metric_name),
+            title=go.layout.Title(text=f'{metric_name} {model_name}'),
             xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text=x_label)),
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
