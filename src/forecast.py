@@ -11,17 +11,7 @@ from nowcasting_datamodel.read.read_gsp import get_gsp_yield, get_gsp_yield_sum
 from nowcasting_datamodel.models import ForecastValue, GSPYield, Location
 import plotly.graph_objects as go
 
-
-colour_per_model = {
-    "cnn": "#FFD053",
-    "National_xg": "#7BCDF3",
-    "pvnet_v2": "#4c9a8e",
-    "blend": "#FF9736",
-    "PVLive Initial Estimate": "#e4e4e4",
-    "PVLive Updated Estimate": "#e4e4e4",
-    "PVLive GSP Sum Estimate": "#FF9736",
-    "PVLive GSP Sum Updated": "#FF9736",
-}
+from plots.utils import colour_per_model
 
 
 def forecast_page():
@@ -66,6 +56,8 @@ def forecast_page():
             forecast_models.remove("National_xg")
             st.sidebar.warning("National_xg only available for National forecast.")
 
+    if gsp_id == 0:
+        show_prob = st.sidebar.checkbox('Show Probabilities Forecast', value=False)
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
     forecast_type = st.sidebar.radio(
@@ -210,7 +202,7 @@ def forecast_page():
             )
         )
 
-    if model != "cnn" and len(forecast) > 0:
+    if model != "cnn" and len(forecast) > 0 and show_prob:
         try:
             properties_0 = forecast[0]._properties
             if isinstance(properties_0, dict):
@@ -275,7 +267,7 @@ def forecast_page():
             elif k == "PVLive GSP Sum Updated":
                 line = dict(color=colour_per_model[k])
 
-            fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
+            fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line, visible="legendonly"))
 
     fig.add_trace(
         go.Scatter(

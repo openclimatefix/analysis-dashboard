@@ -3,78 +3,47 @@ UK analysis dashboard for OCF
 """
 
 import os
-import streamlit as st
-import pandas as pd
-import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
-
 from datetime import datetime, timedelta
 
+import pandas as pd
+import streamlit as st
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.metric import MetricValue
-from get_data import get_metric_value
+
 from auth import check_password
-from status import status_page
 from forecast import forecast_page
+from get_data import get_metric_value
+from plots.all_gsps import make_all_gsps_plots
+from plots.forecast_horizon import (
+    make_mae_by_forecast_horizon,
+    make_mae_forecast_horizon_group_by_forecast_horizon,
+    make_mae_vs_forecast_horizon_group_by_date,
+)
+from plots.mae_and_rmse import make_rmse_and_mae_plot, make_mae_plot
+from plots.pinball_and_exceedance_plots import make_pinball_or_exceedance_plot
+from plots.utils import get_x_y
 from pvsite_forecast import pvsite_forecast_page
 from sites_toolbox import sites_toolbox_page
+from status import status_page
+from tables.raw import make_raw_table
+from tables.summary import make_recent_summary_stats, make_forecast_horizon_table
 
 st.get_option("theme.primaryColor")
-
-MAE_LIMIT_DEFAULT = 800
-MAE_LIMIT_DEFAULT_HORIZON_0 = 300
-
-
-def get_x_y(metric_values):
-    """
-    Extra x and y values from the metric values
-
-    x is the time
-    y is the metric value
-    """
-    metric_values = [MetricValue.from_orm(value) for value in metric_values]
-    # select data to show in the chart MAE and RMSE and date from the above date range
-    x = [value.datetime_interval.start_datetime_utc for value in metric_values]
-    y = [round(float(value.value), 2) for value in metric_values]
-
-    return x, y
-
-
-def get_recent_daily_values(values):
-    """
-    Get the recent daily values from the metric values
-    """
-    if len(values) == 0:
-        day_before_yesterday = None
-        yesterday = None
-        today = None
-    elif len(values) == 1:
-        day_before_yesterday = None
-        yesterday = None
-        today = values[len(values) - 1]
-    elif len(values) == 2:
-        day_before_yesterday = None
-        yesterday = values[len(values) - 2]
-        today = values[len(values) - 1]
-    else:
-        day_before_yesterday = values[len(values) - 3]
-        yesterday = values[len(values) - 2]
-        today = values[len(values) - 1]
-
-    return day_before_yesterday, yesterday, today
+st.set_page_config(layout="centered", page_title="OCF Dashboard")
 
 
 def metric_page():
-
     # set up title and subheader
     st.markdown(
-        f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Dashboard"}</h1>', unsafe_allow_html=True
+        f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Dashboard"}</h1>',
+        unsafe_allow_html=True,
     )
     # set up sidebar
     st.sidebar.subheader("Select date range for charts")
     # select start and end date
-    starttime = st.sidebar.date_input("Start Date", datetime.today() - timedelta(days=30))
+    starttime = st.sidebar.date_input(
+        "Start Date", datetime.today() - timedelta(days=30)
+    )
     endtime = st.sidebar.date_input("End Date", datetime.today())
 
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
@@ -89,7 +58,6 @@ def metric_page():
     # get metrics for comparing MAE and RMSE without forecast horizon
 
     with connection.get_session() as session:
-
         # read database metric values
         name_mae = "Daily Latest MAE"
         name_rmse = "Daily Latest RMSE"
@@ -151,40 +119,36 @@ def metric_page():
         x_plive_mae, y_plive_mae = get_x_y(metric_values=metric_values_pvlive_mae)
         x_plive_rmse, y_plive_rmse = get_x_y(metric_values=metric_values_pvlive_rmse)
 
-        # getting recent statistics for the dashboard
-        day_before_yesterday_mae, yesterday_mae, today_mae = get_recent_daily_values(values=y_mae)
-        day_before_yesterday_rmse, yesterday_rmse, today_rmse = get_recent_daily_values(
-            values=y_rmse
-        )
-
     st.markdown(
         f'<h1 style="color:#63BCAF;font-size:48px;">{"Metrics"}</h1>',
         unsafe_allow_html=True,
     )
 
-    with st.expander("Recent MAE Values"):
-        st.subheader("Recent MAE")
-        t = datetime.today() - timedelta(days=1)
-        t2 = datetime.today() - timedelta(days=2)
-        t3 = datetime.today() - timedelta(days=3)
-        col1, col2, col3 = st.columns([1, 1, 1])
-
-        col1.metric(label=t3.strftime("%d/%m/%y"), value=day_before_yesterday_mae)
-        col2.metric(label=t2.strftime("%d/%m/%y"), value=yesterday_mae)
-        col3.metric(label=t.strftime("%d/%m/%y"), value=today_mae)
-
-    with st.expander("Recent RMSE Values"):
-        st.subheader("Recent RMSE")
-        col1, col2, col3 = st.columns([1, 1, 1])
-        col1.metric(label=t3.strftime("%d/%m/%y"), value=day_before_yesterday_rmse)
-        col2.metric(label=t2.strftime("%d/%m/%y"), value=yesterday_rmse)
-        col3.metric(label=t.strftime("%d/%m/%y"), value=today_rmse)
+    make_recent_summary_stats(values=y_mae)
+    make_recent_summary_stats(values=y_rmse)
 
     st.sidebar.subheader("Select Forecast Horizon")
     forecast_horizon_selection = st.sidebar.multiselect(
         "Select",
-        [0, 60, 120, 180, 240, 300, 360, 420, 8*60, 12*60, 15*60, 18*60, 21*60, 24*60, 30*60, 35*60],
-        [60, 120, 240, 420]
+        [
+            0,
+            60,
+            120,
+            180,
+            240,
+            300,
+            360,
+            420,
+            8 * 60,
+            12 * 60,
+            15 * 60,
+            18 * 60,
+            21 * 60,
+            24 * 60,
+            30 * 60,
+            35 * 60,
+        ],
+        [60, 120, 240, 420],
     )
 
     df_mae = pd.DataFrame(
@@ -201,56 +165,11 @@ def metric_page():
         }
     )
 
-    df_mae_all_gsp = pd.DataFrame(
-        {
-            "MAE All GSPs": y_mae_all_gsp,
-            "datetime_utc": x_mae_all_gsp,
-        })
- 
-    # set up title and subheader
-    fig = px.bar(
-        df_mae,
-        x="datetime_utc",
-        y="MAE",
-        title="Quartz Solar MAE",
-        hover_data=["MAE", "datetime_utc"],
-        color_discrete_sequence=["#FFAC5F"],
-    )
-
-    fig.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT_HORIZON_0])
+    # Make MAE plot
+    fig = make_mae_plot(df_mae)
     st.plotly_chart(fig, theme="streamlit")
 
-    line_color = [
-        "#9EC8FA",
-        "#9AA1F9",
-        "#FFAC5F",
-        "#9F973A",
-        "#7BCDF3",
-        "#086788",
-        "#63BCAF",
-        "#4C9A8E",
-    ]
-
-    # MAE by forecast horizon adding go.Figure
-    fig2 = go.Figure(
-        layout=go.Layout(
-            title=go.layout.Title(text="Quartz Solar MAE by Forecast Horizon (selected in sidebar)"),
-            xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
-            yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="MAE (MW)")),
-            legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
-        )
-    )
-
-    fig2.add_trace(
-        go.Scatter(
-            x=df_mae["datetime_utc"],
-            y=df_mae["MAE"],
-            mode="lines",
-            name="Daily Total MAE",
-            line=dict(color="#FFD053"),
-        )
-    )
-
+    # get metrics per forecast horizon
     metric_values_by_forecast_horizon = {}
     with connection.get_session() as session:
         # read database metric values
@@ -267,220 +186,69 @@ def metric_page():
             metric_values = [MetricValue.from_orm(value) for value in metric_values]
             metric_values_by_forecast_horizon[forecast_horizon] = metric_values
 
-    for forecast_horizon in forecast_horizon_selection:
-        metric_values = metric_values_by_forecast_horizon[forecast_horizon]
-        x_mae_horizon, y_mae_horizon = get_x_y(metric_values=metric_values)
+    fig2 = make_mae_by_forecast_horizon(
+        df_mae, forecast_horizon_selection, metric_values_by_forecast_horizon
+    )
+    with st.expander("MAE by Forecast Horizon"):
+        st.plotly_chart(fig2, theme="streamlit")
 
-        df = pd.DataFrame(
-            {
-                "MAE": y_mae_horizon,
-                "datetime_utc": x_mae_horizon,
-            }
-        )
-
-        fig2.add_traces(
-            [
-                go.Scatter(
-                    x=df["datetime_utc"],
-                    y=df["MAE"],
-                    name=f"{forecast_horizon}-minute horizon",
-                    mode="lines",
-                    line=dict(color=line_color[forecast_horizon_selection.index(forecast_horizon)]),
-                )
-            ]
-        )
-
-    fig2.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
-    st.plotly_chart(fig2, theme="streamlit")
-   
-    fig4 = go.Figure(
-        layout=go.Layout(
-            title=go.layout.Title(
-                text="Quartz Solar MAE by Forecast Horizon for Date Range(selected in sidebar)"
-            ),
-            xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="MAE (MW)")),
-            yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="Forecast Horizon (minutes)")),
-        )
+    fig3 = make_mae_forecast_horizon_group_by_forecast_horizon(
+        forecast_horizon_selection, metric_values_by_forecast_horizon
     )
 
-    for forecast_horizon in forecast_horizon_selection:
-        metric_values = metric_values_by_forecast_horizon[forecast_horizon]
-        x_mae_horizon = [value.datetime_interval.start_datetime_utc for value in metric_values]
-        y_mae_horizon = [round(float(value.value), 2) for value in metric_values]
+    with st.expander("MAE by Forecast Horizon by Date"):
+        st.plotly_chart(fig3, theme="streamlit")
 
-        df_mae_horizon = pd.DataFrame(
-            {
-                "MAE": y_mae_horizon,
-                "datetime_utc": x_mae_horizon,
-                "forecast_horizon": forecast_horizon,
-            }
-        )
-
-        fig4.add_traces(
-            [
-                go.Scatter(
-                    x=df_mae_horizon["MAE"],
-                    y=df_mae_horizon["forecast_horizon"],
-                    name=f"{forecast_horizon}-minute horizon",
-                    mode="markers",
-                    line=dict(color=line_color[forecast_horizon_selection.index(forecast_horizon)]),
-                ),
-            ]
-        )
-        fig4.update_layout(
-            xaxis=dict(tickmode="linear", tick0=0, dtick=50),
-            yaxis=dict(tickmode="linear", tick0=0, dtick=60),
-        )
-
-    fig4.update_layout(xaxis_range=[0, MAE_LIMIT_DEFAULT])
-    st.plotly_chart(fig4, theme="streamlit")
-
-    # add chart with forecast horizons on x-axis and line for each day in the date range
-    fig5 = go.Figure(
-        layout=go.Layout(
-            title=go.layout.Title(text="Quartz Solar MAE Forecast Horizon Values by Date"),
-            xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Forecast Horizon (minutes)")),
-            yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="MAE (MW)")),
-            legend=go.layout.Legend(title=go.layout.legend.Title(text="Date")),
-        )
+    all_forecast_horizons_df, fig4 = make_mae_vs_forecast_horizon_group_by_date(
+        forecast_horizon_selection, metric_values_by_forecast_horizon
     )
-    # make an empty array to capture data for each line
-    traces = []
-    # make an empty array to capture values for each forecast horizon in the date range
-    dfs = []
-    # get data for each forecast horizon
-    # read database metric values
-    for forecast_horizon in forecast_horizon_selection:
-        metric_values = metric_values_by_forecast_horizon[forecast_horizon]
-        dates = [value.datetime_interval.start_datetime_utc for value in metric_values]
-        mae_value = [round(float(value.value), 2) for value in metric_values]
-        forecast_horizons = [value.forecast_horizon_minutes for value in metric_values]
 
-        # create dataframe for each date with a value for each forecast horizon
-        data = pd.DataFrame(
-            {
-                "MAE": mae_value,
-                "datetime_utc": dates,
-                "forecast_horizon": forecast_horizons,
-            }
-        )
-
-        dfs.append(data)
-
-    # merge dataframes
-    all_forecast_horizons_df = pd.concat(dfs, axis=0).sort_values(by=["datetime_utc"], ascending=True)
-    # group by date
-    result = {result_.index[0]: result_ for _, result_ in all_forecast_horizons_df.groupby("datetime_utc")}
-    # loop through each date group in the dictionary and add to traces
-    len_colours = len(line_color)
-    # loop through each date group in the dictionary and add to traces
-    for i in result:
-        # sort results by day
-        results_for_day = result[i]
-        results_for_day = results_for_day.sort_values(by=["forecast_horizon"], ascending=True)
-        traces.append(
-            go.Scatter(
-                x=results_for_day["forecast_horizon"].sort_values(ascending=True),
-                y=results_for_day["MAE"],
-                name=results_for_day["datetime_utc"].iloc[0].strftime("%Y-%m-%d"),
-                mode="lines+markers",
-                line=dict(color=line_color[i % len_colours]),
-            )
-        )
-
-    fig5.add_traces(traces)
-
-    fig5.update_layout(
-        xaxis=dict(tickmode="linear", tick0=0, dtick=60),
-        yaxis=dict(tickmode="linear", tick0=0, dtick=50),
-    )
-    fig5.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
-    st.plotly_chart(fig5, theme="streamlit")
+    with st.expander("MAE Forecast Horizon Values by Date"):
+        st.plotly_chart(fig4, theme="streamlit")
 
     # comparing MAE and RMSE
-    fig6 = go.Figure(
-        layout=go.Layout(
-            title=go.layout.Title(text="Quartz Solar and PVlive MAE with RMSE for Comparison"),
-            xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
-            yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="Error Value (MW)")),
-            legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
-        )
+    fig5 = make_rmse_and_mae_plot(
+        df_mae, df_rmse, x_plive_mae, x_plive_rmse, y_plive_mae, y_plive_rmse
     )
 
-    fig6.add_traces(
-        [
-            go.Scatter(
-                x=df_mae["datetime_utc"],
-                y=df_mae["MAE"],
-                name="MAE",
-                mode="lines",
-                line=dict(color=line_color[0]),
-            ),
-            go.Scatter(
-                x=df_rmse["datetime_utc"],
-                y=df_rmse["RMSE"],
-                name="RMSE",
-                mode="lines",
-                line=dict(color=line_color[1]),
-            ),
-            go.Scatter(
-                x=x_plive_mae,
-                y=y_plive_mae,
-                name="MAE PVLive",
-                mode="lines",
-                line=dict(color=line_color[0],dash='dash'),
-            ),
-        go.Scatter(
-            x=x_plive_rmse,
-            y=y_plive_rmse,
-            name="RMSE PVLive",
-            mode="lines",
-            line=dict(color=line_color[1],dash='dash'),
-        ),
-        ]
-    )
-
-    fig6.update_layout(yaxis_range=[0, MAE_LIMIT_DEFAULT])
-    st.plotly_chart(fig6, theme="streamlit")
-    st.write("PVLive is the difference between the intraday and day after PVLive values.")
-    
-    fig7 = go.Figure(
-        layout=go.Layout(
-        title=go.layout.Title(text="Daily Latest MAE All GSPs"),
-        xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
-        yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="Error Value (MW)")),
-        legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
+    with st.expander("Quartz Solar and PVlive MAE with RMSE"):
+        st.plotly_chart(fig5, theme="streamlit")
+        st.write(
+            "PVLive is the difference between the intraday and day after PVLive values."
         )
-    )
 
-    fig7.add_traces(
-        go.Scatter(
-            x=df_mae_all_gsp["datetime_utc"],
-            y=df_mae_all_gsp["MAE All GSPs"],
-            mode="lines",
-            name="Daily Latest MAE All GSPs",
-            line=dict(color=line_color[4]),
-        ),
-        )
-    
+    fig6 = make_all_gsps_plots(x_mae_all_gsp, y_mae_all_gsp)
+
     if model_name in ["pvnet_v2", "cnn"]:
-        
-        st.plotly_chart(fig7, theme="streamlit")
+        with st.expander("MAE All GSPs"):
+            st.plotly_chart(fig6, theme="streamlit")
 
-    st.subheader("Data - forecast horizon averaged")
-    # get average MAE for each forecast horizon
-    df_mae_horizon_mean = all_forecast_horizons_df.groupby(["forecast_horizon"]).mean().reset_index()
-    df_mae_horizon_mean.rename(columns={"MAE": "mean"}, inplace=True)
-    df_mae_horizon_std = all_forecast_horizons_df.groupby(["forecast_horizon"]).std().reset_index()
-    df_mae_horizon_mean['std'] = df_mae_horizon_std['MAE']
-    pv_live_mae = np.round(np.mean(y_plive_mae),2)
-    st.write(f"PV LIVE Mae {pv_live_mae} MW (intraday - day after)")
-    st.write(df_mae_horizon_mean)
+    if model_name in ["pvnet_v2", "National_xg"]:
+        with connection.get_session() as session:
+            with st.expander("Pinball loss"):
+                fig7 = make_pinball_or_exceedance_plot(
+                    session=session,
+                    model_name=model_name,
+                    starttime=starttime,
+                    endtime=endtime,
+                    forecast_horizon_selection=forecast_horizon_selection,
+                    metric_name="Pinball loss",
+                )
+                st.plotly_chart(fig7, theme="streamlit")
+            with st.expander("Exceedance"):
+                fig8 = make_pinball_or_exceedance_plot(
+                    session=session,
+                    model_name=model_name,
+                    starttime=starttime,
+                    endtime=endtime,
+                    forecast_horizon_selection=forecast_horizon_selection,
+                    metric_name="Exceedance",
+                )
+                st.plotly_chart(fig8, theme="streamlit")
 
-    st.subheader("Raw Data")
-    col1, col2 = st.columns([1, 1])
-    col1.write(df_mae)
-    col2.write(df_rmse)
+    make_forecast_horizon_table(all_forecast_horizons_df, y_plive_mae)
+
+    make_raw_table(df_mae, df_rmse)
 
 
 if check_password():

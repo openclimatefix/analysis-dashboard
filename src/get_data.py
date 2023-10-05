@@ -32,6 +32,7 @@ def get_metric_value(
     gsp_id: Optional[int] = None,
     forecast_horizon_minutes: Optional[int] = None,
     model_name: Optional[str] = None,
+    plevel: Optional[int] = None,
 ) -> List[MetricValueSQL]:
     """
     Get Metric values, for example MAE for gsp_id 5 on 2023-01-01
@@ -83,6 +84,9 @@ def get_metric_value(
     if model_name is not None:
         query = query.join(MLModelSQL)
         query = query.filter(MLModelSQL.name == model_name)
+
+    if plevel is not None:
+        query = query.filter(MetricValueSQL.p_level == plevel)
 
     # order by 'created_utc' desc, so we get the latest one
     query = query.order_by(
