@@ -54,12 +54,8 @@ def get_site_details(session, site_uuid: str):
         "GSP": str(site.gsp),
         "tilt": str(site.tilt),
         "orientation": str(site.orientation),
-        "inverter_capacity_kw": (f"{site.inverter_capacity_kw} kw")
-        if site.inverter_capacity_kw
-        else None,
-        "module_capacity_kw": (f"{site.module_capacity_kw} kw")
-        if site.module_capacity_kw
-        else None,
+        "inverter_capacity_kw": (f"{site.inverter_capacity_kw} kw"),
+        "module_capacity_kw": (f"{site.module_capacity_kw} kw"),
         "capacity": (f"{site.capacity_kw} kw"),
         "date_added": (site.created_utc.strftime("%Y-%m-%d")),
     }
@@ -349,7 +345,7 @@ def sites_toolbox_page():
             )
 
             if st.button("Check DNO data"):
-                if dno_name is "" or dno_long_name is "" or dno_id is "":
+                if (dno_name == "") or (dno_long_name == "") or (dno_id == ""):
                     st.write(
                         "Please check that you've entered an integer for dno_id and a string for name and long_name."
                     )
@@ -366,7 +362,7 @@ def sites_toolbox_page():
             gsp_formatted = str({"gsp_id": gsp_id, "name": gsp_name})
 
             if st.button("Check GSP data"):
-                if gsp_id is "" or gsp_name is "":
+                if (gsp_id == "") or (gsp_name == ""):
                     st.write(
                         "Please check that you've entered an integer for gsp_id and a string for gsp_name."
                     )
@@ -442,12 +438,8 @@ def sites_toolbox_page():
                         "GSP": str(site.gsp),
                         "tilt": str(site.tilt),
                         "orientation": str(site.orientation),
-                        "inverter_capacity_kw": (f"{site.inverter_capacity_kw} kw")
-                        if site.inverter_capacity_kw
-                        else None,
-                        "module_capacity_kw": (f"{site.module_capacity_kw} kw")
-                        if site.module_capacity_kw
-                        else None,
+                        "inverter_capacity_kw": (f"{site.inverter_capacity_kw} kw"),
+                        "module_capacity_kw": (f"{site.module_capacity_kw} kw"),
                         "capacity": (f"{site.capacity_kw} kw"),
                         "date_added": (site.created_utc.strftime("%Y-%m-%d")),
                     }
