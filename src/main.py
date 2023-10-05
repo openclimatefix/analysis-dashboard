@@ -17,7 +17,7 @@ from plots.all_gsps import make_all_gsps_plots
 from plots.forecast_horizon import (
     make_mae_by_forecast_horizon,
     make_mae_forecast_horizon_group_by_forecast_horizon,
-    make_mae_vs_froecast_horizon_group_by_date,
+    make_mae_vs_forecast_horizon_group_by_date,
 )
 from plots.mae_and_rmse import make_rmse_and_mae_plot, make_mae_plot
 from plots.pinball_and_exceedance_plots import make_pinball_or_exceedance_plot
@@ -29,18 +29,21 @@ from tables.raw import make_raw_table
 from tables.summary import make_recent_summary_stats, make_forecast_horizon_table
 
 st.get_option("theme.primaryColor")
+st.set_page_config(layout="centered", page_title="OCF Dashboard")
 
 
 def metric_page():
-
     # set up title and subheader
     st.markdown(
-        f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Dashboard"}</h1>', unsafe_allow_html=True
+        f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Dashboard"}</h1>',
+        unsafe_allow_html=True,
     )
     # set up sidebar
     st.sidebar.subheader("Select date range for charts")
     # select start and end date
-    starttime = st.sidebar.date_input("Start Date", datetime.today() - timedelta(days=30))
+    starttime = st.sidebar.date_input(
+        "Start Date", datetime.today() - timedelta(days=30)
+    )
     endtime = st.sidebar.date_input("End Date", datetime.today())
 
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
@@ -55,7 +58,6 @@ def metric_page():
     # get metrics for comparing MAE and RMSE without forecast horizon
 
     with connection.get_session() as session:
-
         # read database metric values
         name_mae = "Daily Latest MAE"
         name_rmse = "Daily Latest RMSE"
@@ -197,7 +199,7 @@ def metric_page():
     with st.expander("MAE by Forecast Horizon by Date"):
         st.plotly_chart(fig3, theme="streamlit")
 
-    all_forecast_horizons_df, fig4 = make_mae_vs_froecast_horizon_group_by_date(
+    all_forecast_horizons_df, fig4 = make_mae_vs_forecast_horizon_group_by_date(
         forecast_horizon_selection, metric_values_by_forecast_horizon
     )
 
@@ -211,7 +213,9 @@ def metric_page():
 
     with st.expander("Quartz Solar and PVlive MAE with RMSE"):
         st.plotly_chart(fig5, theme="streamlit")
-        st.write("PVLive is the difference between the intraday and day after PVLive values.")
+        st.write(
+            "PVLive is the difference between the intraday and day after PVLive values."
+        )
 
     fig6 = make_all_gsps_plots(x_mae_all_gsp, y_mae_all_gsp)
 
@@ -231,7 +235,7 @@ def metric_page():
                     metric_name="Pinball loss",
                 )
                 st.plotly_chart(fig7, theme="streamlit")
-            with st.expander("Exccedance"):
+            with st.expander("Exceedance"):
                 fig8 = make_pinball_or_exceedance_plot(
                     session=session,
                     model_name=model_name,
