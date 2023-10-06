@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from sqlalchemy.orm.session import Session
+from sqlalchemy.sql.functions import func
 
 from nowcasting_datamodel.models.gsp import LocationSQL
 from nowcasting_datamodel.models import MLModelSQL
@@ -194,13 +195,13 @@ def add_site_to_site_group(
 # make site
 def create_new_site(
     session: Session,
-    ml_id=int,
-    client_site_id=int,
-    client_site_name=str,
-    latitude=float,
-    longitude=float,
-    capacity_kw=float,
-    created_utc=str,
+    ml_id: int,
+    client_site_id: int,
+    client_site_name: str,
+    latitude: float,
+    longitude: float,
+    capacity_kw: float,
+    created_utc: str,
 ) -> SiteSQL:
     """Creates a site and adds it to the database.
     :param session: database session
@@ -211,8 +212,13 @@ def create_new_site(
     :param capacity_kw: capacity of site in kw
     :param created_utc: date site was added to the database
     """
+    max_ml_id = session.query(func.max(SiteSQL.ml_id)).scalar()
+
+    if max_ml_id is None:
+        max_ml_id = 0
+
     site = SiteSQL(
-        ml_id=ml_id,
+        ml_id=max_ml_id + 1,
         client_site_id=client_site_id,
         client_site_name=client_site_name,
         latitude=latitude,
