@@ -53,7 +53,6 @@ def test_add_site_to_site_group(db_session):
 # create new site
 def test_create_new_site(db_session):
     site, message = create_new_site(
-        ml_id=1,
         session=db_session,
         client_site_id=6932,
         client_site_name="test_site_name",
@@ -72,12 +71,11 @@ def test_create_new_site(db_session):
     )
 
 
-# test for create_new_site_group for ml_id
-def test_create_new_site_ml_id(db_session, max_ml_id):
+# test for create_new_site to check ml_id increments
+def test_create_new_site_twice(db_session):
     """Test create new site function for ml_id"""
 
-    site = create_new_site(
-        ml_id=max_ml_id + 1,
+    site_1, _= create_new_site(
         session=db_session,
         client_site_id=6932,
         client_site_name="test_site_name",
@@ -87,4 +85,16 @@ def test_create_new_site_ml_id(db_session, max_ml_id):
         created_utc="2021-01-01 00:00:00",
     )
 
-    assert site.ml_id == 1
+    site_2, _= create_new_site(
+        session=db_session,
+        client_site_id=6932,
+        client_site_name="test_site_name",
+        latitude=1.0,
+        longitude=1.0,
+        capacity_kw=1.0,
+        created_utc="2021-01-01 00:00:00",
+    )
+
+    assert site_1.ml_id == 1
+    assert site_2.ml_id == 2
+

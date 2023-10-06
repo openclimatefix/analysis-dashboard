@@ -19,7 +19,6 @@ from get_data import (
     get_site_by_client_site_id,
     add_site_to_site_group,
     update_user_site_group,
-    create_new_site,
 )
 
 
@@ -313,15 +312,15 @@ def sites_toolbox_page():
     )
     with st.expander("Input new site data"):
         with connection.get_session() as session:
-            max_ml_id = session.query(func.max(SiteSQL.ml_id)).scalar()
-            if max_ml_id is None:
-                max_ml_id = 0
+            # max_ml_id = session.query(func.max(SiteSQL.ml_id)).scalar()
+            # if max_ml_id is None:
+            #     max_ml_id = 0
 
             st.markdown(
                 f'<h1 style="color:#FFD053;font-size:22px;">{"Client Information"}</h1>',
                 unsafe_allow_html=True,
             )
-            ml_id = max_ml_id + 1
+            # ml_id = max_ml_id + 1
             client_site_id = st.text_input("client_site_id")
             client_site_name = st.text_input("client_site_name")
 
@@ -408,7 +407,6 @@ def sites_toolbox_page():
                     )
                 else:  # create new
                     site, message = create_new_site(
-                        ml_id=ml_id,
                         session=session,
                         client_site_id=client_site_id,
                         client_site_name=client_site_name,

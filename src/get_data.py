@@ -195,7 +195,6 @@ def add_site_to_site_group(
 # make site
 def create_new_site(
     session: Session,
-    ml_id: int,
     client_site_id: int,
     client_site_name: str,
     latitude: float,
@@ -228,7 +227,7 @@ def create_new_site(
     )
 
     session.add(site)
-    
+
     session.commit()
 
     message = f"Site with client site id {site.client_site_id} and site uuid {site.site_uuid} created successfully"
