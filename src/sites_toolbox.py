@@ -1,15 +1,19 @@
 """This module contains the sites toolbox for the OCF dashboard"""
 import os
 import streamlit as st
-
+from datetime import datetime, timezone
+from sqlalchemy import func
 from pvsite_datamodel.connection import DatabaseConnection
+from pvsite_datamodel.sqlmodels import SiteSQL
 from pvsite_datamodel.read import (
     get_all_sites,
     get_user_by_email,
     get_site_by_uuid,
     get_site_group_by_name,
 )
+
 from get_data import (
+    create_new_site,
     get_all_users,
     get_all_site_groups,
     get_site_by_client_site_id,
@@ -44,10 +48,13 @@ def get_site_details(session, site_uuid: str):
         ],
         "latitude": str(site.latitude),
         "longitude": str(site.longitude),
+        "region": str(site.region),
         "DNO": str(site.dno),
         "GSP": str(site.gsp),
         "tilt": str(site.tilt),
         "orientation": str(site.orientation),
+        "inverter_capacity_kw": (f"{site.inverter_capacity_kw} kw"),
+        "module_capacity_kw": (f"{site.module_capacity_kw} kw"),
         "capacity": (f"{site.capacity_kw} kw"),
         "date_added": (site.created_utc.strftime("%Y-%m-%d")),
     }
@@ -297,3 +304,145 @@ def sites_toolbox_page():
         st.write(user, "is now in the", user_site_group, "site group.")
         if st.button("Close"):
             st.empty()
+
+    # create a new site
+    st.markdown(
+        f'<h1 style="color:#63BCAF;font-size:32px;">{"Create New Site"}</h1>',
+        unsafe_allow_html=True,
+    )
+    with st.expander("Input new site data"):
+        with connection.get_session() as session:
+            # max_ml_id = session.query(func.max(SiteSQL.ml_id)).scalar()
+            # if max_ml_id is None:
+            #     max_ml_id = 0
+
+            st.markdown(
+                f'<h1 style="color:#FFD053;font-size:22px;">{"Client Information"}</h1>',
+                unsafe_allow_html=True,
+            )
+            # ml_id = max_ml_id + 1
+            client_site_id = st.text_input("client_site_id")
+            client_site_name = st.text_input("client_site_name")
+
+            st.markdown(
+                f'<h1 style="color:#FFD053;font-size:22px;">{"Geographical Information"}</h1>',
+                unsafe_allow_html=True,
+            )
+            st.text(
+                "DNO and GSP Data take a specific format, but the form will do that for you."
+            )
+            st.text(
+                "Once you've entered the data, click the button to check it's in the right format."
+            )
+            st.json({"dno_id": "10", "name": "_A", "long_name": "UKPN (East)"})
+            st.json({"gsp_id": "280", "name": "Sundon"})
+            dno_id = st.text_input("dno_id (integer)")
+            dno_name = st.text_input("name")
+            dno_long_name = st.text_input("long_name")
+            dno_formatted = str(
+                {"dno_id": dno_id, "name": dno_name, "long_name": dno_long_name}
+            )
+
+            if st.button("Check DNO data"):
+                if (dno_name == "") or (dno_long_name == "") or (dno_id == ""):
+                    st.write(
+                        "Please check that you've entered an integer for dno_id and a string for name and long_name."
+                    )
+                else:
+                    st.json(dno_formatted)
+                    if st.button("Close DNO data", key="dno"):
+                        st.empty()
+
+            dno_formatted = str(
+                {"dno_id": dno_id, "name": dno_name, "long_name": dno_long_name}
+            )
+            gsp_id = st.text_input("gsp_id")
+            gsp_name = st.text_input("gsp_name")
+            gsp_formatted = str({"gsp_id": gsp_id, "name": gsp_name})
+
+            if st.button("Check GSP data"):
+                if (gsp_id == "") or (gsp_name == ""):
+                    st.write(
+                        "Please check that you've entered an integer for gsp_id and a string for gsp_name."
+                    )
+                else:
+                    st.json(gsp_formatted)
+                    if st.button("Close GSP data", key="gsp"):
+                        st.empty()
+
+            latitude = st.text_input("latitude")
+            longitude = st.text_input("longitude")
+            region = st.text_input("region")
+
+            st.markdown(
+                f'<h1 style="color:#FFD053;font-size:22px;">{"PV Information"}</h1>',
+                unsafe_allow_html=True,
+            )
+            orientation = st.text_input("orientation")
+            tilt = st.text_input("tilt")
+            inverter_capacity_kw = st.text_input("inverter_capacity_kw")
+            module_capacity_kw = st.text_input("module_capacity_kw")
+            capacity_kw = st.text_input("capacity_kw")
+
+            if st.button(f"Create new site"):
+                if (
+                    client_site_id
+                    or client_site_name
+                    or region
+                    or dno_formatted
+                    or gsp_formatted
+                    or orientation
+                    or tilt
+                    or latitude
+                    or longitude
+                    or inverter_capacity_kw
+                    or module_capacity_kw
+                    or capacity_kw is None
+                    or ""
+                ):
+                    st.write("Please check that you've entered data for each field.")
+                elif type(client_site_id or dno_id or gsp_id) is not int:
+                    st.write(
+                        "Please check that you've entered an integer for client_site_id, dno_id and gsp_id."
+                    )
+                else:  # create new
+                    site, message = create_new_site(
+                        session=session,
+                        client_site_id=client_site_id,
+                        client_site_name=client_site_name,
+                        region=region,
+                        dno=dno_formatted,
+                        gsp=gsp_formatted,
+                        orientation=orientation,
+                        tilt=tilt,
+                        latitude=latitude,
+                        longitude=longitude,
+                        inverter_capacity_kw=inverter_capacity_kw,
+                        module_capacity_kw=module_capacity_kw,
+                        capacity_kw=capacity_kw,
+                    )
+                    site_details = {
+                        "site_uuid": str(site.site_uuid),
+                        "ml_id": str(site.ml_id),
+                        "client_site_id": str(site.client_site_id),
+                        "client_site_name": str(site.client_site_name),
+                        "site_group_names": [
+                            site_group.site_group_name
+                            for site_group in site.site_groups
+                        ],
+                        "latitude": str(site.latitude),
+                        "longitude": str(site.longitude),
+                        "DNO": str(site.dno),
+                        "GSP": str(site.gsp),
+                        "tilt": str(site.tilt),
+                        "orientation": str(site.orientation),
+                        "inverter_capacity_kw": (f"{site.inverter_capacity_kw} kw"),
+                        "module_capacity_kw": (f"{site.module_capacity_kw} kw"),
+                        "capacity": (f"{site.capacity_kw} kw"),
+                        "date_added": (site.created_utc.strftime("%Y-%m-%d")),
+                    }
+                    st.write(message)
+                    st.write("Here are the site details for the new site")
+                    st.json(site_details)
+                    if st.button("Close site details"):
+                        st.empty()

@@ -1,5 +1,11 @@
 """tests for get_data.py"""
-from get_data import get_all_users, get_all_site_groups, add_site_to_site_group
+from get_data import (
+    add_site_to_site_group,
+    create_new_site,
+    get_all_users,
+    get_all_site_groups,
+)
+from sqlalchemy import func
 from pvsite_datamodel.sqlmodels import UserSQL, SiteGroupSQL, SiteSQL
 from pvsite_datamodel.read import get_all_sites
 from pvsite_datamodel.write.user_and_site import make_site_group, make_site
@@ -42,3 +48,53 @@ def test_add_site_to_site_group(db_session):
     )
 
     assert len(site_group.sites) == 3
+
+
+# create new site
+def test_create_new_site(db_session):
+    site, message = create_new_site(
+        session=db_session,
+        client_site_id=6932,
+        client_site_name="test_site_name",
+        latitude=1.0,
+        longitude=1.0,
+        capacity_kw=1.0,
+        created_utc="2021-01-01 00:00:00",
+    )
+
+    assert site.client_site_name == "test_site_name"
+    assert site.ml_id == 1
+    assert site.client_site_id == 6932
+    assert (
+        message
+        == f"Site with client site id {site.client_site_id} and site uuid {site.site_uuid} created successfully"
+    )
+
+
+# test for create_new_site to check ml_id increments
+def test_create_new_site_twice(db_session):
+    """Test create new site function for ml_id"""
+
+    site_1, _= create_new_site(
+        session=db_session,
+        client_site_id=6932,
+        client_site_name="test_site_name",
+        latitude=1.0,
+        longitude=1.0,
+        capacity_kw=1.0,
+        created_utc="2021-01-01 00:00:00",
+    )
+
+    site_2, _= create_new_site(
+        session=db_session,
+        client_site_id=6932,
+        client_site_name="test_site_name",
+        latitude=1.0,
+        longitude=1.0,
+        capacity_kw=1.0,
+        created_utc="2021-01-01 00:00:00",
+    )
+
+    assert site_1.ml_id == 1
+    assert site_2.ml_id == 2
+

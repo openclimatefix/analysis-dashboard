@@ -6,10 +6,11 @@
 # TODO move to nowcasting_datamodel
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from sqlalchemy.orm.session import Session
+from sqlalchemy.sql.functions import func
 
 from nowcasting_datamodel.models.gsp import LocationSQL
 from nowcasting_datamodel.models import MLModelSQL
@@ -98,7 +99,8 @@ def get_metric_value(
 
     return metric_values
 
-# get all users 
+
+# get all users
 def get_all_users(session: Session) -> List[UserSQL]:
     """Get all users from the database.
     :param session: database session
@@ -110,6 +112,7 @@ def get_all_users(session: Session) -> List[UserSQL]:
     users = query.all()
 
     return users
+
 
 # get all site groups
 def get_all_site_groups(session: Session) -> List[SiteGroupSQL]:
@@ -123,6 +126,7 @@ def get_all_site_groups(session: Session) -> List[SiteGroupSQL]:
     site_groups = query.all()
 
     return site_groups
+
 
 # update user site group; users only belong to one site group
 def update_user_site_group(
@@ -147,6 +151,7 @@ def update_user_site_group(
 
     return user
 
+
 # get site group by name
 def get_site_by_client_site_id(session: Session, client_site_id: str) -> List[SiteSQL]:
     """Get site by client site id.
@@ -160,6 +165,7 @@ def get_site_by_client_site_id(session: Session, client_site_id: str) -> List[Si
     site = query.first()
 
     return site
+
 
 # add site to site group; sites can belong to many groups
 def add_site_to_site_group(
@@ -184,3 +190,46 @@ def add_site_to_site_group(
     session.commit()
 
     return site_group.sites
+
+
+# make site
+def create_new_site(
+    session: Session,
+    client_site_id: int,
+    client_site_name: str,
+    latitude: float,
+    longitude: float,
+    capacity_kw: float,
+    created_utc: str,
+) -> SiteSQL:
+    """Creates a site and adds it to the database.
+    :param session: database session
+    :param client_site_id: id the client uses for the site
+    :param client_site_name: name the client uses for the site
+    :param latitude: latitude of site as an integer
+    :param longitude: longitude of site as an integer
+    :param capacity_kw: capacity of site in kw
+    :param created_utc: date site was added to the database
+    """
+    max_ml_id = session.query(func.max(SiteSQL.ml_id)).scalar()
+
+    if max_ml_id is None:
+        max_ml_id = 0
+
+    site = SiteSQL(
+        ml_id=max_ml_id + 1,
+        client_site_id=client_site_id,
+        client_site_name=client_site_name,
+        latitude=latitude,
+        longitude=longitude,
+        capacity_kw=capacity_kw,
+        created_utc=created_utc,
+    )
+
+    session.add(site)
+
+    session.commit()
+
+    message = f"Site with client site id {site.client_site_id} and site uuid {site.site_uuid} created successfully"
+
+    return site, message
