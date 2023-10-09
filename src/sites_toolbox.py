@@ -1,5 +1,6 @@
 """This module contains the sites toolbox for the OCF dashboard"""
 import os
+import json
 import streamlit as st
 from datetime import datetime, timezone
 from sqlalchemy import func
@@ -339,7 +340,7 @@ def sites_toolbox_page():
             dno_id = st.text_input("dno_id (integer)")
             dno_name = st.text_input("name")
             dno_long_name = st.text_input("long_name")
-            dno_formatted = str(
+            dno_formatted = json.dumps(
                 {"dno_id": dno_id, "name": dno_name, "long_name": dno_long_name}
             )
 
@@ -353,12 +354,12 @@ def sites_toolbox_page():
                     if st.button("Close DNO data", key="dno"):
                         st.empty()
 
-            dno_formatted = str(
+            dno_formatted = json.dumps(
                 {"dno_id": dno_id, "name": dno_name, "long_name": dno_long_name}
             )
             gsp_id = st.text_input("gsp_id")
             gsp_name = st.text_input("gsp_name")
-            gsp_formatted = str({"gsp_id": gsp_id, "name": gsp_name})
+            gsp_formatted = json.dumps({"gsp_id": gsp_id, "name": gsp_name})
 
             if st.button("Check GSP data"):
                 if (gsp_id == "") or (gsp_name == ""):
