@@ -10,6 +10,7 @@ and we want to added the gsp as {gsp_id}|{gsp_nam} into the database
 
 """
 import ssl
+import os
 
 import geopandas as gpd
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
@@ -18,8 +19,11 @@ from shapely.geometry import Point
 from data.utils import lat_lon_to_osgb
 
 
-# make the transformers
-dno_local_file = './src/data/dno'
+cwd = os.getcwd()
+if 'src' not in cwd:
+    dno_local_file = './src/data/dno'
+else:
+    dno_local_file = './data/dno'
 
 
 def download_dno():

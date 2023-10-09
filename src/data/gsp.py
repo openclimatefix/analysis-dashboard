@@ -1,11 +1,18 @@
+import os
 import geopandas as gpd
 import pandas as pd
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from shapely.geometry import Point
 
-gsp_names = pd.read_csv(f"./src/data/gsp_new_ids_and_names-edited.csv")
 
-gsp_local_file = './src/data/gsp'
+cwd = os.getcwd()
+if 'src' not in cwd:
+    dir = "./src/data"
+else:
+    dir = "./data"
+
+gsp_names = pd.read_csv(f"{dir}/gsp_new_ids_and_names-edited.csv")
+gsp_local_file = f'{dir}/gsp'
 
 
 def download_gsp():
