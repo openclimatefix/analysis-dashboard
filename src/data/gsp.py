@@ -2,8 +2,9 @@ import os
 
 import geopandas as gpd
 import pandas as pd
-from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from shapely.geometry import Point
+
+from data.utils import lat_lon_to_osgb
 
 cwd = os.getcwd()
 if "src" not in cwd:
