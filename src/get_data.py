@@ -6,6 +6,7 @@
 # TODO move to nowcasting_datamodel
 """
 import logging
+import json
 from datetime import datetime, timezone
 from typing import List, Optional
 
@@ -21,6 +22,8 @@ from nowcasting_datamodel.models.metric import (
 )
 from pvsite_datamodel.sqlmodels import UserSQL, SiteGroupSQL, SiteSQL
 
+from data.gsp import get_gsp
+from data.dno import get_dno
 
 logger = logging.getLogger(__name__)
 
@@ -233,11 +236,12 @@ def create_new_site(
         module_capacity_kw = capacity_kw
 
     if gsp is None:
-        pass
+        gsp = get_gsp(latitude=latitude, longitude=longitude)
+        gsp = json.dumps(gsp)
 
     if dno is None:
-        pass
-
+        dno = get_dno(latitude=latitude, longitude=longitude)
+        dno = json.dumps(dno)
 
     site = SiteSQL(
         ml_id=max_ml_id + 1,
