@@ -14,9 +14,6 @@ WGS84 = 4326
 WGS84_CRS = f"EPSG:{WGS84}"
 
 
-
-
-
 def lat_lon_to_osgb(lat: float, lon: float) -> [float, float]:
     """
     Change lat, lon to a OSGB coordinates
@@ -55,7 +52,6 @@ class Transformers:
         self._osgb_to_lat_lon = pyproj.Transformer.from_crs(crs_from=OSGB, crs_to=WGS84)
         self._lat_lon_to_osgb = pyproj.Transformer.from_crs(crs_from=WGS84, crs_to=OSGB)
 
-
     @property
     def osgb_to_lat_lon(self):
         """OSGB to lat-lon property"""
@@ -73,4 +69,3 @@ class Transformers:
 
 
 transformers = Transformers()
-

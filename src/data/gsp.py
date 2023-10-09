@@ -1,23 +1,23 @@
 import os
+
 import geopandas as gpd
 import pandas as pd
 from nowcasting_dataset.geospatial import lat_lon_to_osgb
 from shapely.geometry import Point
 
-
 cwd = os.getcwd()
-if 'src' not in cwd:
+if "src" not in cwd:
     dir = "./src/data"
 else:
     dir = "./data"
 
 gsp_names = pd.read_csv(f"{dir}/gsp_new_ids_and_names-edited.csv")
-gsp_local_file = f'{dir}/gsp'
+gsp_local_file = f"{dir}/gsp"
 
 
 def download_gsp():
 
-    print('Getting gsp file')
+    print("Getting gsp file")
 
     url = (
         "https://data.nationalgrideso.com/backend/dataset/2810092e-d4b2-472f-b955-d8bea01f9ec0/"
@@ -25,7 +25,7 @@ def download_gsp():
     )
     gsp_shapes = gpd.read_file(url)
 
-    print('Saving gsp file')
+    print("Saving gsp file")
     gsp_shapes.to_file(gsp_local_file)
 
 
