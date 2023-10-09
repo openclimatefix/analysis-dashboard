@@ -1,4 +1,4 @@
-from plots.ramprate import make_ramp_rate_plot
+from plots.ramp_rate import make_ramp_rate_plot
 
 from datetime import datetime
 

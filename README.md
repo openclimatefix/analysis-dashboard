@@ -28,34 +28,39 @@ To run the app locally, you'll need to connect it to the `forecast development d
 OCF team members can connect to the `forecast development database` using [these Notion instructions](https://www.notion.so/openclimatefix/Connecting-to-AWS-RDS-bf35b3fbd61f40df9c974c240e042354). Add `DB_URL= (db_url from notion documents)` to a `secrets.toml` file. Follow the instructions in the Notion document to connect to the database v. 
 
 Run app: `cd src && streamlit run main.py`.
-
-## main.py
+## files
+### main.py
 
 `main.py` contains functions for the `home page` of the app, which focuses on MAE for the OCF `Quartz Solar` forecast.
 
-## forecast.py
+### forecast.py
 
 `forecast.py` contains functions for the `forecast page`. The forecast page looks at how well each of OCF's forecast models is performing compared to `PVLive updated` truth values. 
 
-## status.py
+### status.py
 
 `status.py` contains functionality for the `status pagwe` and allows the OCF team to update the forecast status in the database. This is one of the advantages of using an interface like Streamlit, facilitating status updates in a database. 
 
-## auth.py
+### auth.py
 
 `auth.py` contains code for the basic authenticaion that's been put in place. 
 
-## pvsite_forecast.py
+### pvsite_forecast.py
 
 TODO
 
-## site_toolbox.py
+### site_toolbox.py
 
 TODO
 
-## plots/make_pinball_and_exceedance_plots.py
+### plots/make_pinball_and_exceedance_plots.py
 
 Function to make `pinball` and exceedance plots. This shows how good the probabilistic forecasts are doing. 
+
+### plots/ramp_rate.py
+
+Function to make `ramp rate` plots.
+
 
 ## 🛠️ infrastructure
 

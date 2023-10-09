@@ -21,7 +21,7 @@ from plots.forecast_horizon import (
 )
 from plots.mae_and_rmse import make_rmse_and_mae_plot, make_mae_plot
 from plots.pinball_and_exceedance_plots import make_pinball_or_exceedance_plot
-from plots.ramprate import make_ramp_rate_plot
+from plots.ramp_rate import make_ramp_rate_plot
 from plots.utils import get_x_y
 from pvsite_forecast import pvsite_forecast_page
 from sites_toolbox import sites_toolbox_page
