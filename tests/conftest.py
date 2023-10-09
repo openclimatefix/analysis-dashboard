@@ -70,3 +70,29 @@ def metrics_pinball(db_session):
             m.location = get_location(db_session, gsp_id=0)
             m.model = get_model(db_session, name="test_model")
             db_session.add(m)
+
+
+@pytest.fixture()
+def metrics_ramp_rate(db_session):
+
+    metric = MetricSQL(name="Ramp rate MAE", description="Ramp Rate")
+    db_session.add(metric)
+
+    d = DatetimeIntervalSQL(
+        start_datetime_utc=dt.datetime(2021, 1, 1, 0, 0, 0),
+        end_datetime_utc=dt.datetime(2021, 1, 1, 0, 0, 0),
+    )
+    db_session.add(d)
+    db_session.commit()
+
+    for forecast_horizon_minutes in [60, 120, 180]:
+        m = MetricValueSQL(
+            forecast_horizon_minutes=forecast_horizon_minutes,
+            value=1.0,
+            number_of_data_points=7,
+        )
+        m.metric = metric
+        m.datetime_interval = d
+        m.location = get_location(db_session, gsp_id=0)
+        m.model = get_model(db_session, name="test_model")
+        db_session.add(m)

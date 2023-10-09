@@ -11,6 +11,7 @@ from typing import List, Optional
 
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.functions import func
+from sqlalchemy.orm import joinedload
 
 from nowcasting_datamodel.models.gsp import LocationSQL
 from nowcasting_datamodel.models import MLModelSQL
@@ -62,6 +63,8 @@ def get_metric_value(
         query = query.filter(
             DatetimeIntervalSQL.start_datetime_utc >= start_datetime_utc
         )
+        # this pre laods the datetimes internals, so they don't have be loaded each time later
+        query = query.options(joinedload(MetricValueSQL.datetime_interval))
 
     # filter on end time
     if end_datetime_utc is not None:
