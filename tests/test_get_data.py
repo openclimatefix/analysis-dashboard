@@ -59,7 +59,6 @@ def test_create_new_site(db_session):
         latitude=1.0,
         longitude=1.0,
         capacity_kw=1.0,
-        created_utc="2021-01-01 00:00:00",
     )
 
     assert site.client_site_name == "test_site_name"
@@ -82,7 +81,6 @@ def test_create_new_site_twice(db_session):
         latitude=1.0,
         longitude=1.0,
         capacity_kw=1.0,
-        created_utc="2021-01-01 00:00:00",
     )
 
     site_2, _= create_new_site(
@@ -92,7 +90,6 @@ def test_create_new_site_twice(db_session):
         latitude=1.0,
         longitude=1.0,
         capacity_kw=1.0,
-        created_utc="2021-01-01 00:00:00",
     )
 
     assert site_1.ml_id == 1

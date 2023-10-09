@@ -322,90 +322,44 @@ def sites_toolbox_page():
                 unsafe_allow_html=True,
             )
             # ml_id = max_ml_id + 1
-            client_site_id = st.text_input("client_site_id")
-            client_site_name = st.text_input("client_site_name")
+            client_site_id = st.number_input("Client Site Id *",step=1)
+            client_site_name = st.text_input("Client Site Name *")
 
             st.markdown(
                 f'<h1 style="color:#FFD053;font-size:22px;">{"Geographical Information"}</h1>',
                 unsafe_allow_html=True,
             )
-            st.text(
-                "DNO and GSP Data take a specific format, but the form will do that for you."
-            )
-            st.text(
-                "Once you've entered the data, click the button to check it's in the right format."
-            )
-            st.json({"dno_id": "10", "name": "_A", "long_name": "UKPN (East)"})
-            st.json({"gsp_id": "280", "name": "Sundon"})
-            dno_id = st.text_input("dno_id (integer)")
-            dno_name = st.text_input("name")
-            dno_long_name = st.text_input("long_name")
-            dno_formatted = json.dumps(
-                {"dno_id": dno_id, "name": dno_name, "long_name": dno_long_name}
-            )
 
-            if st.button("Check DNO data"):
-                if (dno_name == "") or (dno_long_name == "") or (dno_id == ""):
-                    st.write(
-                        "Please check that you've entered an integer for dno_id and a string for name and long_name."
-                    )
-                else:
-                    st.json(dno_formatted)
-                    if st.button("Close DNO data", key="dno"):
-                        st.empty()
-
-            dno_formatted = json.dumps(
-                {"dno_id": dno_id, "name": dno_name, "long_name": dno_long_name}
-            )
-            gsp_id = st.text_input("gsp_id")
-            gsp_name = st.text_input("gsp_name")
-            gsp_formatted = json.dumps({"gsp_id": gsp_id, "name": gsp_name})
-
-            if st.button("Check GSP data"):
-                if (gsp_id == "") or (gsp_name == ""):
-                    st.write(
-                        "Please check that you've entered an integer for gsp_id and a string for gsp_name."
-                    )
-                else:
-                    st.json(gsp_formatted)
-                    if st.button("Close GSP data", key="gsp"):
-                        st.empty()
-
-            latitude = st.text_input("latitude")
-            longitude = st.text_input("longitude")
+            latitude = st.text_input("latitude *")
+            longitude = st.text_input("longitude *")
             region = st.text_input("region")
+
 
             st.markdown(
                 f'<h1 style="color:#FFD053;font-size:22px;">{"PV Information"}</h1>',
                 unsafe_allow_html=True,
             )
-            orientation = st.text_input("orientation")
-            tilt = st.text_input("tilt")
-            inverter_capacity_kw = st.text_input("inverter_capacity_kw")
-            module_capacity_kw = st.text_input("module_capacity_kw")
-            capacity_kw = st.text_input("capacity_kw")
+            capacity_kw = st.text_input("Capacity [kwp] *")
+            orientation = st.text_input("Orientation")
+            tilt = st.text_input("Tilt")
+            inverter_capacity_kw = st.text_input("Inverter capacity [kwp]")
+            module_capacity_kw = st.text_input("Module Capacity [kwp]")
 
             if st.button(f"Create new site"):
                 if (
-                     None in [client_site_id ,client_site_name,region,dno_formatted ,gsp_formatted,orientation,
+                     None in [client_site_id ,client_site_name,region,orientation,
                               tilt, latitude,longitude, inverter_capacity_kw,module_capacity_kw,capacity_kw]
                 ):
                     st.write(f"Please check that you've entered data for each field."
-                             f" {client_site_id} {client_site_name} {region} {dno_formatted} "
-                             f"{gsp_formatted} {orientation} {tilt} {latitude} {longitude} "
+                             f" {client_site_id} {client_site_name} {region} "
+                             f"{orientation} {tilt} {latitude} {longitude} "
                              f"{inverter_capacity_kw} {module_capacity_kw} {capacity_kw}")
-                # elif type(client_site_id or dno_id or gsp_id) is not int:
-                #     st.write(
-                #         "Please check that you've entered an integer for client_site_id, dno_id and gsp_id."
-                #     )
                 else:  # create new
                     site, message = create_new_site(
                         session=session,
                         client_site_id=client_site_id,
                         client_site_name=client_site_name,
                         region=region,
-                        dno=dno_formatted,
-                        gsp=gsp_formatted,
                         orientation=orientation,
                         tilt=tilt,
                         latitude=latitude,
