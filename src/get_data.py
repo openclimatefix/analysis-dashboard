@@ -59,9 +59,7 @@ def get_metric_value(
 
     # filter on start time
     if start_datetime_utc is not None:
-        query = query.filter(
-            DatetimeIntervalSQL.start_datetime_utc >= start_datetime_utc
-        )
+        query = query.filter(DatetimeIntervalSQL.start_datetime_utc >= start_datetime_utc)
 
     # filter on end time
     if end_datetime_utc is not None:
@@ -74,9 +72,7 @@ def get_metric_value(
 
     # filter forecast_horizon_minutes
     if forecast_horizon_minutes is not None:
-        query = query.filter(
-            MetricValueSQL.forecast_horizon_minutes == forecast_horizon_minutes
-        )
+        query = query.filter(MetricValueSQL.forecast_horizon_minutes == forecast_horizon_minutes)
     else:
         # select forecast_horizon_minutes is Null, which gets the last forecast.
         # !! This has to be a double equals or it won't work
@@ -129,18 +125,14 @@ def get_all_site_groups(session: Session) -> List[SiteGroupSQL]:
 
 
 # update user site group; users only belong to one site group
-def update_user_site_group(
-    session: Session, email: str, site_group_name: str
-) -> UserSQL:
+def update_user_site_group(session: Session, email: str, site_group_name: str) -> UserSQL:
     """Change site group for user.
     :param session: database session
     :param email: email of user
     :param site_group_name: name of site group
     """
     site_group = (
-        session.query(SiteGroupSQL)
-        .filter(SiteGroupSQL.site_group_name == site_group_name)
-        .first()
+        session.query(SiteGroupSQL).filter(SiteGroupSQL.site_group_name == site_group_name).first()
     )
 
     user = session.query(UserSQL).filter(UserSQL.email == email)
@@ -168,18 +160,14 @@ def get_site_by_client_site_id(session: Session, client_site_id: str) -> List[Si
 
 
 # add site to site group; sites can belong to many groups
-def add_site_to_site_group(
-    session: Session, site_uuid: str, site_group_name: str
-) -> SiteGroupSQL:
+def add_site_to_site_group(session: Session, site_uuid: str, site_group_name: str) -> SiteGroupSQL:
     """Add a site to a site group.
     :param session: database session
     :param site_uuid: uuid of site
     :param site_group_name: name of site group
     """
     site_group = (
-        session.query(SiteGroupSQL)
-        .filter(SiteGroupSQL.site_group_name == site_group_name)
-        .first()
+        session.query(SiteGroupSQL).filter(SiteGroupSQL.site_group_name == site_group_name).first()
     )
 
     site = session.query(SiteSQL).filter(SiteSQL.site_uuid == site_uuid).one()
@@ -200,7 +188,13 @@ def create_new_site(
     latitude: float,
     longitude: float,
     capacity_kw: float,
-    created_utc: str,
+    dno: Optional[str] = None,
+    gsp: Optional[str] = None,
+    region: Optional[str] = None,
+    orientation: Optional[float] = None,
+    tilt: Optional[float] = None,
+    inverter_capacity_kw: Optional[float] = None,
+    module_capacity_kw: Optional[float] = None,
 ) -> SiteSQL:
     """Creates a site and adds it to the database.
     :param session: database session
@@ -209,12 +203,41 @@ def create_new_site(
     :param latitude: latitude of site as an integer
     :param longitude: longitude of site as an integer
     :param capacity_kw: capacity of site in kw
-    :param created_utc: date site was added to the database
+    :param dno: dno of site
+    :param gsp: gsp of site
+    :param region: region of site, deafut is uk
+    :param orientation: orientation of site, default is 180
+    :param tilt: tilt of site, default is 35
+    :param inverter_capacity_kw: inverter capacity of site in kw
+    :param module_capacity_kw: module capacity of site in kw
+
     """
     max_ml_id = session.query(func.max(SiteSQL.ml_id)).scalar()
 
     if max_ml_id is None:
         max_ml_id = 0
+
+    if region is None:
+        region = "uk"
+
+    if orientation is None:
+        orientation = 180
+
+    if tilt is None:
+        tilt = 35
+
+    if inverter_capacity_kw is None:
+        inverter_capacity_kw = capacity_kw
+
+    if module_capacity_kw is None:
+        module_capacity_kw = capacity_kw
+
+    if gsp is None:
+        pass
+
+    if dno is None:
+        pass
+
 
     site = SiteSQL(
         ml_id=max_ml_id + 1,
@@ -223,7 +246,13 @@ def create_new_site(
         latitude=latitude,
         longitude=longitude,
         capacity_kw=capacity_kw,
-        created_utc=created_utc,
+        dno=dno,
+        gsp=gsp,
+        region=region,
+        orientation=orientation,
+        tilt=tilt,
+        inverter_capacity_kw=inverter_capacity_kw,
+        module_capacity_kw=module_capacity_kw,
     )
 
     session.add(site)
