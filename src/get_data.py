@@ -200,7 +200,13 @@ def create_new_site(
     latitude: float,
     longitude: float,
     capacity_kw: float,
-    created_utc: str,
+    dno:dict,
+    gsp:dict,
+    region:str='uk',
+    orientation:float=180,
+    tilt:float=35,
+    inverter_capacity_kw: Optional[float] = None,
+    module_capacity_kw: Optional[float] = None,
 ) -> SiteSQL:
     """Creates a site and adds it to the database.
     :param session: database session
@@ -216,6 +222,12 @@ def create_new_site(
     if max_ml_id is None:
         max_ml_id = 0
 
+    if inverter_capacity_kw is None:
+        inverter_capacity_kw = capacity_kw
+
+    if module_capacity_kw is None:
+        module_capacity_kw = capacity_kw
+
     site = SiteSQL(
         ml_id=max_ml_id + 1,
         client_site_id=client_site_id,
@@ -223,7 +235,13 @@ def create_new_site(
         latitude=latitude,
         longitude=longitude,
         capacity_kw=capacity_kw,
-        created_utc=created_utc,
+        dno=dno,
+        gsp=gsp,
+        region=region,
+        orientation=orientation,
+        tilt=tilt,
+        inverter_capacity_kw=inverter_capacity_kw,
+        module_capacity_kw=module_capacity_kw,
     )
 
     session.add(site)

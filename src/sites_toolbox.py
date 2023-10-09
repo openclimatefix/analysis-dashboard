@@ -386,25 +386,17 @@ def sites_toolbox_page():
 
             if st.button(f"Create new site"):
                 if (
-                    client_site_id
-                    or client_site_name
-                    or region
-                    or dno_formatted
-                    or gsp_formatted
-                    or orientation
-                    or tilt
-                    or latitude
-                    or longitude
-                    or inverter_capacity_kw
-                    or module_capacity_kw
-                    or capacity_kw is None
-                    or ""
+                     None in [client_site_id ,client_site_name,region,dno_formatted ,gsp_formatted,orientation,
+                              tilt, latitude,longitude, inverter_capacity_kw,module_capacity_kw,capacity_kw]
                 ):
-                    st.write("Please check that you've entered data for each field.")
-                elif type(client_site_id or dno_id or gsp_id) is not int:
-                    st.write(
-                        "Please check that you've entered an integer for client_site_id, dno_id and gsp_id."
-                    )
+                    st.write(f"Please check that you've entered data for each field."
+                             f" {client_site_id} {client_site_name} {region} {dno_formatted} "
+                             f"{gsp_formatted} {orientation} {tilt} {latitude} {longitude} "
+                             f"{inverter_capacity_kw} {module_capacity_kw} {capacity_kw}")
+                # elif type(client_site_id or dno_id or gsp_id) is not int:
+                #     st.write(
+                #         "Please check that you've entered an integer for client_site_id, dno_id and gsp_id."
+                #     )
                 else:  # create new
                     site, message = create_new_site(
                         session=session,
