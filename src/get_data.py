@@ -7,6 +7,7 @@
 """
 import logging
 import json
+import re
 from datetime import datetime, timezone
 from typing import List, Optional
 
@@ -271,3 +272,26 @@ def create_new_site(
     message = f"Site with client site id {site.client_site_id} and site uuid {site.site_uuid} created successfully"
 
     return site, message
+
+
+# create user
+def create_user(
+        session: Session,
+        email: str,
+        site_group: str,
+) -> UserSQL:
+    """Create a user.
+    :param session: database session
+    :param email: email of user
+    :param site_group: name of site group
+    """
+
+    
+    user = UserSQL(
+        email=email,
+        site_group_uuid=site_group.site_group_uuid)
+
+    session.add(user)
+    session.commit()
+    
+    return user, message

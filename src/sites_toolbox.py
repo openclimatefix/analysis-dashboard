@@ -2,10 +2,12 @@
 import os
 import json
 import streamlit as st
+import re
 from datetime import datetime, timezone
 from sqlalchemy import func
 from pvsite_datamodel.connection import DatabaseConnection
 from pvsite_datamodel.sqlmodels import SiteSQL
+from pvsite_datamodel.write.user_and_site import make_user
 from pvsite_datamodel.read import (
     get_all_sites,
     get_user_by_email,
@@ -15,6 +17,7 @@ from pvsite_datamodel.read import (
 
 from get_data import (
     create_new_site,
+    create_user,
     get_all_users,
     get_all_site_groups,
     get_site_by_client_site_id,
@@ -44,7 +47,9 @@ def get_site_details(session, site_uuid: str):
         "site_uuid": str(site.site_uuid),
         "client_site_id": str(site.client_site_id),
         "client_site_name": str(site.client_site_name),
-        "site_group_names": [site_group.site_group_name for site_group in site.site_groups],
+        "site_group_names": [
+            site_group.site_group_name for site_group in site.site_groups
+        ],
         "latitude": str(site.latitude),
         "longitude": str(site.longitude),
         "region": str(site.region),
@@ -67,9 +72,13 @@ def select_site_id(dbsession, query_method: str):
         site_uuids = [str(site.site_uuid) for site in get_all_sites(session=dbsession)]
         selected_uuid = st.selectbox("Sites by site_uuid", site_uuids)
     elif query_method == "client_site_id":
-        client_site_ids = [str(site.client_site_id) for site in get_all_sites(session=dbsession)]
+        client_site_ids = [
+            str(site.client_site_id) for site in get_all_sites(session=dbsession)
+        ]
         client_site_id = st.selectbox("Sites by client_site_id", client_site_ids)
-        site = get_site_by_client_site_id(session=dbsession, client_site_id=client_site_id)
+        site = get_site_by_client_site_id(
+            session=dbsession, client_site_id=client_site_id
+        )
         selected_uuid = str(site.site_uuid)
     elif query_method not in ["site_uuid", "client_site_id"]:
         raise ValueError("Please select a valid query_method.")
@@ -79,7 +88,9 @@ def select_site_id(dbsession, query_method: str):
 # get details for one site group
 def get_site_group_details(session, site_group_name: str):
     """Get the site group details from the database"""
-    site_group_uuid = get_site_group_by_name(session=session, site_group_name=site_group_name)
+    site_group_uuid = get_site_group_by_name(
+        session=session, site_group_name=site_group_name
+    )
     site_group_sites = [
         {"site_uuid": str(site.site_uuid), "client_site_id": str(site.client_site_id)}
         for site in site_group_uuid.sites
@@ -91,7 +102,9 @@ def get_site_group_details(session, site_group_name: str):
 # update a site's site groups
 def update_site_group(session, site_uuid: str, site_group_name: str):
     """Add a site to a site group"""
-    site_group = get_site_group_by_name(session=session, site_group_name=site_group_name)
+    site_group = get_site_group_by_name(
+        session=session, site_group_name=site_group_name
+    )
     site_group_sites = add_site_to_site_group(
         session=session, site_uuid=site_uuid, site_group_name=site_group_name
     )
@@ -110,7 +123,9 @@ def change_user_site_group(session, email: str, site_group_name: str):
     Change user to a specific site group name
     :param session: the database session
     :param email: the email of the user"""
-    update_user_site_group(session=session, email=email, site_group_name=site_group_name)
+    update_user_site_group(
+        session=session, email=email, site_group_name=site_group_name
+    )
     user = get_user_by_email(session=session, email=email)
     user_site_group = user.site_group.site_group_name
     user = user.email
@@ -124,7 +139,9 @@ def add_all_sites_to_ocf_group(session, site_group_name="ocf"):
     :param site_group_name: the name of the site group"""
     all_sites = get_all_sites(session=session)
 
-    ocf_site_group = get_site_group_by_name(session=session, site_group_name=site_group_name)
+    ocf_site_group = get_site_group_by_name(
+        session=session, site_group_name=site_group_name
+    )
 
     site_uuids = [site.site_uuid for site in ocf_site_group.sites]
 
@@ -186,7 +203,9 @@ def sites_toolbox_page():
             user_site_count,
             "sites.",
         )
-        st.write("Here are the site_uuids and client_site_ids for this group:", user_sites)
+        st.write(
+            "Here are the site_uuids and client_site_ids for this group:", user_sites
+        )
         if st.button("Close user details"):
             st.empty()
 
@@ -257,7 +276,9 @@ def sites_toolbox_page():
             "sites: ",
             site_group_sites,
         )
-        st.write("The following site groups include site", site_uuid, ":", site_site_groups)
+        st.write(
+            "The following site groups include site", site_uuid, ":", site_site_groups
+        )
         if st.button("Close details"):
             st.empty()
 
@@ -295,10 +316,6 @@ def sites_toolbox_page():
     )
     with st.expander("Input new site data"):
         with connection.get_session() as session:
-            # max_ml_id = session.query(func.max(SiteSQL.ml_id)).scalar()
-            # if max_ml_id is None:
-            #     max_ml_id = 0
-
             st.markdown(
                 f'<h1 style="color:#FFD053;font-size:22px;">{"Client Information"}</h1>',
                 unsafe_allow_html=True,
@@ -327,7 +344,13 @@ def sites_toolbox_page():
             module_capacity_kw = st.text_input("Module Capacity [kwp]")
 
             if st.button(f"Create new site"):
-                if "" in [client_site_id, client_site_name, latitude, longitude, capacity_kw]:
+                if "" in [
+                    client_site_id,
+                    client_site_name,
+                    latitude,
+                    longitude,
+                    capacity_kw,
+                ]:
                     error = (
                         f"Please check that you've entered data for each field. "
                         f"{client_site_id=} {client_site_name=} "
@@ -354,7 +377,8 @@ def sites_toolbox_page():
                         "client_site_id": str(site.client_site_id),
                         "client_site_name": str(site.client_site_name),
                         "site_group_names": [
-                            site_group.site_group_name for site_group in site.site_groups
+                            site_group.site_group_name
+                            for site_group in site.site_groups
                         ],
                         "latitude": str(site.latitude),
                         "longitude": str(site.longitude),
@@ -372,3 +396,38 @@ def sites_toolbox_page():
                     st.json(site_details)
                     if st.button("Close site details"):
                         st.empty()
+
+    # create a new user
+    st.markdown(
+        f'<h1 style="color:#63BCAF;font-size:32px;">{"Create New User"}</h1>',
+        unsafe_allow_html=True,
+    )
+
+    with st.expander("Input new user data"):
+        with connection.get_session() as session:
+            st.markdown(
+                f'<h1 style="color:#FFD053;font-size:22px;">{"User Information"}</h1>',
+                unsafe_allow_html=True,
+            )
+
+            email = st.text_input("email")
+
+            site_group = st.selectbox("Select a group", site_groups, key="site_group")
+            # check that site group exists
+            if st.button(f"Create new user"):
+                site_group = get_site_group_by_name(
+                    session=session, site_group_name=site_group
+                )
+                user, message = create_user(
+                    session=session,
+                    email=email,
+                    site_group=site_group,
+                )
+                user_details = {
+                    "email": str(user.email),
+                    "site_group": str(user.site_group.site_group_name),
+                    "date_added": (user.created_utc.strftime("%Y-%m-%d")),
+                }
+                st.json(user_details)
+                if st.button("Close site details"):
+                    st.empty()
