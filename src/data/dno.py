@@ -18,11 +18,8 @@ from shapely.geometry import Point
 from data.utils import lat_lon_to_osgb
 
 
-cwd = os.getcwd()
-if "src" not in cwd:
-    dno_local_file = "./src/data/dno"
-else:
-    dno_local_file = "./data/dno"
+dir_path = os.path.dirname(os.path.realpath(__file__))
+dno_local_file = f"{dir_path}/dno"
 
 
 def download_dno():

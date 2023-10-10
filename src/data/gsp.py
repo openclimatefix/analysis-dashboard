@@ -6,14 +6,10 @@ from shapely.geometry import Point
 
 from data.utils import lat_lon_to_osgb
 
-cwd = os.getcwd()
-if "src" not in cwd:
-    dir = "./src/data"
-else:
-    dir = "./data"
 
-gsp_names = pd.read_csv(f"{dir}/gsp_new_ids_and_names-edited.csv")
-gsp_local_file = f"{dir}/gsp"
+dir_path = os.path.dirname(os.path.realpath(__file__))
+gsp_local_file = f"{dir_path}/gsp"
+gsp_names = pd.read_csv(f"{dir_path}/gsp_new_ids_and_names-edited.csv")
 
 
 def download_gsp():
