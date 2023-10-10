@@ -286,6 +286,8 @@ def create_user(
     :param site_group: name of site group
     """
 
+    if site_group is None:
+        site_group = "ocf"
     
     user = UserSQL(
         email=email,
@@ -294,4 +296,4 @@ def create_user(
     session.add(user)
     session.commit()
     
-    return user, message
+    return user

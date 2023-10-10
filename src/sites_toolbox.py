@@ -411,14 +411,16 @@ def sites_toolbox_page():
             )
 
             email = st.text_input("email")
-
+            if email is not None:
+                if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+                    st.write("Please enter a valid email address.")
             site_group = st.selectbox("Select a group", site_groups, key="site_group")
             # check that site group exists
             if st.button(f"Create new user"):
                 site_group = get_site_group_by_name(
                     session=session, site_group_name=site_group
                 )
-                user, message = create_user(
+                user = create_user(
                     session=session,
                     email=email,
                     site_group=site_group,
@@ -429,5 +431,5 @@ def sites_toolbox_page():
                     "date_added": (user.created_utc.strftime("%Y-%m-%d")),
                 }
                 st.json(user_details)
-                if st.button("Close site details"):
+                if st.button("Close user details"):
                     st.empty()
