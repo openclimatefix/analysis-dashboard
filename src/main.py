@@ -21,6 +21,7 @@ from plots.forecast_horizon import (
 )
 from plots.mae_and_rmse import make_rmse_and_mae_plot, make_mae_plot
 from plots.pinball_and_exceedance_plots import make_pinball_or_exceedance_plot
+from plots.ramp_rate import make_ramp_rate_plot
 from plots.utils import get_x_y
 from pvsite_forecast import pvsite_forecast_page
 from sites_toolbox import sites_toolbox_page
@@ -222,6 +223,10 @@ def metric_page():
     if model_name in ["pvnet_v2", "cnn"]:
         with st.expander("MAE All GSPs"):
             st.plotly_chart(fig6, theme="streamlit")
+
+    fig7 = make_ramp_rate_plot(session=session, model_name=model_name, starttime=starttime, endtime=endtime)
+    with st.expander("Ramp Rate"):
+        st.plotly_chart(fig7, theme="streamlit")
 
     if model_name in ["pvnet_v2", "National_xg"]:
         with connection.get_session() as session:
