@@ -160,6 +160,13 @@ def add_all_sites_to_ocf_group(session, site_group_name="ocf"):
     return message, sites_added
 
 
+# validate email address
+def validate_email(email):
+    if re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        return True
+    return False
+
+
 # sites toolbox page
 def sites_toolbox_page():
     st.markdown(
@@ -409,27 +416,28 @@ def sites_toolbox_page():
                 f'<h1 style="color:#FFD053;font-size:22px;">{"User Information"}</h1>',
                 unsafe_allow_html=True,
             )
-
-            email = st.text_input("email")
-            if email is not None:
-                if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-                    st.write("Please enter a valid email address.")
+            email = st.text_input("User Email")
             site_group = st.selectbox("Select a group", site_groups, key="site_group")
+            email_validation = validate_email(email)
             # check that site group exists
             if st.button(f"Create new user"):
-                site_group = get_site_group_by_name(
-                    session=session, site_group_name=site_group
-                )
-                user = create_user(
-                    session=session,
-                    email=email,
-                    site_group=site_group,
-                )
-                user_details = {
-                    "email": str(user.email),
-                    "site_group": str(user.site_group.site_group_name),
-                    "date_added": (user.created_utc.strftime("%Y-%m-%d")),
-                }
-                st.json(user_details)
-                if st.button("Close user details"):
-                    st.empty()
+                if email_validation is False:
+                    st.markdown(f'<p style="color:#f07167;font-size:16px;">{"Please enter a valid email address."}</p>',
+                                unsafe_allow_html=True,)
+                else:
+                    site_group = get_site_group_by_name(
+                        session=session, site_group_name=site_group
+                    )
+                    user = create_user(
+                        session=session,
+                        email=email,
+                        site_group=site_group,
+                    )
+                    user_details = {
+                        "email": str(user.email),
+                        "site_group": str(user.site_group.site_group_name),
+                        "date_added": (user.created_utc.strftime("%Y-%m-%d")),
+                    }
+                    st.json(user_details)
+                    if st.button("Close user details"):
+                        st.empty()
