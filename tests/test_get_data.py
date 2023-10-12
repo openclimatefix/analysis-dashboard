@@ -97,7 +97,7 @@ def test_create_new_site_twice(db_session):
     assert site_2.ml_id == 2
 
 
-def test_create_new_user(db_session):
+def test_create_user(db_session):
     "Test to create a new user."
 
     site_group_1 = make_site_group(db_session=db_session)
