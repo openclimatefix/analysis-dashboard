@@ -419,7 +419,7 @@ def sites_toolbox_page():
                 unsafe_allow_html=True,
             )
             email = st.text_input("User Email")
-            site_group = st.selectbox("Select a group", site_groups, key="site_group")
+            site_group_name = st.selectbox("Select a group", site_groups, key="site_group")
             email_validation = validate_email(email)
             # check that site group exists
             if st.button(f"Create new user"):
@@ -435,10 +435,10 @@ def sites_toolbox_page():
                     )
                 else:
                     site_group = get_site_group_by_name(
-                        session=session, site_group_name=site_group
+                        session=session, site_group_name=site_group_name
                     )
 
-                    user, message = create_user(
+                    user = create_user(
                         session=session,
                         email=email,
                         site_group_name=site_group.site_group_name,
@@ -453,3 +453,4 @@ def sites_toolbox_page():
 
                 if st.button("Close details"):
                     st.empty()
+              
