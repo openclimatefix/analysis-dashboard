@@ -434,19 +434,16 @@ def sites_toolbox_page():
                         unsafe_allow_html=True,
                     )
                 else:
-                    site_group = get_site_group_by_name(
-                        session=session, site_group_name=site_group_name
-                    )
 
                     user = create_user(
                         session=session,
                         email=email,
-                        site_group_name=site_group.site_group_name,
+                        site_group_name=site_group_name,
                     )
 
                     user_details = {
                         "email": str(user.email),
-                        "site_group": str(site_group.site_group_name),
+                        "site_group": str(site_group_name),
                         "date_added": (user.created_utc.strftime("%Y-%m-%d")),
                     }
                     st.json(user_details)
