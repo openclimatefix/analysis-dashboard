@@ -412,6 +412,8 @@ def sites_toolbox_page():
 
     with st.expander("Input new user data"):
         with connection.get_session() as session:
+            user_list = get_all_users(session=session)
+            user_list = [user.email for user in user_list]
             st.markdown(
                 f'<h1 style="color:#FFD053;font-size:22px;">{"User Information"}</h1>',
                 unsafe_allow_html=True,
@@ -422,22 +424,32 @@ def sites_toolbox_page():
             # check that site group exists
             if st.button(f"Create new user"):
                 if email_validation is False:
-                    st.markdown(f'<p style="color:#f07167;font-size:16px;">{"Please enter a valid email address."}</p>',
-                                unsafe_allow_html=True,)
+                    st.markdown(
+                        f'<p style="color:#f07167;font-size:16px;">{"Please enter a valid email address."}</p>',
+                        unsafe_allow_html=True,
+                    )
+                elif email in user_list:
+                    st.markdown(
+                        f'<p style="color:#f07167;font-size:16px;">{"This user already exists."}</p>',
+                        unsafe_allow_html=True,
+                    )
                 else:
                     site_group = get_site_group_by_name(
                         session=session, site_group_name=site_group
                     )
-                    user = create_user(
+
+                    user, message = create_user(
                         session=session,
                         email=email,
                         site_group_name=site_group.site_group_name,
                     )
+
                     user_details = {
                         "email": str(user.email),
                         "site_group": str(site_group.site_group_name),
                         "date_added": (user.created_utc.strftime("%Y-%m-%d")),
                     }
                     st.json(user_details)
-                    if st.button("Close user details"):
-                        st.empty()
+
+                if st.button("Close details"):
+                    st.empty()
