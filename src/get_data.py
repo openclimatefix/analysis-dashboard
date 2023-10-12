@@ -7,6 +7,7 @@
 """
 import logging
 import json
+import re
 from datetime import datetime, timezone
 from typing import List, Optional
 
@@ -80,7 +81,9 @@ def get_metric_value(
 
     # filter forecast_horizon_minutes
     if forecast_horizon_minutes is not None:
-        query = query.filter(MetricValueSQL.forecast_horizon_minutes == forecast_horizon_minutes)
+        query = query.filter(
+            MetricValueSQL.forecast_horizon_minutes == forecast_horizon_minutes
+        )
     else:
         # select forecast_horizon_minutes is Null, which gets the last forecast.
         # !! This has to be a double equals or it won't work
@@ -133,14 +136,18 @@ def get_all_site_groups(session: Session) -> List[SiteGroupSQL]:
 
 
 # update user site group; users only belong to one site group
-def update_user_site_group(session: Session, email: str, site_group_name: str) -> UserSQL:
+def update_user_site_group(
+    session: Session, email: str, site_group_name: str
+) -> UserSQL:
     """Change site group for user.
     :param session: database session
     :param email: email of user
     :param site_group_name: name of site group
     """
     site_group = (
-        session.query(SiteGroupSQL).filter(SiteGroupSQL.site_group_name == site_group_name).first()
+        session.query(SiteGroupSQL)
+        .filter(SiteGroupSQL.site_group_name == site_group_name)
+        .first()
     )
 
     user = session.query(UserSQL).filter(UserSQL.email == email)
@@ -168,14 +175,18 @@ def get_site_by_client_site_id(session: Session, client_site_id: str) -> List[Si
 
 
 # add site to site group; sites can belong to many groups
-def add_site_to_site_group(session: Session, site_uuid: str, site_group_name: str) -> SiteGroupSQL:
+def add_site_to_site_group(
+    session: Session, site_uuid: str, site_group_name: str
+) -> SiteGroupSQL:
     """Add a site to a site group.
     :param session: database session
     :param site_uuid: uuid of site
     :param site_group_name: name of site group
     """
     site_group = (
-        session.query(SiteGroupSQL).filter(SiteGroupSQL.site_group_name == site_group_name).first()
+        session.query(SiteGroupSQL)
+        .filter(SiteGroupSQL.site_group_name == site_group_name)
+        .first()
     )
 
     site = session.query(SiteSQL).filter(SiteSQL.site_uuid == site_uuid).one()
@@ -271,3 +282,31 @@ def create_new_site(
     message = f"Site with client site id {site.client_site_id} and site uuid {site.site_uuid} created successfully"
 
     return site, message
+
+
+# create user
+def create_user(
+    session: Session,
+    email: str,
+    site_group_name: str,
+) -> UserSQL:
+    """Create a user.
+    :param session: database session
+    :param email: email of user being created
+    :param site_group: name of the site group this user will be part of
+    """
+
+    site_group = (
+        session.query(SiteGroupSQL)
+        .filter(SiteGroupSQL.site_group_name == site_group_name)
+        .first()
+    )
+
+    user = UserSQL(email=email, site_group_uuid=site_group.site_group_uuid)
+
+    session.add(user)
+    site_group.users.append(user)
+    session.commit()
+    print(user)
+
+    return user
