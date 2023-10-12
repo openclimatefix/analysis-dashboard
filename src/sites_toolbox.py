@@ -431,11 +431,11 @@ def sites_toolbox_page():
                     user = create_user(
                         session=session,
                         email=email,
-                        site_group=site_group,
+                        site_group_name=site_group.site_group_name,
                     )
                     user_details = {
                         "email": str(user.email),
-                        "site_group": str(user.site_group.site_group_name),
+                        "site_group": str(site_group.site_group_name),
                         "date_added": (user.created_utc.strftime("%Y-%m-%d")),
                     }
                     st.json(user_details)
