@@ -307,6 +307,18 @@ def create_user(
     session.add(user)
     site_group.users.append(user)
     session.commit()
-    print(user)
 
     return user
+
+
+# create a new site group
+def create_new_site_group(session: Session, site_group_name: str) -> SiteGroupSQL:
+    """Creating a new site group
+    :param session: database session
+    :param site_group_name: name of the site group this user will be part of"""
+
+    new_site_group = SiteGroupSQL(site_group_name=site_group_name)
+    session.add(new_site_group)
+    session.commit()
+
+    return new_site_group
