@@ -2,6 +2,7 @@
 from get_data import (
     add_site_to_site_group,
     create_new_site,
+    create_user,
     get_all_users,
     get_all_site_groups,
 )
@@ -74,7 +75,7 @@ def test_create_new_site(db_session):
 def test_create_new_site_twice(db_session):
     """Test create new site function for ml_id"""
 
-    site_1, _= create_new_site(
+    site_1, _ = create_new_site(
         session=db_session,
         client_site_id=6932,
         client_site_name="test_site_name",
@@ -83,7 +84,7 @@ def test_create_new_site_twice(db_session):
         capacity_kw=1.0,
     )
 
-    site_2, _= create_new_site(
+    site_2, _ = create_new_site(
         session=db_session,
         client_site_id=6932,
         client_site_name="test_site_name",
@@ -95,3 +96,18 @@ def test_create_new_site_twice(db_session):
     assert site_1.ml_id == 1
     assert site_2.ml_id == 2
 
+
+def test_create_new_user(db_session):
+    "Test to create a new user."
+
+    site_group_1 = make_site_group(db_session=db_session)
+
+    user_1 = create_user(
+        session=db_session,
+        email="test_user@test.org",
+        site_group_name=site_group_1.site_group_name,
+    )
+
+    assert user_1.email == "test_user@test.org"
+    assert user_1.site_group.site_group_name == "test_site_group"
+    assert user_1.site_group_uuid == site_group_1.site_group_uuid
