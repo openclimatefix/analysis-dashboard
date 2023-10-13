@@ -1,30 +1,26 @@
+import os
 import streamlit as st
+import ssl
+from auth0_component import login_button
+
+clientId = os.getenv("AUTH0_CLIENT_ID")
+domain = os.getenv("AUTH0_DOMAIN")
+
+# need this for the login to work
+ssl._create_default_https_context = ssl._create_unverified_context
 
 
 def check_password():
     """Returns `True` if the user had the correct password."""
 
-    def password_entered():
-        """Checks whether a password entered by the user is correct."""
-        if st.session_state["password"] == st.secrets["password"]:
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]  # don't store password
-        else:
-            st.session_state["password_correct"] = False
+    with st.sidebar:
+        user_info = login_button(clientId=clientId, domain=domain,debug_logs=True)
 
-    if "password_correct" not in st.session_state:
-        # First run, show input for password.
-        st.text_input(
-            "Password", type="password", on_change=password_entered, key="password", autocomplete="current-password"
-        )
+    if user_info is None:
+        st.text('No user info')
         return False
-    elif not st.session_state["password_correct"]:
-        # Password not correct, show input + error.
-        st.text_input(
-            "Password", type="password", on_change=password_entered, key="password", autocomplete="current-password"
-        )
-        st.error("😕 Password incorrect")
+
+    if not user_info:
+        st.text('Please log in')
         return False
-    else:
-        # Password correct.
-        return True
+    return user_info

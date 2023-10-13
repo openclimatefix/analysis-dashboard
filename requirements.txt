@@ -10,4 +10,5 @@ streamlit==1.17.0
 testcontainers==3.2.0
 uvicorn==0.17.6
 geopandas==0.11.1
+garrett-streamlit-auth0==0.9
 
