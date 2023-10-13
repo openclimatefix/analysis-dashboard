@@ -307,6 +307,5 @@ def create_user(
     session.add(user)
     site_group.users.append(user)
     session.commit()
-    print(user)
 
     return user

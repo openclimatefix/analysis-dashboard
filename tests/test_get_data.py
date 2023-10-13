@@ -111,3 +111,4 @@ def test_create_user(db_session):
     assert user_1.email == "test_user@test.org"
     assert user_1.site_group.site_group_name == "test_site_group"
     assert user_1.site_group_uuid == site_group_1.site_group_uuid
+

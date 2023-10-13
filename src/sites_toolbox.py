@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from sqlalchemy import func
 from pvsite_datamodel.connection import DatabaseConnection
 from pvsite_datamodel.sqlmodels import SiteSQL
-from pvsite_datamodel.write.user_and_site import make_user
+from pvsite_datamodel.write.user_and_site import make_site_group
 from pvsite_datamodel.read import (
     get_all_sites,
     get_user_by_email,
@@ -318,7 +318,7 @@ def sites_toolbox_page():
 
     # create a new site
     st.markdown(
-        f'<h1 style="color:#63BCAF;font-size:32px;">{"Create New Site"}</h1>',
+        f'<h1 style="color:#63BCAF;font-size:32px;">{"Create Site"}</h1>',
         unsafe_allow_html=True,
     )
     with st.expander("Input new site data"):
@@ -406,7 +406,7 @@ def sites_toolbox_page():
 
     # create a new user
     st.markdown(
-        f'<h1 style="color:#63BCAF;font-size:32px;">{"Create New User"}</h1>',
+        f'<h1 style="color:#63BCAF;font-size:32px;">{"Create User"}</h1>',
         unsafe_allow_html=True,
     )
 
@@ -419,7 +419,9 @@ def sites_toolbox_page():
                 unsafe_allow_html=True,
             )
             email = st.text_input("User Email")
-            site_group_name = st.selectbox("Select a group", site_groups, key="site_group")
+            site_group_name = st.selectbox(
+                "Select a group", site_groups, key="site_group"
+            )
             email_validation = validate_email(email)
             # check that site group exists
             if st.button(f"Create new user"):
@@ -434,7 +436,6 @@ def sites_toolbox_page():
                         unsafe_allow_html=True,
                     )
                 else:
-
                     user = create_user(
                         session=session,
                         email=email,
@@ -450,4 +451,43 @@ def sites_toolbox_page():
 
                 if st.button("Close details"):
                     st.empty()
-              
+
+    # create site group
+    st.markdown(
+        f'<h1 style="color:#63BCAF;font-size:32px;">{"Create Site Group"}</h1>',
+        unsafe_allow_html=True,
+    )
+
+    with st.expander("Input new group data"):
+        with connection.get_session() as session:
+            st.markdown(
+                f'<h1 style="color:#FFD053;font-size:22px;">{"Site Group Information"}</h1>',
+                unsafe_allow_html=True,
+            )
+            new_site_group_name = st.text_input("Enter new site group name")
+            # check that site group exists
+            if st.button(f"Create new site group"):
+                if new_site_group_name == "":
+                    st.markdown(
+                        f'<p style="color:#f07167;font-size:16px;">{"Please enter a valid name for the site group."}</p>',
+                        unsafe_allow_html=True,
+                    )
+                elif new_site_group_name in site_groups:
+                    st.markdown(
+                        f'<p style="color:#f07167;font-size:16px;">{"This site group already exists."}</p>',
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    new_site_group = make_site_group(
+                        db_session=session,
+                        site_group_name=new_site_group_name,
+                    )
+                    new_site_group_details = {
+                        "site_group": str(new_site_group.site_group_name),
+                        "site_group_uuid": str(new_site_group.site_group_uuid),
+                        "date_added": (new_site_group.created_utc.strftime("%Y-%m-%d")),
+                    }
+                    st.json(new_site_group_details)
+
+                if st.button("Close details"):
+                    st.empty()
