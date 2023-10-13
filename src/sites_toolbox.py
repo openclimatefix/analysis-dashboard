@@ -18,6 +18,9 @@ from pvsite_datamodel.read import (
 from get_data import (
     create_new_site,
     create_user,
+    delete_site,
+    delete_user,
+    delete_site_group,
     get_all_users,
     get_all_site_groups,
     get_site_by_client_site_id,
@@ -25,6 +28,8 @@ from get_data import (
     update_user_site_group,
 )
 
+# colors 7bcdf3 
+# yellow ffd053
 
 # get details for one user
 def get_user_details(session, email: str):
@@ -264,7 +269,7 @@ def sites_toolbox_page():
             st.empty()
         # add site to site group
     st.markdown(
-        f'<h1 style="color:#63BCAF;font-size:32px;">{"Add Site to Site Group"}</h1>',
+        f'<h1 style="color:#ffd053;font-size:32px;">{"Add Site to Site Group"}</h1>',
         unsafe_allow_html=True,
     )
     site_uuid = st.selectbox("Select site", site_uuid_list, key="add")
@@ -291,7 +296,7 @@ def sites_toolbox_page():
 
     # getting site group details
     st.markdown(
-        f'<h1 style="color:#63BCAF;font-size:32px;">{"Add All Sites to OCF Group"}</h1>',
+        f'<h1 style="color:#ffd053;font-size:32px;">{"Add All Sites to OCF Group"}</h1>',
         unsafe_allow_html=True,
     )
     if st.button("Add Sites to OCF group"):
@@ -302,7 +307,7 @@ def sites_toolbox_page():
 
     # update user site group
     st.markdown(
-        f'<h1 style="color:#63BCAF;font-size:32px;">{"Change User Site Group"}</h1>',
+        f'<h1 style="color:#ffd053;font-size:32px;">{"Change User Site Group"}</h1>',
         unsafe_allow_html=True,
     )
     email = st.selectbox("Select user whose site group will change.", user_list)
@@ -318,7 +323,7 @@ def sites_toolbox_page():
 
     # create a new site
     st.markdown(
-        f'<h1 style="color:#63BCAF;font-size:32px;">{"Create Site"}</h1>',
+        f'<h1 style="color:#7bcdf3;font-size:32px;">{"Create Site"}</h1>',
         unsafe_allow_html=True,
     )
     with st.expander("Input new site data"):
@@ -406,7 +411,7 @@ def sites_toolbox_page():
 
     # create a new user
     st.markdown(
-        f'<h1 style="color:#63BCAF;font-size:32px;">{"Create User"}</h1>',
+        f'<h1 style="color:#7bcdf3;font-size:32px;">{"Create User"}</h1>',
         unsafe_allow_html=True,
     )
 
@@ -454,7 +459,7 @@ def sites_toolbox_page():
 
     # create site group
     st.markdown(
-        f'<h1 style="color:#63BCAF;font-size:32px;">{"Create Site Group"}</h1>',
+        f'<h1 style="color:#7bcdf3;font-size:32px;">{"Create Site Group"}</h1>',
         unsafe_allow_html=True,
     )
 
@@ -491,3 +496,55 @@ def sites_toolbox_page():
 
                 if st.button("Close details"):
                     st.empty()
+
+# delete site
+    st.markdown(
+        f'<h1 style="color:#E63946;font-size:32px;">{"Delete Site"}</h1>',
+        unsafe_allow_html=True,
+    )
+
+    with st.expander("Input site data"):
+        with connection.get_session() as session:
+            st.markdown(
+                f'<h1 style="color:#FF9736;font-size:22px;">{"Site UUID"}</h1>',
+                unsafe_allow_html=True,
+            )
+            site_uuid = st.selectbox("Enter site uuid", site_uuid_list)
+            if st.button("Delete Site"):
+                message = delete_site(session=session, site_uuid=site_uuid)
+                st.write(message)
+    
+    st.markdown(
+        f'<h1 style="color:#E63946;font-size:32px;">{"Delete User"}</h1>',
+        unsafe_allow_html=True,
+    )
+
+    with st.expander("Input user email"):
+        with connection.get_session() as session:
+            st.markdown(
+                f'<h1 style="color:#FF9736;font-size:22px;">{"User Information"}</h1>',
+                unsafe_allow_html=True,
+            )
+            email = st.selectbox("Enter user email", user_list)
+            if st.button("Delete User"):
+                message = delete_user(session=session, email=email)
+                st.write(message)
+
+# delete site group
+    st.markdown(
+        f'<h1 style="color:#E63946;font-size:32px;">{"Delete Site Group"}</h1>',
+        unsafe_allow_html=True,
+    )
+
+    with st.expander("Input site group information"):
+        with connection.get_session() as session:
+            site_groups = get_all_site_groups(session=session)
+            site_groups = [site_group.site_group_name for site_group in site_groups]
+            st.markdown(
+                f'<h1 style="color:#FF9736;font-size:22px;">{"Site Group Information"}</h1>',
+                unsafe_allow_html=True,
+            )
+            site_group_name = st.selectbox("Enter site group", site_groups)
+            if st.button("Delete Site Group"):
+                message = delete_site_group(session=session, site_group_name=site_group_name)
+                st.write(message)
