@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from sqlalchemy import func
 from pvsite_datamodel.connection import DatabaseConnection
 from pvsite_datamodel.sqlmodels import SiteSQL
-from pvsite_datamodel.write.user_and_site import make_user
+from pvsite_datamodel.write.user_and_site import make_site_group
 from pvsite_datamodel.read import (
     get_all_sites,
     get_user_by_email,
@@ -17,7 +17,6 @@ from pvsite_datamodel.read import (
 
 from get_data import (
     create_new_site,
-    create_new_site_group,
     create_user,
     get_all_users,
     get_all_site_groups,
@@ -479,8 +478,8 @@ def sites_toolbox_page():
                         unsafe_allow_html=True,
                     )
                 else:
-                    new_site_group = create_new_site_group(
-                        session=session,
+                    new_site_group = make_site_group(
+                        db_session=session,
                         site_group_name=new_site_group_name,
                     )
                     new_site_group_details = {
