@@ -3,6 +3,9 @@ from get_data import (
     add_site_to_site_group,
     create_new_site,
     create_user,
+    delete_site,
+    delete_site_group,
+    delete_user,
     get_all_users,
     get_all_site_groups,
 )
@@ -111,4 +114,33 @@ def test_create_user(db_session):
     assert user_1.email == "test_user@test.org"
     assert user_1.site_group.site_group_name == "test_site_group"
     assert user_1.site_group_uuid == site_group_1.site_group_uuid
+
+# test to delete a site
+def test_delete_site(db_session):
+    """Test to delete a site."""
+
+    site_1 = make_site(db_session=db_session, ml_id=1)
+
+    site_uuid = site_1.site_uuid
+
+    message = delete_site(session=db_session, site_uuid=site_uuid)
+
+    site = db_session.query(SiteSQL).filter(SiteSQL.site_uuid == site_uuid).first()
+
+    assert site is None
+    assert message == f"Site with site uuid {site_uuid} deleted successfully"
+
+# test to delete a user
+def test_delete_user(db_session):
+    """Test to delete a user."""
+
+    site_group_1 = make_site_group(db_session=db_session)
+
+    user_1 = make_user(
+        session=db_session,
+        email="test_user
+
+# test to delete a site group
+def test_delete_site_group(db_session):
+  
 
