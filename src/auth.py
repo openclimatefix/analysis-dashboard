@@ -23,4 +23,9 @@ def check_password():
     if not user_info:
         st.text('Please log in')
         return False
+
+    if '@openclimatefix.' not in user_info['email']:
+        st.text('This is only available to OCF members')
+        return False
+
     return user_info
