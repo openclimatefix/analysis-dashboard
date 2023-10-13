@@ -309,3 +309,56 @@ def create_user(
     session.commit()
 
     return user
+
+# delete a site 
+def delete_site(session: Session, site_uuid: str) -> SiteGroupSQL:
+    """Delete a site group.
+    :param session: database session
+    :param site_uuid: unique identifier for site
+    """
+    site = session.query(SiteSQL).filter(SiteSQL.site_uuid == site_uuid).first()
+
+    session.delete(site)
+
+    message = f"Site with site uuid {site.site_uuid} deleted successfully"
+
+    session.commit()
+
+    return message
+
+# delete user
+def delete_user(session: Session, email: str) -> UserSQL:
+    """Delete a user.
+    :param session: database session
+    :param email: email of user being deleted
+    """
+    user = session.query(UserSQL).filter(UserSQL.email == email).first()
+
+    session.delete(user)
+    
+    message = f"User with email {user.email} and user uuid {user.user_uuid} deleted successfully"
+
+    session.commit()
+
+    return message
+
+#delete site group
+def delete_site_group(session: Session, site_group_name: str) -> SiteGroupSQL:
+    """Delete a site group.
+    :param session: database session
+    :param site_group_name: name of site group being deleted
+    """
+    site_group = (
+        session.query(SiteGroupSQL)
+        .filter(SiteGroupSQL.site_group_name == site_group_name)
+        .first()
+    )
+
+    session.delete(site_group)
+
+    message = f"Site group with name {site_group.site_group_name} and site group uuid {site_group.site_group_uuid} deleted successfully"
+
+    session.commit()
+
+    return message
+
