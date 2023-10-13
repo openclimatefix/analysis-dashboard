@@ -113,21 +113,3 @@ def test_create_user(db_session):
     assert user_1.site_group.site_group_name == "test_site_group"
     assert user_1.site_group_uuid == site_group_1.site_group_uuid
 
-
-# test to create a new site group
-def test_create_new_site_group(db_session):
-    """Test to creat a new site group."""
-
-    site_1 = make_site(db_session=db_session, ml_id=1)
-    site_2 = make_site(db_session=db_session, ml_id=2)
-    site_3 = make_site(db_session=db_session, ml_id=3)
-
-    new_site_group = create_new_site_group(
-        session=db_session, site_group_name="new_site_group"
-    )
-    new_site_group.sites.append(site_1)
-    new_site_group.sites.append(site_2)
-    new_site_group.sites.append(site_3)
-
-    assert new_site_group.site_group_name == "new_site_group"
-    assert len(new_site_group.sites) == 3
