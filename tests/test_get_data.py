@@ -3,7 +3,6 @@ from get_data import (
     add_site_to_site_group,
     create_new_site,
     create_user,
-    create_new_site_group,
     get_all_users,
     get_all_site_groups,
 )
