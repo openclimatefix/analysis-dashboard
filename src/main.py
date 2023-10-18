@@ -51,7 +51,7 @@ def metric_page():
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
     st.sidebar.subheader("Select Forecast Model")
-    model_name = st.sidebar.selectbox("Select", ["cnn", "National_xg", "pvnet_v2"])
+    model_name = st.sidebar.selectbox("Select", ["cnn", "National_xg", "pvnet_v2"], "pvnet_v2")
 
     # set up database connection
     url = os.environ["DB_URL"]
