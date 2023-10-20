@@ -14,7 +14,7 @@ import plotly.graph_objects as go
 from plots.utils import colour_per_model
 
 
-show_pvnet_gsp_sum = int(os.getenv("SHOW_PVNET_GSP_SUM", False))
+show_pvnet_gsp_sum = os.getenv("SHOW_PVNET_GSP_SUM", "False").lower() == "true"
 
 
 
