@@ -37,7 +37,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-show_pvnet_gsp_sum = os.getenv("SHOW_PVNET_GSP_SUM", False)
+show_pvnet_gsp_sum = int(os.getenv("SHOW_PVNET_GSP_SUM", False))
 
 
 def metric_page():
