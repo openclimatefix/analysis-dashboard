@@ -37,6 +37,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+show_pvnet_gsp_sum = os.getenv("SHOW_PVNET_GSP_SUM", "False").lower() == "true"
 
 def metric_page():
     # set up title and subheader
@@ -51,7 +52,10 @@ def metric_page():
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
     st.sidebar.subheader("Select Forecast Model")
-    model_name = st.sidebar.selectbox("Select", ["cnn", "National_xg", "pvnet_v2"], "pvnet_v2")
+    models = ["cnn", "National_xg", "pvnet_v2"]
+    if show_pvnet_gsp_sum:
+        models.append("pvnet_gsp_sum")
+    model_name = st.sidebar.selectbox("Select", models, "pvnet_v2")
 
     # set up database connection
     url = os.environ["DB_URL"]

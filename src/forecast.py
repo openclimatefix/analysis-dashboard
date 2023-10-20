@@ -14,6 +14,10 @@ import plotly.graph_objects as go
 from plots.utils import colour_per_model
 
 
+show_pvnet_gsp_sum = os.getenv("SHOW_PVNET_GSP_SUM", "False").lower() == "true"
+
+
+
 def forecast_page():
     """Main page for status"""
 
@@ -44,8 +48,11 @@ def forecast_page():
         if location.gsp_id == gsp_id
     ][0]
 
+    models = ["cnn", "National_xg", "pvnet_v2", "blend"]
+    if show_pvnet_gsp_sum:
+        models.append("pvnet_gsp_sum")
     forecast_models = st.sidebar.multiselect(
-        "Select a model", ["cnn", "National_xg", "pvnet_v2", "blend"], ["pvnet_v2"]
+        "Select a model", models, ["pvnet_v2"]
     )
 
     probabilistic_forecasts = [model for model in forecast_models if model in ["National_xg", "pvnet_v2", "blend"]]
