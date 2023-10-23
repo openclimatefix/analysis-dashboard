@@ -55,7 +55,7 @@ def metric_page():
     models = ["cnn", "National_xg", "pvnet_v2"]
     if show_pvnet_gsp_sum:
         models.append("pvnet_gsp_sum")
-    model_name = st.sidebar.selectbox("Select", models, "pvnet_v2")
+    model_name = st.sidebar.selectbox("Select", models, 2)
 
     # set up database connection
     url = os.environ["DB_URL"]
