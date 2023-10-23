@@ -32,11 +32,6 @@ from tables.summary import make_recent_summary_stats, make_forecast_horizon_tabl
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="centered", page_title="OCF Dashboard")
 
-st.markdown(
-    f'<h1 style="color:#FFD053;font-size:48px;">{"OCF Dashboard"}</h1>',
-    unsafe_allow_html=True,
-)
-
 show_pvnet_gsp_sum = os.getenv("SHOW_PVNET_GSP_SUM", "False").lower() == "true"
 
 def metric_page():
