@@ -14,7 +14,11 @@ def check_password():
     """Returns `True` if the user had the correct password."""
 
     with st.sidebar:
-        user_info = login_button(clientId=clientId, domain=domain,debug_logs=True)
+        try:
+            user_info = login_button(clientId=clientId, domain=domain,debug_logs=True)
+        except:
+            st.text('Could not run auth')
+            return False
 
     if user_info is None:
         st.text('No user info')
