@@ -54,8 +54,9 @@ def forecast_page():
     forecast_models = st.sidebar.multiselect(
         "Select a model", models, ["pvnet_v2"]
     )
-
-    probabilistic_forecasts = [model for model in forecast_models if model in ["National_xg", "pvnet_v2", "blend"]]
+    
+    probabilisitic_models = ["National_xg", "pvnet_v2", "blend"]
+    probabilistic_forecasts = [model for model in forecast_models if model in probabilisitic_models]
 
     if len(probabilistic_forecasts) > 0:
         show_prob = st.sidebar.checkbox('Show Probabilities Forecast', value=False)
@@ -211,7 +212,7 @@ def forecast_page():
             )
         )
 
-        if len(forecast) > 0 and show_prob:
+        if len(forecast) > 0 and show_prob and (model in probabilisitic_models):
             try:
                 properties_0 = forecast[0]._properties
                 if isinstance(properties_0, dict):
