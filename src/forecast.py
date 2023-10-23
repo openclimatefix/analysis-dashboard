@@ -17,7 +17,6 @@ from plots.utils import colour_per_model
 show_pvnet_gsp_sum = os.getenv("SHOW_PVNET_GSP_SUM", "False").lower() == "true"
 
 
-
 def forecast_page():
     """Main page for status"""
 
@@ -51,15 +50,15 @@ def forecast_page():
     models = ["cnn", "National_xg", "pvnet_v2", "blend"]
     if show_pvnet_gsp_sum:
         models.append("pvnet_gsp_sum")
-    forecast_models = st.sidebar.multiselect(
-        "Select a model", models, ["pvnet_v2"]
-    )
-    
+    forecast_models = st.sidebar.multiselect("Select a model", models, ["pvnet_v2"])
+
     probabilisitic_models = ["National_xg", "pvnet_v2", "blend"]
-    probabilistic_forecasts = [model for model in forecast_models if model in probabilisitic_models]
+    probabilistic_forecasts = [
+        model for model in forecast_models if model in probabilisitic_models
+    ]
 
     if len(probabilistic_forecasts) > 0:
-        show_prob = st.sidebar.checkbox('Show Probabilities Forecast', value=False)
+        show_prob = st.sidebar.checkbox("Show Probabilities Forecast", value=False)
     else:
         show_prob = False
 
@@ -215,8 +214,9 @@ def forecast_page():
         if len(forecast) > 0 and show_prob and (model in probabilisitic_models):
             try:
                 properties_0 = forecast[0]._properties
-                if isinstance(properties_0, dict):
-                    assert "10" in properties_0.keys() and "90" in properties_0.keys()
+                if isinstance(properties_0, dict) and (
+                    "10" in properties_0.keys() and "90" in properties_0.keys()
+                ):
                     plevel_10 = [i._properties["10"] for i in forecast]
                     plevel_90 = [i._properties["90"] for i in forecast]
 
@@ -277,7 +277,11 @@ def forecast_page():
             elif k == "PVLive GSP Sum Updated":
                 line = dict(color=colour_per_model[k])
 
-            fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line, visible="legendonly"))
+            fig.add_trace(
+                go.Scatter(
+                    x=x, y=y, mode="lines", name=k, line=line, visible="legendonly"
+                )
+            )
 
     fig.add_trace(
         go.Scatter(
