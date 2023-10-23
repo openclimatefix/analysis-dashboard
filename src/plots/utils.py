@@ -14,6 +14,7 @@ colour_per_model = {
     "cnn": "#FFD053",
     "National_xg": "#7BCDF3",
     "pvnet_v2": "#4c9a8e",
+    "pvnet_gsp_sum": "#7e47d6",
     "blend": "#FF9736",
     "PVLive Initial Estimate": "#e4e4e4",
     "PVLive Updated Estimate": "#e4e4e4",

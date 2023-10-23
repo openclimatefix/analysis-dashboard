@@ -131,7 +131,7 @@ def metric_page():
     )
 
     make_recent_summary_stats(values=y_mae)
-    make_recent_summary_stats(values=y_rmse)
+    make_recent_summary_stats(values=y_rmse, title="Recent RMSE")
 
     st.sidebar.subheader("Select Forecast Horizon")
     forecast_horizon_selection = st.sidebar.multiselect(
