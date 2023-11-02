@@ -34,7 +34,6 @@ def check_password():
             unsafe_allow_html=True,
         )
 
-
     auth0_logged = False
     password_logged = False
 
@@ -54,24 +53,24 @@ def check_password():
             else:
                 auth0_logged = True
 
-        if "password_correct" not in st.session_state:
-            # First run, show input for password.
-            st.text_input(
-                "Password", type="password", on_change=password_entered, key="password", autocomplete="current-password"
-            )
+        if not auth0_logged:
+            if "password_correct" not in st.session_state:
+                # First run, show input for password.
+                st.text_input(
+                    "Password", type="password", on_change=password_entered, key="password", autocomplete="current-password"
+                )
 
-        elif not st.session_state["password_correct"]:
-            # Password not correct, show input + error.
-            st.text_input(
-                "Password", type="password", on_change=password_entered, key="password", autocomplete="current-password"
-            )
-            st.error("😕 Password incorrect")
+            elif not st.session_state["password_correct"]:
+                # Password not correct, show input + error.
+                st.text_input(
+                    "Password", type="password", on_change=password_entered, key="password", autocomplete="current-password"
+                )
+                st.error("😕 Password incorrect")
 
-        else:
-            # Password correct, show success message.
-            st.success("🔒 Password correct")
-            password_logged = True
-
+            else:
+                # Password correct, show success message.
+                st.success("🔒 Password correct")
+                password_logged = True
 
         if auth0_logged or password_logged:
             return True
