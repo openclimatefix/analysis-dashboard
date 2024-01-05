@@ -9,7 +9,7 @@ from sites_toolbox import (
     add_all_sites_to_ocf_group,
 )
 
-from pvsite_datamodel.write.user_and_site import make_site, make_site_group, make_user
+from pvsite_datamodel.write.user_and_site import create_site, make_site_group, make_user
 
 
 def test_get_user_details(db_session):
