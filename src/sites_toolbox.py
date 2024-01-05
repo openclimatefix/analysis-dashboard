@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from sqlalchemy import func
 from pvsite_datamodel.connection import DatabaseConnection
 from pvsite_datamodel.sqlmodels import SiteSQL
-from pvsite_datamodel.write.user_and_site import make_site_group
+# from pvsite_datamodel.write.user_and_site import create_site_group
 from pvsite_datamodel.read import (
     get_all_sites,
     get_user_by_email,
@@ -15,17 +15,16 @@ from pvsite_datamodel.read import (
     get_site_group_by_name,
 )
 
-from get_data import (
-    create_new_site,
+from get_data import get_all_users, get_all_site_groups, get_site_by_client_site_id
+from pvsite_datamodel.write.user_and_site import (
+    create_site,
     create_user,
     delete_site,
     delete_user,
     delete_site_group,
-    get_all_users,
-    get_all_site_groups,
-    get_site_by_client_site_id,
     add_site_to_site_group,
     update_user_site_group,
+    create_site_group
 )
 
 # colors 7bcdf3 
@@ -367,7 +366,7 @@ def sites_toolbox_page():
                     )
                     st.write(error)
                 else:  # create new
-                    site, message = create_new_site(
+                    site, message = create_site(
                         session=session,
                         client_site_id=client_site_id,
                         client_site_name=client_site_name,
@@ -480,7 +479,7 @@ def sites_toolbox_page():
                         unsafe_allow_html=True,
                     )
                 else:
-                    new_site_group = make_site_group(
+                    new_site_group = create_site_group(
                         db_session=session,
                         site_group_name=new_site_group_name,
                     )
