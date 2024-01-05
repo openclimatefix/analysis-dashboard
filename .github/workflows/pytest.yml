@@ -9,7 +9,7 @@ jobs:
     uses: openclimatefix/.github/.github/workflows/python-test.yml@main
     with:
       # default python versions to use
-      python-version: "['3.10', '3.11']"
+      python-version: "['3.11']"
       # pytest-cov looks at this folder
       pytest_cov_dir: "src"
       #      brew_install: "proj geos librttopo"
