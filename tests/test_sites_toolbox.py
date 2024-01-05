@@ -9,19 +9,18 @@ from sites_toolbox import (
     add_all_sites_to_ocf_group,
 )
 
-from pvsite_datamodel.write.user_and_site import create_site, make_site_group, make_user
-
+from pvsite_datamodel.write.user_and_site import make_fake_site, create_site_group, create_user
 
 def test_get_user_details(db_session):
     """Test the get user details function"""
-    site_group = make_site_group(db_session=db_session)
-    site_1 = make_site(db_session=db_session, ml_id=1)
-    site_2 = make_site(db_session=db_session, ml_id=2)
+    site_group = create_site_group(db_session=db_session)
+    site_1 = make_fake_site(db_session=db_session, ml_id=1)
+    site_2 = make_fake_site(db_session=db_session, ml_id=2)
     site_group.sites.append(site_1)
     site_group.sites.append(site_2)
 
-    user = make_user(
-        db_session=db_session, email="test_user@gmail.com", site_group=site_group
+    user = create_user(
+        session=db_session, email="test_user@gmail.com", site_group_name=site_group.site_group_name
     )
     user_sites, user_site_group, user_site_count = get_user_details(
         session=db_session, email="test_user@gmail.com"
@@ -40,7 +39,7 @@ def test_get_site_details(db_session):
     """Test the get site details function
     :param db_session: the database session
     """
-    site = make_site(db_session=db_session, ml_id=1)
+    site = make_fake_site(db_session=db_session, ml_id=1)
 
     site_details = get_site_details(session=db_session, site_uuid=str(site.site_uuid))
 
@@ -68,7 +67,7 @@ def test_get_site_details(db_session):
 # test for select_site_id
 def test_select_site_id(db_session):
     """Test the select site id function"""
-    site = make_site(db_session=db_session, ml_id=1)
+    site = make_fake_site(db_session=db_session, ml_id=1)
 
     site_uuid = select_site_id(dbsession=db_session, query_method="site_uuid")
 
@@ -81,9 +80,9 @@ def test_select_site_id(db_session):
 # test for get_site_group_details
 def test_get_site_group_details(db_session):
     """Test the get site group details function"""
-    site_group = make_site_group(db_session=db_session)
-    site_1 = make_site(db_session=db_session, ml_id=1)
-    site_2 = make_site(db_session=db_session, ml_id=2)
+    site_group = create_site_group(db_session=db_session)
+    site_1 = make_fake_site(db_session=db_session, ml_id=1)
+    site_2 = make_fake_site(db_session=db_session, ml_id=2)
     site_group.sites.append(site_1)
     site_group.sites.append(site_2)
 
@@ -101,10 +100,10 @@ def test_get_site_group_details(db_session):
 # test update site group
 def test_update_site_group(db_session):
     """Test the update site group function"""
-    site_group = make_site_group(db_session=db_session)
-    site_1 = make_site(db_session=db_session, ml_id=1)
-    site_2 = make_site(db_session=db_session, ml_id=2)
-    site_3 = make_site(db_session=db_session, ml_id=3)
+    site_group = create_site_group(db_session=db_session)
+    site_1 = make_fake_site(db_session=db_session, ml_id=1)
+    site_2 = make_fake_site(db_session=db_session, ml_id=2)
+    site_3 = make_fake_site(db_session=db_session, ml_id=3)
     site_group.sites.append(site_1)
     site_group.sites.append(site_2)
 
@@ -128,11 +127,11 @@ def test_update_site_group(db_session):
 def test_change_user_site_group(db_session):
     """Test the change user site group function
     :param db_session: the database session"""
-    site_group = make_site_group(db_session=db_session)
-    user = make_user(
-        db_session=db_session, email="test_user@gmail.com", site_group=site_group
+    site_group = create_site_group(db_session=db_session)
+    _ = create_user(
+        session=db_session, email="test_user@gmail.com", site_group_name=site_group.site_group_name
     )
-    site_group2 = make_site_group(
+    site_group2 = create_site_group(
         db_session=db_session, site_group_name="test_site_group2"
     )
     user, user_site_group = change_user_site_group(
@@ -148,13 +147,13 @@ def test_change_user_site_group(db_session):
 # test for add_all_sites_to_ocf_group
 def test_add_all_sites_to_ocf_group(db_session, site_group_name="ocf"):
     """Test the add all sites to ocf group function"""
-    ocf_site_group = make_site_group(db_session=db_session, site_group_name="ocf")
-    site_1 = make_site(db_session=db_session, ml_id=1)
-    site_2 = make_site(db_session=db_session, ml_id=2)
+    ocf_site_group = create_site_group(db_session=db_session, site_group_name="ocf")
+    site_1 = make_fake_site(db_session=db_session, ml_id=1)
+    site_2 = make_fake_site(db_session=db_session, ml_id=2)
     ocf_site_group.sites.append(site_1)
     ocf_site_group.sites.append(site_2)
-    site_3 = make_site(db_session=db_session, ml_id=3)
-    site_4 = make_site(db_session=db_session, ml_id=4)
+    _ = make_fake_site(db_session=db_session, ml_id=3)
+    _ = make_fake_site(db_session=db_session, ml_id=4)
 
     message, sites_added = add_all_sites_to_ocf_group(
         session=db_session, site_group_name="ocf"
