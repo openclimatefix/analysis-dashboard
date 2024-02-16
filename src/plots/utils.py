@@ -33,7 +33,7 @@ def get_colour_from_model_name(model_name, opacity=1.0):
 
     # get colour from model, some models have a space and a datetime
     model_name_only = model_name.split(" ")[0]
-    colour = colour_per_model.get(model_name_only, "#000000")
+    colour = colour_per_model.get(model_name_only, "#FFFFFF")
 
     # change opacity to hex
     rgb = hex_to_rgb(colour)
