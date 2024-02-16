@@ -53,7 +53,7 @@ def get_x_y(metric_values):
     x is the time
     y is the metric value
     """
-    metric_values = [MetricValue.from_orm(value) for value in metric_values]
+
     # select data to show in the chart MAE and RMSE and date from the above date range
     x = [value.datetime_interval.start_datetime_utc for value in metric_values]
     y = [round(float(value.value), 2) for value in metric_values]
