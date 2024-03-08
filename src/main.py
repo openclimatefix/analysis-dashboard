@@ -272,5 +272,5 @@ if check_password():
         "NWP": nwp_page
     }
 
-    demo_name = st.sidebar.selectbox("Choose a page", page_names_to_funcs.keys(), 6)
+    demo_name = st.sidebar.selectbox("Choose a page", page_names_to_funcs.keys())
     page_names_to_funcs[demo_name]()
