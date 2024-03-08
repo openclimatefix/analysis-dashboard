@@ -2,6 +2,8 @@ import plotly.graph_objects as go
 import streamlit as st
 import xarray as xr
 
+# need this for some zarr files
+import ocf_blosc2
 
 @st.cache_data(ttl=3600)
 def get_data(zarr_file):
