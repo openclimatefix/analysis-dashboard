@@ -1,15 +1,51 @@
 import plotly.graph_objects as go
 import streamlit as st
 import xarray as xr
+import os, fsspec
+from datetime import datetime, timedelta
 
 # need this for some zarr files
 import ocf_blosc2
 
-@st.cache_data(ttl=3600)
+
 def get_data(zarr_file):
-    ds = xr.open_dataset(zarr_file)
+
+    # hash filename
+    hash_filename = f'./data/{zarr_file.replace("/","")}'
+
+    # file exits open this
+    download = True
+
+    if os.path.exists(hash_filename):
+        print("NWP file exists")
+
+        downloaded_datetime = os.path.getmtime(hash_filename)
+        downloaded_datetime = datetime.fromtimestamp(downloaded_datetime)
+        print(downloaded_datetime)
+
+        if downloaded_datetime < datetime.now() - timedelta(hours=1):
+            print("NWP file is more than 1 hour old")
+            download = True
+
+            # remove file
+            fs = fsspec.open(hash_filename).fs
+            fs.rm(hash_filename, recursive=True)
+        else:
+            download = False
+    else:
+        print("NWP file does not exist")
+
+    if download:
+
+        # download file from zarr_file to hash_filename
+        print(f"Downloading NWP file from {zarr_file} to {hash_filename}")
+        fs = fsspec.open(zarr_file).fs
+        fs.get(zarr_file, hash_filename, recursive=True)
+        print("Downloaded")
+
+    ds = xr.open_dataset(hash_filename)
     print("Loading")
-    ds = ds.load()
+
     return ds
 
 
@@ -61,16 +97,35 @@ def nwp_page():
         step = steps[step_idx]
         d_one_channel_one_step = d_one_channel.sel(step=step)
 
+        # change nanoseconds to hours
+        step = step.astype("timedelta64[h]").astype(int)
+
         # get values
         if "ECMWF_NW-INDIA" in d_one_channel_one_step.variables:
             values = d_one_channel_one_step["ECMWF_NW-INDIA"]
+            x = d_one_channel_one_step.longitude.values
+            y = d_one_channel_one_step.latitude.values
+            xaxis_title = "Longitude"
+            yaxis_title = "Latitude"
         elif "ECMWF_UK" in d_one_channel_one_step.variables:
             values = d_one_channel_one_step["ECMWF_UK"]
+            x = d_one_channel_one_step.longitude.values
+            y = d_one_channel_one_step.latitude.values
+            xaxis_title = "Longitude"
+            yaxis_title = "Latitude"
         elif "UKV" in d_one_channel_one_step.variables:
             values = d_one_channel_one_step["UKV"]
+            x = d_one_channel_one_step.x.values
+            y = d_one_channel_one_step.y.values
+            xaxis_title = "x_osgb"
+            yaxis_title = "y_osgb"
 
         else:
             values = d_one_channel_one_step
+            x = d_one_channel_one_step.longitude.values
+            y = d_one_channel_one_step.latitude.values
+            xaxis_title = "Longitude"
+            yaxis_title = "Latitude"
 
         # reduce dimensions
         if len(values.shape) == 3:
@@ -83,17 +138,17 @@ def nwp_page():
         fig = go.Figure(
             data=go.Heatmap(
                 z=values,
-                x=d_one_channel_one_step.longitude.values,
-                y=d_one_channel_one_step.latitude.values,
+                x=x,
+                y=y,
                 colorscale="Viridis",
             )
         )
 
         # add title
         fig.update_layout(
-            title=f"NWP {channels} at {init_time} + {step}",
-            xaxis_title="Longitude",
-            yaxis_title="Latitude",
+            title=f"NWP {channels} at {init_time} + {step} hours",
+            xaxis_title=xaxis_title,
+            yaxis_title=yaxis_title,
         )
         # make figure bigger
         fig.update_layout(
