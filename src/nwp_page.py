@@ -97,6 +97,9 @@ def nwp_page():
         step = steps[step_idx]
         d_one_channel_one_step = d_one_channel.sel(step=step)
 
+        # change nanoseconds to hours
+        step = step.astype("timedelta64[h]").astype(int)
+
         # get values
         if "ECMWF_NW-INDIA" in d_one_channel_one_step.variables:
             values = d_one_channel_one_step["ECMWF_NW-INDIA"]
@@ -143,7 +146,7 @@ def nwp_page():
 
         # add title
         fig.update_layout(
-            title=f"NWP {channels} at {init_time} + {step}",
+            title=f"NWP {channels} at {init_time} + {step} hours",
             xaxis_title=xaxis_title,
             yaxis_title=yaxis_title,
         )
