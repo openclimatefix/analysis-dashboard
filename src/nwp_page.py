@@ -159,23 +159,28 @@ def nwp_page():
         st.plotly_chart(fig, theme="streamlit", height=2000)
 
     else:
-        print("Average over latitude and longitude")
+        if "UKV" in d_one_channel.variables:
+            xaxis_title = "x"
+            yaxis_title = "y"
+        else:
+            xaxis_title = "longitude"
+            yaxis_title = "latitude"
 
         # reduce by lat lon
-        lon = st.text_input("Longitude Limits", "73,79")
-        lat = st.text_input("Latitude Limits", "24,28")
-        lon = lon.split(",")
-        lat = lat.split(",")
+        x = f'{d_one_channel.__getitem__(xaxis_title).min().values},{d_one_channel.__getitem__(xaxis_title).max().values}'
+        y = f'{d_one_channel.__getitem__(yaxis_title).min().values},{d_one_channel.__getitem__(yaxis_title).max().values}'
+        x = st.text_input(f"{xaxis_title} Limits", x)
+        y = st.text_input(f"{yaxis_title} Limits", y)
+        x = x.split(",")
+        y = y.split(",")
 
         # swap lat limits round if wrong way
-        if d_one_channel.latitude.values[0] > d_one_channel.latitude.values[-1]:
-            lat = lat[::-1]
-        d_one_channel = d_one_channel.sel({'latitude':slice(lat[0], lat[1]), 'longitude':slice(lon[0], lon[1])})
+        if d_one_channel.__getitem__(yaxis_title).values[0] > d_one_channel.__getitem__(yaxis_title).values[-1]:
+            y = y[::-1]
+        d_one_channel = d_one_channel.sel({xaxis_title: slice(x[0], x[1]), yaxis_title:slice(y[0], y[1])})
 
-        if "latitude" in d_one_channel.dims and "longitude" in d_one_channel.dims:
-            df = d_one_channel.mean(dim=["latitude", "longitude"])
-        else:
-            df = d_one_channel.mean(dim=["x", "y"])
+        # mean over x and y
+        df = d_one_channel.mean(dim=[xaxis_title, yaxis_title])
 
         print("Convert to dataframe")
         df = df.to_dataframe()
