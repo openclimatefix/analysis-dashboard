@@ -15,8 +15,6 @@ from status import status_page
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="centered", page_title="OCF Dashboard")
 
-show_pvnet_gsp_sum = os.getenv("SHOW_PVNET_GSP_SUM", "False").lower() == "true"
-
 if check_password():
 
     page_names_to_funcs = {

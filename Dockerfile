@@ -15,4 +15,4 @@ EXPOSE 8501
 
 EXPOSE 5433
 #runs the command I'd run to start the app -- these are called "flags" and they're like arguments but they're not
-ENTRYPOINT ["streamlit", "run", "main.py", "--server.port=8501", "--browser.serverAddress=0.0.0.0", "--server.address=0.0.0.0", "–server.enableCORS False"]
+CMD ["streamlit", "run", "main.py", "--server.port=8501", "--browser.serverAddress=0.0.0.0", "--server.address=0.0.0.0", "–server.enableCORS False"]
