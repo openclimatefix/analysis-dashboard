@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 import streamlit as st
 from datetime import datetime, timedelta, time, timezone
 from pvsite_datamodel.connection import DatabaseConnection
@@ -30,7 +31,15 @@ def pvsite_forecast_page():
       
     site_selection = st.sidebar.selectbox("Select sites by site_uuid", site_uuids,)
     starttime = st.sidebar.date_input("Start Date", min_value=datetime.today() - timedelta(days=3), max_value=datetime.today())
-    st.write("Forecast for", site_selection, "starting on", starttime)
+    created = st.sidebar.text_input("Created Before", pd.Timestamp.now().ceil('15min'))
+
+    if created == "":
+        created = datetime.now()
+    else:
+        created = datetime.fromisoformat(created)
+    st.write("Forecast for", site_selection, "starting on", starttime, "created by", created)
+
+    forecast_horizon = st.sidebar.selectbox("Select Forecast Horizon", range(0,2880,15), None)
 
     # get forecast values for selected sites and plot
     with connection.get_session() as session:
@@ -38,6 +47,8 @@ def pvsite_forecast_page():
             session=session,
             site_uuids=[site_selection],
             start_utc=starttime,
+            created_by=created,
+            forecast_horizon_minutes=forecast_horizon
         )
 
         forecasts = forecasts.values()
