@@ -160,6 +160,18 @@ def nwp_page():
 
     else:
         print("Average over latitude and longitude")
+
+        # reduce by lat lon
+        lon = st.text_input("Longitude Limits", "73,79")
+        lat = st.text_input("Latitude Limits", "24,28")
+        lon = lon.split(",")
+        lat = lat.split(",")
+
+        # swap lat limits round if wrong way
+        if d_one_channel.latitude.values[0] > d_one_channel.latitude.values[-1]:
+            lat = lat[::-1]
+        d_one_channel = d_one_channel.sel({'latitude':slice(lat[0], lat[1]), 'longitude':slice(lon[0], lon[1])})
+
         if "latitude" in d_one_channel.dims and "longitude" in d_one_channel.dims:
             df = d_one_channel.mean(dim=["latitude", "longitude"])
         else:
