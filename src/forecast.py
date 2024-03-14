@@ -71,12 +71,13 @@ def forecast_page():
 
             d = st.sidebar.date_input("Forecast creation date:", now.date())
             dd = datetime.combine(d, time(0, 0))
-            initial_times = [dd + timedelta(minutes=30 * i) for i in range(48)]
+            initial_times = [dd - timedelta(days=1) + timedelta(hours=3 * i) for i in range(8)]
+            initial_times += [dd + timedelta(minutes=30 * i) for i in range(48)]
 
             select_init_times = st.sidebar.multiselect(
                 "Forecast creation time",
                 initial_times,
-                [initial_times[x] for x in [6, 12, 18, 24, 30]],
+                [initial_times[x] for x in [2,6, 14, 20, 26, 32, 38]],
             )
             select_init_times = sorted(select_init_times)
             forecast_time = select_init_times[0]
