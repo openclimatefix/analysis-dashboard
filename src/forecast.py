@@ -77,7 +77,7 @@ def forecast_page():
             select_init_times = st.sidebar.multiselect(
                 "Forecast creation time",
                 initial_times,
-                [initial_times[x] for x in [14, 20, 26, 32, 38]],
+                [initial_times[x] for x in [2,6, 14, 20, 26, 32, 38]],
             )
             select_init_times = sorted(select_init_times)
             forecast_time = select_init_times[0]
