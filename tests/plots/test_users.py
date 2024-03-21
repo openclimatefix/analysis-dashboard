@@ -23,7 +23,7 @@ def test_make_api_requests_freq_plot():
     # create fake data
     api_requests = pd.DataFrame(
         {
-            "created_utc": ["2021-01-01", "2021-01-02", "2021-01-03"],
+            "date": ["2021-01-01", "2021-01-02", "2021-01-03"],
             "url": [1, 2, 3],
         }
     )
