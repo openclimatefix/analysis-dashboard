@@ -13,7 +13,7 @@ from sites_toolbox import sites_toolbox_page
 from status import status_page
 
 st.get_option("theme.primaryColor")
-st.set_page_config(layout="centered", page_title="OCF Dashboard")
+st.set_page_config(layout="wide", page_title="OCF Dashboard")
 
 if check_password():
 

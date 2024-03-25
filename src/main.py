@@ -32,7 +32,7 @@ from users import user_page
 from nwp_page import nwp_page
 
 st.get_option("theme.primaryColor")
-st.set_page_config(layout="centered", page_title="OCF Dashboard")
+st.set_page_config(layout="wide", page_title="OCF Dashboard")
 
 show_pvnet_gsp_sum = os.getenv("SHOW_PVNET_GSP_SUM", "False").lower() == "true"
 
