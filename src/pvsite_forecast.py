@@ -30,7 +30,7 @@ def pvsite_forecast_page():
         ]
       
     site_selection = st.sidebar.selectbox("Select sites by site_uuid", site_uuids,)
-    starttime = st.sidebar.date_input("Start Date", min_value=datetime.today() - timedelta(days=3), max_value=datetime.today())
+    starttime = st.sidebar.date_input("Start Date", min_value=datetime.today() - timedelta(days=365), max_value=datetime.today())
     created = st.sidebar.text_input("Created Before", pd.Timestamp.now().ceil('15min'))
 
     if created == "":
