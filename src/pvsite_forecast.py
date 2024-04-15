@@ -97,3 +97,23 @@ def pvsite_forecast_page():
     )
 
     st.plotly_chart(fig, theme="streamlit")
+
+    # download data,
+    @st.cache_data
+    def convert_df(df: pd.DataFrame):
+        # IMPORTANT: Cache the conversion to prevent computation on every rerun
+        return df.to_csv().encode('utf-8')
+
+    # join data together
+    forecast = pd.DataFrame({'forecast_datetime': x, 'forecast_power_kw': y})
+    generation = pd.DataFrame({'generation_datetime': xx, 'generation_power_kw': yy})
+    df = pd.concat([forecast, generation], axis=1)
+    csv = convert_df(df)
+    now = datetime.now().isoformat()
+
+    st.download_button(
+        label="Download data as CSV",
+        data=csv,
+        file_name=f'site_forecast_{site_selection}_{now}.csv',
+        mime='text/csv',
+    )
