@@ -41,6 +41,10 @@ def pvsite_forecast_page():
 
     forecast_horizon = st.sidebar.selectbox("Select Forecast Horizon", range(0,2880,15), None)
 
+    # an option to resample to the data
+    resample = st.sidebar.selectbox("Resample data", [None, "15T", "30T"], None)
+
+
     # get forecast values for selected sites and plot
     with connection.get_session() as session:
         forecasts = get_latest_forecast_values_by_site(
@@ -66,7 +70,25 @@ def pvsite_forecast_page():
         )
 
         yy = [generation.generation_power_kw for generation in generations if generation is not None]
-        xx = [generation.start_utc for generation in generations if generation is not None] 
+        xx = [generation.start_utc for generation in generations if generation is not None]
+
+    df_forecast = pd.DataFrame({'forecast_datetime': x, 'forecast_power_kw': y})
+    df_generation = pd.DataFrame({'generation_datetime': xx, 'generation_power_kw': yy})
+
+    if resample is not None:
+        df_forecast.set_index('forecast_datetime', inplace=True)
+        df_generation.set_index('generation_datetime', inplace=True)
+        df_forecast = df_forecast.resample(resample).mean()
+        df_generation = df_generation.resample(resample).mean()
+
+        # merge together
+        df_all = df_forecast.merge(df_generation, left_index=True, right_index=True, how='outer')
+
+        # select variables
+        xx = df_all.index
+        x = df_all.index
+        yy = df_all['generation_power_kw']
+        y = df_all['forecast_power_kw']
 
     fig = go.Figure(
         layout=go.Layout(
@@ -105,9 +127,10 @@ def pvsite_forecast_page():
         return df.to_csv().encode('utf-8')
 
     # join data together
-    forecast = pd.DataFrame({'forecast_datetime': x, 'forecast_power_kw': y})
-    generation = pd.DataFrame({'generation_datetime': xx, 'generation_power_kw': yy})
-    df = pd.concat([forecast, generation], axis=1)
+    if resample is not None:
+        df = df_all
+    else:
+        df = pd.concat([df_forecast, df_generation], axis=1)
     csv = convert_df(df)
     now = datetime.now().isoformat()
 
