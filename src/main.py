@@ -30,6 +30,7 @@ from tables.raw import make_raw_table
 from tables.summary import make_recent_summary_stats, make_forecast_horizon_table
 from users import user_page
 from nwp_page import nwp_page
+from satellite_page import satellite_page
 
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
@@ -269,7 +270,8 @@ if check_password():
         "PV Site Forecast": pvsite_forecast_page,
         "Sites Toolbox": sites_toolbox_page,
         "API Users": user_page,
-        "NWP": nwp_page
+        "NWP": nwp_page,
+        "Satellite": satellite_page,
     }
 
     demo_name = st.sidebar.selectbox("Choose a page", page_names_to_funcs.keys())
