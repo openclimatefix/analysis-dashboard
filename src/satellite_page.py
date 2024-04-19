@@ -45,7 +45,7 @@ def get_data(zarr_file):
         fs.get(zarr_file, hash_filename, recursive=True)
         print("Downloaded")
 
-    if not os.path.exists(hash_filename):
+    if not os.path.exists(hash_filename_unzip):
         print("Unzipping")
         os.system(f"unzip -qq {hash_filename} -d {hash_filename_unzip}")
     ds = xr.open_dataset(hash_filename_unzip)
