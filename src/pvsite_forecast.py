@@ -46,7 +46,7 @@ def pvsite_forecast_page():
         created = None
 
     if forecast_type == "Forecast_horizon":
-        forecast_horizon = st.sidebar.selectbox("Select Forecast Horizon", range(0,2880,15), 5)
+        forecast_horizon = st.sidebar.selectbox("Select Forecast Horizon", range(0,2880,15), 6)
     else:
         forecast_horizon = None
 
