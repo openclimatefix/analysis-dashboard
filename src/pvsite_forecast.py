@@ -113,7 +113,7 @@ def pvsite_forecast_page():
     fig = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(text="Latest Forecast for Selected Site"),
-            xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
+            xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Time [UTC]")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="KW")),
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
         )
