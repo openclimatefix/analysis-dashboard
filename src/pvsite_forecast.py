@@ -51,6 +51,7 @@ def pvsite_forecast_page():
         forecast_horizon = None
 
     if forecast_type == "DA":
+        # TODO make these more flexible
         day_ahead_hours = 9
         day_ahead_timezone_delta_hours = 5.5
         st.write(f"Forecast for {day_ahead_hours} oclock the day before "
