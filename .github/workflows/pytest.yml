@@ -6,7 +6,7 @@ on:
     - cron: "0 12 * * 1"
 jobs:
   call-run-python-tests:
-    uses: openclimatefix/.github/.github/workflows/python-test.yml@main
+    uses: openclimatefix/.github/.github/workflows/python-test.yml@remove-python3.9-specifc
     with:
       # default python versions to use
       python-version: "['3.11']"
