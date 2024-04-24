@@ -31,19 +31,37 @@ def pvsite_forecast_page():
       
     site_selection = st.sidebar.selectbox("Select sites by site_uuid", site_uuids,)
     starttime = st.sidebar.date_input("Start Date", min_value=datetime.today() - timedelta(days=365), max_value=datetime.today())
-    created = st.sidebar.text_input("Created Before", pd.Timestamp.now().ceil('15min'))
 
-    if created == "":
-        created = datetime.now()
+    forecast_type = st.sidebar.selectbox("Select Forecast Type", ["Latest", "Forecast_horizon", "DA"], 0)
+
+    if forecast_type == "Latest":
+        created = st.sidebar.text_input("Created Before", pd.Timestamp.now().ceil('15min'))
+
+        if created == "":
+            created = datetime.now()
+        else:
+            created = datetime.fromisoformat(created)
+        st.write("Forecast for", site_selection, "starting on", starttime, "created by", created)
     else:
-        created = datetime.fromisoformat(created)
-    st.write("Forecast for", site_selection, "starting on", starttime, "created by", created)
+        created = None
 
-    forecast_horizon = st.sidebar.selectbox("Select Forecast Horizon", range(0,2880,15), None)
+    if forecast_type == "Forecast_horizon":
+        forecast_horizon = st.sidebar.selectbox("Select Forecast Horizon", range(0,2880,15), 6)
+    else:
+        forecast_horizon = None
+
+    if forecast_type == "DA":
+        # TODO make these more flexible
+        day_ahead_hours = 9
+        day_ahead_timezone_delta_hours = 5.5
+        st.write(f"Forecast for {day_ahead_hours} oclock the day before "
+                 f"with {day_ahead_timezone_delta_hours} hour timezone delta")
+    else:
+        day_ahead_hours = None
+        day_ahead_timezone_delta_hours = None
 
     # an option to resample to the data
     resample = st.sidebar.selectbox("Resample data", [None, "15T", "30T"], None)
-
 
     # get forecast values for selected sites and plot
     with connection.get_session() as session:
@@ -52,7 +70,9 @@ def pvsite_forecast_page():
             site_uuids=[site_selection],
             start_utc=starttime,
             created_by=created,
-            forecast_horizon_minutes=forecast_horizon
+            forecast_horizon_minutes=forecast_horizon,
+            day_ahead_hours=day_ahead_hours,
+            day_ahead_timezone_delta_hours=day_ahead_timezone_delta_hours
         )
 
         forecasts = forecasts.values()
@@ -93,7 +113,7 @@ def pvsite_forecast_page():
     fig = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(text="Latest Forecast for Selected Site"),
-            xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Date")),
+            xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Time [UTC]")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="KW")),
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
         )
