@@ -3,11 +3,13 @@ import streamlit as st
 from datetime import datetime, timedelta
 import os
 from nowcasting_datamodel.connection import DatabaseConnection
-from nowcasting_datamodel.models.api import UserSQL, APIRequestSQL
 from nowcasting_datamodel.read.read_user import (
     get_all_last_api_request,
     get_api_requests_for_one_user,
 )
+from pvsite_datamodel.connection import DatabaseConnection as SitesDatabaseConnection
+from pvsite_datamodel.read.user import get_all_last_api_request as get_all_last_api_request_sites
+from pvsite_datamodel.read.user import get_api_requests_for_one_user as get_api_requests_for_one_user_sites
 
 from plots.users import make_api_requests_plot, make_api_frequency_requests_plot
 
@@ -35,11 +37,37 @@ def user_page():
     )
 
     # get last call from the database
-    url = os.environ["DB_URL"]
-    connection = DatabaseConnection(url=url, echo=True)
+    db_url = os.environ["DB_URL"]
+    db_url_sites = os.environ["SITES_DB_URL"]
+
+    # if both databases are available, let the user choose which one to use
+    # if none, show error
+    if db_url is not None and db_url_sites is not None:
+        db_connection = st.sidebar.selectbox("Select", ['National', 'Sites'], index=0)
+    elif db_url is not None:
+        db_connection = 'National'
+    elif db_url_sites is not None:
+        db_connection = 'Sites'
+    else:
+        st.error("No database URL found")
+        return
+
+    # depending on which database has been selected, we choose the
+    # 1. connection function
+    # 2. get_all_last_api_request function
+    # 3. get_api_requests_for_one_user function
+    if db_connection == 'National':
+        connection = DatabaseConnection(url=db_url, echo=True)
+        get_all_last_api_request_func = get_all_last_api_request
+        get_api_requests_for_one_user_func = get_api_requests_for_one_user
+    else:
+        connection = SitesDatabaseConnection(url=db_url_sites, echo=True)
+        get_all_last_api_request_func = get_all_last_api_request_sites
+        get_api_requests_for_one_user_func = get_api_requests_for_one_user_sites
+
     with connection.get_session() as session:
 
-        last_requests_sql = get_all_last_api_request(session=session)
+        last_requests_sql = get_all_last_api_request_func(session=session)
 
         last_request = [
             (last_request_sql.user.email, last_request_sql.created_utc)
@@ -57,7 +85,7 @@ def user_page():
 
     # get all calls for selected user
     with connection.get_session() as session:
-        api_requests_sql = get_api_requests_for_one_user(
+        api_requests_sql = get_api_requests_for_one_user_func(
             session=session, email=email_selected, start_datetime=start_time, end_datetime=end_time
         )
 
