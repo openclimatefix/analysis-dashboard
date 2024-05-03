@@ -37,8 +37,8 @@ def user_page():
     )
 
     # get last call from the database
-    db_url = os.environ["DB_URL"]
-    db_url_sites = os.environ["SITES_DB_URL"]
+    db_url = os.getenv("DB_URL", None)
+    db_url_sites = os.getenv("SITES_DB_URL", None)
 
     # if both databases are available, let the user choose which one to use
     # if none, show error
