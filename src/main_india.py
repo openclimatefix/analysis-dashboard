@@ -12,6 +12,7 @@ from pvsite_forecast import pvsite_forecast_page
 from sites_toolbox import sites_toolbox_page
 from satellite_page import satellite_page
 from status import status_page
+from users import user_page
 
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
@@ -22,6 +23,7 @@ if check_password():
         "Status": status_page,
         "Location Forecast": pvsite_forecast_page,
         "Sites Toolbox": sites_toolbox_page,
+        "API Users": user_page,
         "NWP": nwp_page,
         "Satellite": satellite_page,
     }
