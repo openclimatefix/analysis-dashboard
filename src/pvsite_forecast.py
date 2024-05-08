@@ -9,7 +9,6 @@ from pvsite_datamodel.read import (
     get_latest_forecast_values_by_site
 )
 
-
 import plotly.graph_objects as go
 
 
@@ -22,6 +21,7 @@ def pvsite_forecast_page():
     )
     # get site_uuids from database
     url = os.environ["SITES_DB_URL"]
+
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         site_uuids = get_all_sites(session=session)
@@ -154,8 +154,20 @@ def pvsite_forecast_page():
     csv = convert_df(df)
     now = datetime.now().isoformat()
 
+    #MAE Calculator
+    mae_kw = abs(df['generation_power_kw'] - df['forecast_power_kw']).sum() / len(df)
+    mae_rounded_kw = round(mae_kw,ndigits=3)
+    mae_rounded_mw = round(mae_kw/1000,ndigits=3)
+    if resample is None:
+         st.caption("Please resample to '15T' to get MAE")
+    elif mae_rounded_kw < 2000:
+         st.write(f"Mean Absolute Error {mae_rounded_kw} KW")
+    else:
+         st.write(f"Mean Absolute Error {mae_rounded_mw} MW")
+
+    #CSV download button
     st.download_button(
-        label="Download data as CSV",
+        label="Download data as CSV",   
         data=csv,
         file_name=f'site_forecast_{site_selection}_{now}.csv',
         mime='text/csv',
