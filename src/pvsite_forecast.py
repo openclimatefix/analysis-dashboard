@@ -155,7 +155,7 @@ def pvsite_forecast_page():
     now = datetime.now().isoformat()
 
     #MAE Calculator
-    mae_kw = abs(df['generation_power_kw'] - df['forecast_power_kw']).sum() / len(df)
+    mae_kw = (df['generation_power_kw'] - df['forecast_power_kw']).abs().mean()
     mae_rounded_kw = round(mae_kw,ndigits=3)
     mae_rounded_mw = round(mae_kw/1000,ndigits=3)
     if resample is None:
