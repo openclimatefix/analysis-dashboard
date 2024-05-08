@@ -155,12 +155,16 @@ def pvsite_forecast_page():
     now = datetime.now().isoformat()
 
     #MAE Calculator
-    MAE = abs(df['generation_power_kw'] - df['forecast_power_kw']).sum() / len(df)
-    MAErounded = round(MAE/1000,ndigits=3)
+    mae_kw = abs(df['generation_power_kw'] - df['forecast_power_kw']).sum() / len(df)
+    mae_rounded_kw = round(mae_kw,ndigits=3)
+    mae_rounded_mw = round(mae_kw/1000,ndigits=3)
     if resample is None:
          st.caption("Please resample to '15T' to get MAE")
+    elif mae_rounded_kw < 2000:
+         st.write(f"Mean Absolute Error {mae_rounded_kw} KW")
     else:
-         st.write("##### Current Mean Actual Error :", MAErounded, "MW")
+         st.write(f"Mean Absolute Error {mae_rounded_mw} MW")
+
     #CSV download button
     st.download_button(
         label="Download data as CSV",   
