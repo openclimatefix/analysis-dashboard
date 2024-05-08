@@ -20,7 +20,7 @@ def pvsite_forecast_page():
         unsafe_allow_html=True,
     )
     # get site_uuids from database
-    url = 'postgresql://main:vPV%xXs6AiviZ8WP@127.0.0.1:5433/indiadbdevelopment'
+    url = os.environ["SITES_DB_URL"]
 
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
@@ -154,11 +154,13 @@ def pvsite_forecast_page():
     csv = convert_df(df)
     now = datetime.now().isoformat()
 
-    MAEformula = abs(df['generation_power_kw'] - df['forecast_power_kw']).sum() / len(df)
-    MAE = round(MAEformula/1000,ndigits=3)
-    st.write("##### Current Mean Actual Error :", MAE, "MW")
+    #MAE Calculator
+    MAE = abs(df['generation_power_kw'] - df['forecast_power_kw']).sum() / len(df)
+    MAErounded = round(MAE/1000,ndigits=3)
+    st.write("##### Current Mean Actual Error :", MAErounded, "MW")
     st.caption("Please resample to '15T' to get MAE")
-
+  
+    #CSV download button
     st.download_button(
         label="Download data as CSV",   
         data=csv,
