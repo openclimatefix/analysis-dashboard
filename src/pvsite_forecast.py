@@ -20,7 +20,7 @@ def pvsite_forecast_page():
         unsafe_allow_html=True,
     )
     # get site_uuids from database
-    url = os.environ["SITES_DB_URL"]
+    url = url = os.environ["SITES_DB_URL"]
 
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
@@ -155,7 +155,7 @@ def pvsite_forecast_page():
     now = datetime.now().isoformat()
 
     #MAE Calculator
-    mae_kw = abs(df['generation_power_kw'] - df['forecast_power_kw']).sum() / len(df)
+    mae_kw = mae_kw = (df['generation_power_kw'] - df['forecast_power_kw']).abs().mean()
     mae_rounded_kw = round(mae_kw,ndigits=3)
     mae_rounded_mw = round(mae_kw/1000,ndigits=3)
     if resample is None:
