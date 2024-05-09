@@ -20,7 +20,7 @@ def pvsite_forecast_page():
         unsafe_allow_html=True,
     )
     # get site_uuids from database
-    url = 'os.environ["SITES_DB_URL"]'
+    url = os.environ["SITES_DB_URL"]
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         site_uuids = get_all_sites(session=session)
