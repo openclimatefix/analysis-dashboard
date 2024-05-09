@@ -20,15 +20,13 @@ def pvsite_forecast_page():
         unsafe_allow_html=True,
     )
     # get site_uuids from database
-    url = 'postgresql://main:vPV%xXs6AiviZ8WP@127.0.0.1:5433/indiadbdevelopment'
-
+    url = os.environ["SITES_DB_URL"]
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         site_uuids = get_all_sites(session=session)
         site_uuids = [
             sites.site_uuid for sites in site_uuids if sites.site_uuid is not None
         ]
-      
     site_selection = st.sidebar.selectbox("Select sites by site_uuid", site_uuids,)
     starttime = st.sidebar.date_input("Start Date", min_value=datetime.today() - timedelta(days=365), max_value=datetime.today())
 
