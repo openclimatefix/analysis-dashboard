@@ -169,7 +169,7 @@ def pvsite_forecast_page():
          st.caption(f"NMAE is calculated by mean generation")
     else:
          st.write(f"Mean Absolute Error {mae_rounded_mw} MW")
-         st.write(f"Normalised Mean Average is:{nmae_rounded*100}%")
+         st.write(f"Normalised Mean Absolute Error is:{nmae_rounded*100}%")
          st.caption(f"NMAE is calculated by mean generation")
 
     #CSV download button
