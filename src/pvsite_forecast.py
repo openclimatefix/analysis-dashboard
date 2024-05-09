@@ -20,15 +20,13 @@ def pvsite_forecast_page():
         unsafe_allow_html=True,
     )
     # get site_uuids from database
-    url = os.environ["SITES_DB_URL"]
-
+    url = 'os.environ["SITES_DB_URL"]'
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         site_uuids = get_all_sites(session=session)
         site_uuids = [
             sites.site_uuid for sites in site_uuids if sites.site_uuid is not None
         ]
-      
     site_selection = st.sidebar.selectbox("Select sites by site_uuid", site_uuids,)
     starttime = st.sidebar.date_input("Start Date", min_value=datetime.today() - timedelta(days=365), max_value=datetime.today())
 
@@ -156,14 +154,30 @@ def pvsite_forecast_page():
 
     #MAE Calculator
     mae_kw = (df['generation_power_kw'] - df['forecast_power_kw']).abs().mean()
+    mean_generation = df['generation_power_kw'].mean()
+    nmae = mae_kw / mean_generation
+    nmae_rounded = round(nmae,ndigits=4)
+    nma2 = (df['generation_power_kw'] - df['forecast_power_kw']).abs()
+    gen = df['generation_power_kw']
+    nmae2 = nma2/gen
+    nmae2_mean = nmae2.mean()
+    nmae2_rounded = round(nmae2_mean,ndigits=4)
     mae_rounded_kw = round(mae_kw,ndigits=3)
     mae_rounded_mw = round(mae_kw/1000,ndigits=3)
     if resample is None:
          st.caption("Please resample to '15T' to get MAE")
     elif mae_rounded_kw < 2000:
          st.write(f"Mean Absolute Error {mae_rounded_kw} KW")
+         st.write(f"Normalised Mean Absolute Error is : {nmae_rounded*100} %")
+         st.caption(f"NMAE is calculated by MAE / (mean generation)")
+         st.write(f"Normalised Mean Absolute Error is : {nmae2_rounded*100} %")
+         st.caption(f"NMAE is calculated by current generation (kw)")
     else:
          st.write(f"Mean Absolute Error {mae_rounded_mw} MW")
+         st.write(f"Normalised Mean Absolute Error is : {nmae_rounded*100} %")
+         st.caption(f"NMAE is calculated by MAE / (mean generation)")
+         st.write(f"Normalised Mean Absolute Error is : {nmae2_rounded*100} %")
+         st.caption(f"NMAE is calculated by current generation (kw)")
 
     #CSV download button
     st.download_button(
