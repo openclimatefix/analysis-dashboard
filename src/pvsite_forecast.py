@@ -20,7 +20,7 @@ def pvsite_forecast_page():
         unsafe_allow_html=True,
     )
     # get site_uuids from database
-    url = os.environ["SITES_DB_URL"]
+    url = 'postgresql://main:vPV%xXs6AiviZ8WP@127.0.0.1:5433/indiadbdevelopment'
 
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
@@ -156,14 +156,21 @@ def pvsite_forecast_page():
 
     #MAE Calculator
     mae_kw = (df['generation_power_kw'] - df['forecast_power_kw']).abs().mean()
+    mean_generation = df['generation_power_kw'].mean()
+    nmae = mae_kw / mean_generation
+    nmae_rounded = round(nmae,ndigits=4)
     mae_rounded_kw = round(mae_kw,ndigits=3)
     mae_rounded_mw = round(mae_kw/1000,ndigits=3)
     if resample is None:
          st.caption("Please resample to '15T' to get MAE")
     elif mae_rounded_kw < 2000:
          st.write(f"Mean Absolute Error {mae_rounded_kw} KW")
+         st.write(f"Normalised Mean Absolute Error is:{nmae_rounded*100}%")
+         st.caption(f"NMAE is calculated by mean generation")
     else:
          st.write(f"Mean Absolute Error {mae_rounded_mw} MW")
+         st.write(f"Normalised Mean Average is:{nmae_rounded*100}%")
+         st.caption(f"NMAE is calculated by mean generation")
 
     #CSV download button
     st.download_button(
