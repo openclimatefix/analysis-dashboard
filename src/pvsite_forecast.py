@@ -22,7 +22,7 @@ def pvsite_forecast_page():
         unsafe_allow_html=True,
     )
     # get site_uuids from database
-    url = os.environ["SITES_DB_URL"]
+    url = 'postgresql://main:vPV%xXs6AiviZ8WP@127.0.0.1:5433/indiadbdevelopment'
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         site_uuids = get_all_sites(session=session)
@@ -32,7 +32,6 @@ def pvsite_forecast_page():
     site_selection = st.sidebar.selectbox("Select sites by site_uuid", site_uuids,)
     day_after_tomorrow = datetime.today() + timedelta(days=3)
     starttime = st.sidebar.date_input("Start Date", min_value=datetime.today() - timedelta(days=365), max_value=datetime.today())
-    #endtime = st.sidebar.date_input("End Date", min_value=datetime.today() - timedelta(days=365), max_value=datetime.today() + timedelta(days=2))
     endtime = st.sidebar.date_input("End Date",day_after_tomorrow)
 
     forecast_type = st.sidebar.selectbox("Select Forecast Type", ["Latest", "Forecast_horizon", "DA"], 0)
