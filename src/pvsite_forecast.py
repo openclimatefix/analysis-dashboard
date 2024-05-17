@@ -22,7 +22,7 @@ def pvsite_forecast_page():
         unsafe_allow_html=True,
     )
     # get site_uuids from database
-    url = 'postgresql://main:vPV%xXs6AiviZ8WP@127.0.0.1:5433/indiadbdevelopment'
+    url = 'os.environ["SITES_DB_URL"]'
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         site_uuids = get_all_sites(session=session)
