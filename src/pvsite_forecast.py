@@ -2,6 +2,8 @@ import os
 import pandas as pd
 import streamlit as st
 from datetime import datetime, timedelta, time, timezone
+from pvsite_datamodel.read import get_site_by_uuid
+from sqlalchemy.orm import Session
 from pvsite_datamodel.connection import DatabaseConnection
 from pvsite_datamodel.read import (
     get_all_sites,
@@ -20,7 +22,7 @@ def pvsite_forecast_page():
         unsafe_allow_html=True,
     )
     # get site_uuids from database
-    url = 'os.environ["SITES_DB_URL"]'
+    url = os.environ["SITES_DB_URL"]
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         site_uuids = get_all_sites(session=session)
@@ -28,7 +30,10 @@ def pvsite_forecast_page():
             sites.site_uuid for sites in site_uuids if sites.site_uuid is not None
         ]
     site_selection = st.sidebar.selectbox("Select sites by site_uuid", site_uuids,)
+    day_after_tomorrow = datetime.today() + timedelta(days=3)
     starttime = st.sidebar.date_input("Start Date", min_value=datetime.today() - timedelta(days=365), max_value=datetime.today())
+    #endtime = st.sidebar.date_input("End Date", min_value=datetime.today() - timedelta(days=365), max_value=datetime.today() + timedelta(days=2))
+    endtime = st.sidebar.date_input("End Date",day_after_tomorrow)
 
     forecast_type = st.sidebar.selectbox("Select Forecast Type", ["Latest", "Forecast_horizon", "DA"], 0)
 
@@ -39,7 +44,7 @@ def pvsite_forecast_page():
             created = datetime.now()
         else:
             created = datetime.fromisoformat(created)
-        st.write("Forecast for", site_selection, "starting on", starttime, "created by", created)
+        st.write("Forecast for", site_selection, "starting on", starttime, "created by", created, "ended on", endtime)
     else:
         created = None
 
@@ -70,9 +75,9 @@ def pvsite_forecast_page():
             created_by=created,
             forecast_horizon_minutes=forecast_horizon,
             day_ahead_hours=day_ahead_hours,
-            day_ahead_timezone_delta_hours=day_ahead_timezone_delta_hours
+            day_ahead_timezone_delta_hours=day_ahead_timezone_delta_hours,
+            end_utc=endtime,
         )
-
         forecasts = forecasts.values()
 
         for forecast in forecasts:
@@ -85,7 +90,9 @@ def pvsite_forecast_page():
             session=session,
             site_uuids=[site_selection],
             start_utc=starttime,
+            end_utc=endtime,
         )
+        capacity = get_site_capacity(session = session, site_uuidss = site_selection)
 
         yy = [generation.generation_power_kw for generation in generations if generation is not None]
         xx = [generation.start_utc for generation in generations if generation is not None]
@@ -152,32 +159,42 @@ def pvsite_forecast_page():
     csv = convert_df(df)
     now = datetime.now().isoformat()
 
-    #MAE Calculator
+    #MAE and NMAE Calculator
     mae_kw = (df['generation_power_kw'] - df['forecast_power_kw']).abs().mean()
     mean_generation = df['generation_power_kw'].mean()
     nmae = mae_kw / mean_generation
-    nmae_rounded = round(nmae,ndigits=4)
+    nmae_rounded = round(nmae*100,ndigits=4)
     nma2 = (df['generation_power_kw'] - df['forecast_power_kw']).abs()
     gen = df['generation_power_kw']
     nmae2 = nma2/gen
     nmae2_mean = nmae2.mean()
-    nmae2_rounded = round(nmae2_mean,ndigits=4)
-    mae_rounded_kw = round(mae_kw,ndigits=3)
+    nmae2_rounded = round(nmae2_mean*100,ndigits=4)
+    mae_rounded_kw = round(mae_kw*100,ndigits=3)
     mae_rounded_mw = round(mae_kw/1000,ndigits=3)
+    nmae_capacity = mae_kw / capacity
+    nmae_rounded_capcity = round(nmae_capacity*100,ndigits=3)
+
     if resample is None:
          st.caption("Please resample to '15T' to get MAE")
+
     elif mae_rounded_kw < 2000:
          st.write(f"Mean Absolute Error {mae_rounded_kw} KW")
-         st.write(f"Normalised Mean Absolute Error is : {nmae_rounded*100} %")
+         st.write(f"Normalised Mean Absolute Error is : {nmae_rounded} %")
          st.caption(f"NMAE is calculated by MAE / (mean generation)")
-         st.write(f"Normalised Mean Absolute Error is : {nmae2_rounded*100} %")
+         st.write(f"Normalised Mean Absolute Error is : {nmae2_rounded} %")
          st.caption(f"NMAE is calculated by current generation (kw)")
+         st.write(f"Normalised Mean Absolute Error is : {nmae_rounded_capcity} %")
+         st.caption(f"NMAE is calculated by generation capacity (mw)")
+
+
     else:
          st.write(f"Mean Absolute Error {mae_rounded_mw} MW")
-         st.write(f"Normalised Mean Absolute Error is : {nmae_rounded*100} %")
+         st.write(f"Normalised Mean Absolute Error is : {nmae_rounded} %")
          st.caption(f"NMAE is calculated by MAE / (mean generation)")
-         st.write(f"Normalised Mean Absolute Error is : {nmae2_rounded*100} %")
+         st.write(f"Normalised Mean Absolute Error is : {nmae2_rounded} %")
          st.caption(f"NMAE is calculated by current generation (kw)")
+         st.write(f"Normalised Mean Absolute Error is : {nmae_rounded_capcity} %")
+         st.caption(f"NMAE is calculated by generation capacity (mw)")
 
     #CSV download button
     st.download_button(
@@ -186,3 +203,7 @@ def pvsite_forecast_page():
         file_name=f'site_forecast_{site_selection}_{now}.csv',
         mime='text/csv',
     )
+def get_site_capacity(session : Session , site_uuidss: str) -> float:
+    site = get_site_by_uuid(session, site_uuidss)
+    capacity_kw = site.capacity_kw
+    return capacity_kw
