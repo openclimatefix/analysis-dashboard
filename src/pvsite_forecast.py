@@ -22,7 +22,7 @@ def pvsite_forecast_page():
         unsafe_allow_html=True,
     )
     # get site_uuids from database
-    url = 'os.environ["SITES_DB_URL"]'
+    url = os.environ["SITES_DB_URL"]
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         site_uuids = get_all_sites(session=session)
@@ -202,6 +202,7 @@ def pvsite_forecast_page():
         file_name=f'site_forecast_{site_selection}_{now}.csv',
         mime='text/csv',
     )
+
 def get_site_capacity(session : Session , site_uuidss: str) -> float:
     site = get_site_by_uuid(session, site_uuidss)
     capacity_kw = site.capacity_kw

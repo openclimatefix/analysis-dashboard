@@ -24,7 +24,7 @@ def get_data(zarr_file):
         downloaded_datetime = datetime.fromtimestamp(downloaded_datetime)
         print(downloaded_datetime)
 
-        if downloaded_datetime < datetime.now() - timedelta(hours=1):
+        if downloaded_datetime < datetime.now() - timedelta(minutes=5):
             print("Satellite file is more than 1 hour old")
             download = True
 
