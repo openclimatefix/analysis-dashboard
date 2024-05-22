@@ -67,7 +67,7 @@ def metric_page():
 
     if show_pvnet_gsp_sum:
         models.append("pvnet_gsp_sum")
-    model_name = st.sidebar.selectbox("Select", models, 2)
+    model_name = st.sidebar.selectbox("Select", models, 3)
 
     # get metrics for comparing MAE and RMSE without forecast horizon
 
