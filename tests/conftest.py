@@ -3,7 +3,8 @@ import datetime as dt
 import pytest
 from nowcasting_datamodel.models.base import Base_Forecast
 from nowcasting_datamodel.models.metric import MetricSQL, MetricValueSQL, DatetimeIntervalSQL
-from nowcasting_datamodel.read.read import get_location, get_model
+from nowcasting_datamodel.read.read import get_location
+from nowcasting_datamodel.read.read_models import get_model
 from pvsite_datamodel.sqlmodels import Base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
