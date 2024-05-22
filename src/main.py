@@ -9,6 +9,7 @@ import pandas as pd
 import streamlit as st
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.metric import MetricValue
+from nowcasting_datamodel.read.read_models import get_models
 
 from auth import check_password
 from forecast import forecast_page
@@ -50,14 +51,23 @@ def metric_page():
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
     st.sidebar.subheader("Select Forecast Model")
-    models = ["cnn", "National_xg", "pvnet_v2"]
-    if show_pvnet_gsp_sum:
-        models.append("pvnet_gsp_sum")
-    model_name = st.sidebar.selectbox("Select", models, 2)
 
     # set up database connection
     url = os.environ["DB_URL"]
     connection = DatabaseConnection(url=url, echo=True)
+
+    with connection.get_session() as session:
+        # this gets all the models used in the last week
+        models = get_models(
+            session=session,
+            with_forecasts=True,
+            forecast_created_utc=datetime.today() - timedelta(days=7),
+        )
+        models = [model.name for model in models]
+
+    if show_pvnet_gsp_sum:
+        models.append("pvnet_gsp_sum")
+    model_name = st.sidebar.selectbox("Select", models, 2)
 
     # get metrics for comparing MAE and RMSE without forecast horizon
 

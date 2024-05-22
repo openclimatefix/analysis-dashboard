@@ -11,6 +11,7 @@ from nowcasting_datamodel.read.read import (
     get_all_locations,
 )
 from nowcasting_datamodel.read.read_gsp import get_gsp_yield, get_gsp_yield_sum
+from nowcasting_datamodel.read.read_models import get_models
 
 from plots.utils import get_colour_from_model_name
 
@@ -41,7 +42,13 @@ def forecast_page():
             location.installed_capacity_mw for location in locations if location.gsp_id == gsp_id
         ][0]
 
-        models = ["cnn", "National_xg", "pvnet_v2", "blend"]
+        models = get_models(
+            session=session,
+            with_forecasts=True,
+            forecast_created_utc=datetime.today() - timedelta(days=7),
+        )
+        models = [model.name for model in models]
+
         if show_pvnet_gsp_sum:
             models.append("pvnet_gsp_sum")
         forecast_models = st.sidebar.multiselect("Select a model", models, ["pvnet_v2"])
