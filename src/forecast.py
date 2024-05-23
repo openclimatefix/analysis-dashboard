@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timedelta, time, timezone
+import numpy as np
 
 import plotly.graph_objects as go
 import streamlit as st
@@ -25,153 +26,168 @@ def forecast_page():
         f'<h1 style="color:#63BCAF;font-size:48px;">{"National and GSP Forecasts"}</h1>',
         unsafe_allow_html=True,
     )
-    # get locations
-    url = os.environ["DB_URL"]
-    connection = DatabaseConnection(url=url, echo=True)
+    
+    st.sidebar.subheader("Select Forecast Model")
+    
+    connection = DatabaseConnection(url=os.environ["DB_URL"], echo=True)
     with connection.get_session() as session:
+                
+        # Get all GSP regions
         locations = get_all_locations(session=session)
-        locations = [Location.from_orm(location) for location in locations if location.gsp_id < 318]
+        locations = [Location.from_orm(loc) for loc in locations if loc.gsp_id < 318]
 
-        gsps = [f"{location.gsp_id}: {location.region_name}" for location in locations]
-
-        st.sidebar.subheader("Select Forecast Model")
+        gsps = [f"{loc.gsp_id}: {loc.region_name}" for loc in locations]
+        
+        # Add dropdown to select GSP region
         gsp_id = st.sidebar.selectbox("Select a region", gsps, index=0)
-        # format gsp_id and get capacity
+        
+        # Get selected GSP ID and its effective capacity
         gsp_id = int(gsp_id.split(":")[0])
-        capacity_mw = [
-            location.installed_capacity_mw for location in locations if location.gsp_id == gsp_id
-        ][0]
-
-        models = get_models(
+        capacity_mw = next(loc.installed_capacity_mw for loc in locations if loc.gsp_id == gsp_id)
+        
+        # Find recent available models
+        available_models = get_models(
             session=session,
             with_forecasts=True,
             forecast_created_utc=datetime.today() - timedelta(days=7),
         )
-        models = [model.name for model in models]
+        available_models = [model.name for model in available_models]
 
-        if show_pvnet_gsp_sum:
-            models.append("pvnet_gsp_sum")
-        forecast_models = st.sidebar.multiselect("Select a model", models, ["pvnet_v2"])
+        if not show_pvnet_gsp_sum:
+            available_models = [m for m in available_models if not m.endswith("_gsp_sum")]
+            
+        # Add selection for models
+        selected_models = st.sidebar.multiselect("Select models", available_models, ["pvnet_v2"])
 
-        probabilisitic_models = ["National_xg", "pvnet_v2", "blend"]
-        probabilistic_forecasts = [
-            model for model in forecast_models if model in probabilisitic_models
-        ]
-
-        if len(probabilistic_forecasts) > 0:
+        # If any selected models are probabilistic add checkbox to show quantiles
+        selected_prob_models = []
+        for model in selected_models:
+            is_prob = (
+                (model in ["National_xg", "blend"])
+                or
+                (model.startswith("pvnet_v2") and not model.endswith("_gsp_sum"))
+            )
+            if is_prob:
+                selected_prob_models.append(model)
+        
+        if len(selected_prob_models)>0:
             show_prob = st.sidebar.checkbox("Show Probabilities Forecast", value=False)
         else:
             show_prob = False
-
+        
         if gsp_id != 0:
-            if "National_xg" in forecast_models:
-                forecast_models.remove("National_xg")
+            if "National_xg" in selected_models:
+                selected_models.remove("National_xg")
                 st.sidebar.warning("National_xg only available for National forecast.")
-
+        
+        # Add selection for adjuster
         use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
+        # Add selection for forecast type
         forecast_type = st.sidebar.radio(
             "Forecast Type", ["Now", "Creation Time", "Forecast Horizon"], index=0
         )
-        if forecast_type == "Creation Time":
-            now = datetime.now(tz=timezone.utc) - timedelta(days=1)
-
-            d = st.sidebar.date_input("Forecast creation date:", now.date())
-            dd = datetime.combine(d, time(0, 0))
-            initial_times = [dd - timedelta(days=1) + timedelta(hours=3 * i) for i in range(8)]
-            initial_times += [dd + timedelta(minutes=30 * i) for i in range(48)]
+        
+        now = datetime.now()
+        today = now.date()
+        yesterday = today - timedelta(days=1)
+        
+        if forecast_type == "Now":
+            start_datetimes = [today - timedelta(days=2)]
+            end_datetimes = [None]
+        
+        elif forecast_type == "Creation Time":
+            # Add calendar to select start date - defaults to yesterday
+            
+            date_sel = st.sidebar.date_input("Forecast creation date:", yesterday)
+            
+            # Add dropdown selection of init-times
+            dt_sel = datetime.combine(date_sel, time(0, 0))
+            initial_times = [dt_sel - timedelta(days=1) + timedelta(hours=3 * i) for i in range(8)]
+            initial_times += [dt_sel + timedelta(minutes=30 * i) for i in range(48)]
 
             select_init_times = st.sidebar.multiselect(
                 "Forecast creation time",
                 initial_times,
-                [initial_times[x] for x in [2,6, 14, 20, 26, 32, 38]],
+                [initial_times[x] for x in [14, 20, 26, 32, 38]],
             )
+            
+            #### fix this part
             select_init_times = sorted(select_init_times)
-            forecast_time = select_init_times[0]
-            st.sidebar.write(f"Forecast creation time: {forecast_time}")
 
             start_datetimes = select_init_times
             end_datetimes = [t + timedelta(days=2) for t in select_init_times]
 
         elif forecast_type == "Forecast Horizon":
-            now = datetime.now(tz=timezone.utc) - timedelta(days=1)
-            start_d = st.sidebar.date_input("Forecast start date:", now.date())
-            start_t = st.sidebar.time_input("Forecast start time", time(0, 0))
+            # Add calendar and time selections for datetime
+            date_sel = st.sidebar.date_input("Forecast start date:", yesterday)
+            time_sel = st.sidebar.time_input("Forecast start time", time(0, 0))
+            
+            dt_sel = datetime.combine(date_sel, time_sel)
+            start_datetimes = [dt_sel]
+            end_datetimes = [dt_sel + timedelta(days=2)]
 
-            start_datetimes = [datetime.combine(start_d, start_t)]
-            end_datetimes = [
-                start_datetime + timedelta(days=2) for start_datetime in start_datetimes
-            ]
-
-            # 0 8 hours in 30 mintue chunks, 8 to 36 hours in 3 hour chunks
+            # Add selection for horizon
+            # 0-8 hours in 30 mintue chunks, 8-36 hours in 3 hour chunks
             forecast_horizon = st.sidebar.selectbox(
-                "Forecast Horizon",
+                "Forecast Horizon (mins)",
                 list(range(0, 480, 30)) + list(range(480, 36 * 60, 180)),
-                8,
+                0,
             )
-            forecast_time = start_datetimes[0]
 
-        else:
-            forecast_time = datetime.now(tz=timezone.utc)
-            now = datetime.now(tz=timezone.utc)
-            start_datetimes = [now.date() - timedelta(days=2)]
-            end_datetimes = [None]
-
+        # Get the data to plot
         forecast_per_model = {}
-        for model in forecast_models:
-            for i in range(len(start_datetimes)):
-
-                start_datetime = start_datetimes[i]
-                end_datetime = end_datetimes[i]
+        for model in selected_models:
+            for start_dt, end_dt in zip(start_datetimes, end_datetimes):
 
                 if forecast_type == "Now":
                     forecast_values = get_forecast_values_latest(
                         session=session,
                         gsp_id=gsp_id,
                         model_name=model,
-                        start_datetime=start_datetime,
+                        start_datetime=start_dt,
                     )
-                    save_model_name = model
+                    label = model
+                
                 elif forecast_type == "Creation Time":
                     forecast_values = get_forecast_values(
                         session=session,
                         gsp_ids=[gsp_id],
                         model_name=model,
-                        start_datetime=start_datetime,
-                        created_utc_limit=start_datetime,
+                        start_datetime=start_dt,
+                        created_utc_limit=start_dt,
                         only_return_latest=True,
                     )
-                    save_model_name = f"{model} {start_datetime}"
-                else:
+                    label = f"{model} {start_dt}"
+                
+                elif forecast_type == "Forecast Horizon":
                     forecast_values = get_forecast_values(
                         session=session,
                         gsp_id=gsp_id,
                         model_name=model,
-                        start_datetime=start_datetime,
+                        start_datetime=start_dt,
                         forecast_horizon_minutes=forecast_horizon,
-                        end_datetime=end_datetime,
+                        end_datetime=end_dt,
                         only_return_latest=True,
                     )
-                    save_model_name = model
+                    label = model
 
-                # make ForecastValue objects with _properties
-                forecast_per_model[save_model_name] = []
+                # Make ForecastValue objects with _properties attribute and maybe adjust
+                forecast_per_model[label] = []
                 for f in forecast_values:
                     forecast_value = ForecastValue.from_orm(f)
                     forecast_value._properties = f.properties
-                    forecast_per_model[save_model_name].append(forecast_value)
+                    if use_adjuster:
+                        forecast_value = forecast_value.adjust(limit=1000)
+                    forecast_per_model[label].append(forecast_value)
 
-                if use_adjuster:
-                    forecast_per_model[save_model_name] = [
-                        f.adjust(limit=1000) for f in forecast_per_model[save_model_name]
-                    ]
 
-        # get pvlive values
+        # Get pvlive values
         pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_sum_inday = get_pvlive_data(
             end_datetimes[0], gsp_id, session, start_datetimes[0]
         )
 
-    # make plot
+    # Make figure
     fig = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(text="Latest Forecast"),
@@ -180,20 +196,23 @@ def forecast_page():
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
         )
     )
-    # forecasts on the chart
+    
+    # Plot PVLive values and the forecasts
     plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_sum_inday)
-    plot_forecasts(fig, forecast_per_model, probabilisitic_models, show_prob)
+    plot_forecasts(fig, forecast_per_model, selected_prob_models, show_prob)
 
-    fig.add_trace(
-        go.Scatter(
-            x=[forecast_time, forecast_time],
-            y=[0, capacity_mw],
-            mode="lines",
-            name="now",
-            line=dict(color="red", width=4, dash="dash"),
-            showlegend=False,
+    if end_datetimes[0] is None or now <= max(end_datetimes):
+        # Add vertical line to indicate now
+        fig.add_trace(
+            go.Scatter(
+                x=[now, now],
+                y=[0, capacity_mw],
+                mode="lines",
+                name="now",
+                line=dict(color="red", width=4, dash="dash"),
+                showlegend=False,
+            )
         )
-    )
 
     st.plotly_chart(fig, theme="streamlit")
 
@@ -234,23 +253,17 @@ def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_su
             )
 
 
-def plot_forecasts(fig, forecast_per_model, probabilisitic_models, show_prob):
+def plot_forecasts(fig, forecast_per_model, selected_prob_models, show_prob):
 
     index_forecast_per_model = 0
     for model, forecast in forecast_per_model.items():
         x = [i.target_time for i in forecast]
         y = [i.expected_power_generation_megawatts for i in forecast]
 
-        # count how many other models have the same name but different times
-        count = sum(
-            [
-                1
-                for key in list(forecast_per_model.keys())
-                if key.split(" ")[0] == model.split(" ")[0]
-            ]
-        )
+        # Count how many other models have the same name but different times
+        count = len([key for key in forecast_per_model if key.split(" ")[0] == model.split(" ")[0]])
 
-        # make opacity of lines depend on the number of models
+        # Make opacity of lines depend on the number of models
         opacity = 0.3 + 0.7 * ((index_forecast_per_model + 1) / count)
         index_forecast_per_model += 1
         if index_forecast_per_model == count:
@@ -262,16 +275,17 @@ def plot_forecasts(fig, forecast_per_model, probabilisitic_models, show_prob):
                 y=y,
                 mode="lines",
                 name=model,
-                line=dict(color=get_colour_from_model_name(model, opacity=opacity)),
+                line=dict(color=get_colour_from_model_name(model)), 
+                opacity=opacity,
                 hovertemplate="<br>%{x}<br>" + "<b>%{y:.2f}</b>MW",
             )
         )
 
-        if len(forecast) > 0 and show_prob and (model in probabilisitic_models):
+        if len(forecast) > 0 and show_prob and (model in selected_prob_models):
             try:
                 properties_0 = forecast[0]._properties
                 if isinstance(properties_0, dict) and (
-                    "10" in properties_0.keys() and "90" in properties_0.keys()
+                    "10" in properties_0 and "90" in properties_0
                 ):
                     plevel_10 = [i._properties["10"] for i in forecast]
                     plevel_90 = [i._properties["90"] for i in forecast]
