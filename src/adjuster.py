@@ -18,6 +18,9 @@ def adjuster_page():
         unsafe_allow_html=True,
     )
 
+    url = 'https://www.notion.so/openclimatefix/Adjuster-cae707fbac0a440895f8aacec2a7b55c?pvs=4'
+    st.markdown(f'<a href="{url}" target="_blank">Link to Notion page</a>', unsafe_allow_html=True)
+
     connection = DatabaseConnection(url=os.environ["DB_URL"], echo=True)
     with connection.get_session() as session:
         # get all the models with adjust values
