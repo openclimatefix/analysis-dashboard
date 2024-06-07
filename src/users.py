@@ -104,13 +104,13 @@ def user_page():
 
 
 @st.cache_data(ttl=60)
-def get_last_request_by_user(connection, get_all_last_api_request_func):
+def get_last_request_by_user(connection, _get_all_last_api_request_func):
     """ Get the last request by user 
 
     Note data is cached for one minute
     """
     with connection.get_session() as session:
-        last_requests_sql = get_all_last_api_request_func(session=session)
+        last_requests_sql = _get_all_last_api_request_func(session=session)
 
         last_request = [
             (last_request_sql.user.email, last_request_sql.created_utc)
