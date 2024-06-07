@@ -65,14 +65,7 @@ def user_page():
         get_all_last_api_request_func = get_all_last_api_request_sites
         get_api_requests_for_one_user_func = get_api_requests_for_one_user_sites
 
-    with connection.get_session() as session:
-
-        last_requests_sql = get_all_last_api_request_func(session=session)
-
-        last_request = [
-            (last_request_sql.user.email, last_request_sql.created_utc)
-            for last_request_sql in last_requests_sql
-        ]
+    last_request = get_last_request_by_user(connection, get_all_last_api_request_func)
 
     last_request = pd.DataFrame(last_request, columns=["email", "last API request"])
     last_request = last_request.sort_values(by="last API request", ascending=False)
@@ -108,4 +101,20 @@ def user_page():
 
     fig = make_api_frequency_requests_plot(api_requests_days, email_selected, end_time, start_time)
     st.plotly_chart(fig, theme="streamlit")
+
+
+@st.cache_data(ttl=60)
+def get_last_request_by_user(connection, get_all_last_api_request_func):
+    """ Get the last request by user 
+
+    Note data is cached for one minute
+    """
+    with connection.get_session() as session:
+        last_requests_sql = get_all_last_api_request_func(session=session)
+
+        last_request = [
+            (last_request_sql.user.email, last_request_sql.created_utc)
+            for last_request_sql in last_requests_sql
+        ]
+    return last_request
 
