@@ -9,9 +9,17 @@ from nowcasting_datamodel.read.read_user import (
 )
 from pvsite_datamodel.connection import DatabaseConnection as SitesDatabaseConnection
 from pvsite_datamodel.read.user import get_all_last_api_request as get_all_last_api_request_sites
-from pvsite_datamodel.read.user import get_api_requests_for_one_user as get_api_requests_for_one_user_sites
+from pvsite_datamodel.read.user import (
+    get_api_requests_for_one_user as get_api_requests_for_one_user_sites,
+)
 
 from plots.users import make_api_requests_plot, make_api_frequency_requests_plot
+
+
+get_all_last_api_request_dict = {
+    "National": get_all_last_api_request,
+    "Sites": get_all_last_api_request_sites,
+}
 
 
 def user_page():
@@ -43,11 +51,11 @@ def user_page():
     # if both databases are available, let the user choose which one to use
     # if none, show error
     if db_url is not None and db_url_sites is not None:
-        db_connection = st.sidebar.selectbox("Select", ['National', 'Sites'], index=0)
+        db_connection = st.sidebar.selectbox("Select", ["National", "Sites"], index=0)
     elif db_url is not None:
-        db_connection = 'National'
+        db_connection = "National"
     elif db_url_sites is not None:
-        db_connection = 'Sites'
+        db_connection = "Sites"
     else:
         st.error("No database URL found")
         return
@@ -56,16 +64,14 @@ def user_page():
     # 1. connection function
     # 2. get_all_last_api_request function
     # 3. get_api_requests_for_one_user function
-    if db_connection == 'National':
+    if db_connection == "National":
         connection = DatabaseConnection(url=db_url, echo=True)
-        get_all_last_api_request_func = get_all_last_api_request
         get_api_requests_for_one_user_func = get_api_requests_for_one_user
     else:
         connection = SitesDatabaseConnection(url=db_url_sites, echo=True)
-        get_all_last_api_request_func = get_all_last_api_request_sites
         get_api_requests_for_one_user_func = get_api_requests_for_one_user_sites
 
-    last_request = get_last_request_by_user(connection, get_all_last_api_request_func)
+    last_request = get_last_request_by_user(_connection=connection, national_or_sites=db_connection)
 
     last_request = pd.DataFrame(last_request, columns=["email", "last API request"])
     last_request = last_request.sort_values(by="last API request", ascending=False)
@@ -94,7 +100,7 @@ def user_page():
     # add plot that shows amount of api calls per day
     api_requests["created_utc"] = pd.to_datetime(api_requests["created_utc"])
     api_requests["date"] = api_requests["created_utc"].dt.date
-    api_requests_days = api_requests[['date','url']].groupby("date").count()
+    api_requests_days = api_requests[["date", "url"]].groupby("date").count()
     api_requests_days.reset_index(inplace=True)
 
     print(api_requests_days)
@@ -104,17 +110,18 @@ def user_page():
 
 
 @st.cache_data(ttl=60)
-def get_last_request_by_user(connection, get_all_last_api_request_func):
-    """ Get the last request by user 
+def get_last_request_by_user(_connection, national_or_sites:str):
+    """Get the last request by user
 
     Note data is cached for one minute
     """
-    with connection.get_session() as session:
-        last_requests_sql = get_all_last_api_request_func(session=session)
+    _get_all_last_api_request_func = get_all_last_api_request_dict[national_or_sites]
+
+    with _connection.get_session() as session:
+        last_requests_sql = _get_all_last_api_request_func(session=session)
 
         last_request = [
             (last_request_sql.user.email, last_request_sql.created_utc)
             for last_request_sql in last_requests_sql
         ]
     return last_request
-
