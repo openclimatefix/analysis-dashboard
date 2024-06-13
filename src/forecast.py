@@ -278,6 +278,7 @@ def plot_forecasts(fig, forecast_per_model, selected_prob_models, show_prob):
                 line=dict(color=get_colour_from_model_name(model)), 
                 opacity=opacity,
                 hovertemplate="<br>%{x}<br>" + "<b>%{y:.2f}</b>MW",
+                legendgroup=model,
             )
         )
 
@@ -297,9 +298,11 @@ def plot_forecasts(fig, forecast_per_model, selected_prob_models, show_prob):
                             mode="lines",
                             name="p10: " + model,
                             line=dict(color=get_colour_from_model_name(model), width=0),
+                            legendgroup=model,
                             showlegend=False,
                         )
                     )
+                    
                     fig.add_trace(
                         go.Scatter(
                             x=x,
@@ -308,9 +311,12 @@ def plot_forecasts(fig, forecast_per_model, selected_prob_models, show_prob):
                             name="p90: " + model,
                             line=dict(color=get_colour_from_model_name(model), width=0),
                             fill="tonexty",
+                            legendgroup=model,
                             showlegend=False,
                         )
                     )
+                    
+                    
             except Exception as e:
                 print(e)
                 print("Could not add plevel to chart")

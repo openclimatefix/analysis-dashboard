@@ -45,6 +45,7 @@ def get_colour_from_model_name(model_name, opacity=1.0):
             colour = colour_per_model[model_name_only]
         else:
             colour = next(line_color_cycle)
+            colour_per_model[model_name_only] = colour
     return colour
 
     # change opacity to hex
