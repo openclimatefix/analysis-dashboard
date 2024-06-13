@@ -65,7 +65,7 @@ def forecast_page():
             is_prob = (
                 (model in ["National_xg", "blend"])
                 or
-                (model.startswith("pvnet_v2") and not model.endswith("_gsp_sum"))
+                (model.startswith("pvnet") and not model.endswith("_gsp_sum"))
             )
             if is_prob:
                 selected_prob_models.append(model)
