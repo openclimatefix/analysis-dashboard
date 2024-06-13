@@ -219,6 +219,11 @@ def forecast_page():
 
 def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_sum_inday):
     # pvlive on the chart
+    choices = st.multiselect('Choose forecast to be displyed:'
+                             ,['PVLive Initial Estimate', 
+                               'PVLive Updated Estimate', 
+                               'PVLive GSP Sum Estimate', 
+                               'PVLive GSP Sum Updated'])
     for k, v in pvlive_data.items():
         x = [i.datetime_utc for i in v]
         y = [i.solar_generation_kw / 1000 for i in v]
@@ -227,8 +232,8 @@ def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_su
             line = dict(color=get_colour_from_model_name(k), dash="dash")
         elif k == "PVLive Updated Estimate":
             line = dict(color=get_colour_from_model_name(k))
-
-        fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
+        if k in choices:
+            fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
     # pvlive gsp sum dictionary of values and chart for national forecast
     if gsp_id == 0:
         pvlive_gsp_sum_data = {}
@@ -247,10 +252,10 @@ def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_su
                 line = dict(color=get_colour_from_model_name(k), dash="dash")
             elif k == "PVLive GSP Sum Updated":
                 line = dict(color=get_colour_from_model_name(k))
-
-            fig.add_trace(
-                go.Scatter(x=x, y=y, mode="lines", name=k, line=line, visible="legendonly")
-            )
+            if k in choices:
+                fig.add_trace(
+                    go.Scatter(x=x, y=y, mode="lines", name=k, line=line, visible="legendonly")
+                )
 
 
 def plot_forecasts(fig, forecast_per_model, selected_prob_models, show_prob):
