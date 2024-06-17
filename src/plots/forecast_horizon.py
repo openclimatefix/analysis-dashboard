@@ -28,7 +28,7 @@ def make_mae_by_forecast_horizon(
             line=dict(color="#FFD053"),
         )
     )
-    for forecast_horizon in forecast_horizon_selection:
+    for i, forecast_horizon in enumerate(forecast_horizon_selection):
         metric_values = metric_values_by_forecast_horizon[forecast_horizon]
         x_mae_horizon, y_mae_horizon = get_x_y(metric_values=metric_values)
 
@@ -46,7 +46,7 @@ def make_mae_by_forecast_horizon(
                     y=df["MAE"],
                     name=f"{forecast_horizon}-minute horizon",
                     mode="lines",
-                    line=dict(color=line_color[forecast_horizon_selection.index(forecast_horizon)]),
+                    line=dict(color=line_color[i%len(line_color)]),
                 )
             ]
         )
@@ -67,7 +67,7 @@ def make_mae_forecast_horizon_group_by_forecast_horizon(
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="Forecast Horizon (minutes)")),
         )
     )
-    for forecast_horizon in forecast_horizon_selection:
+    for i, forecast_horizon in enumerate(forecast_horizon_selection):
         metric_values = metric_values_by_forecast_horizon[forecast_horizon]
         x_mae_horizon = [value.datetime_interval.start_datetime_utc for value in metric_values]
         y_mae_horizon = [round(float(value.value), 2) for value in metric_values]
@@ -87,7 +87,7 @@ def make_mae_forecast_horizon_group_by_forecast_horizon(
                     y=df_mae_horizon["forecast_horizon"],
                     name=f"{forecast_horizon}-minute horizon",
                     mode="markers",
-                    line=dict(color=line_color[forecast_horizon_selection.index(forecast_horizon)]),
+                    line=dict(color=line_color[i%len(line_color)]),
                 ),
             ]
         )
@@ -145,8 +145,6 @@ def make_mae_vs_forecast_horizon_group_by_date(
         result_.index[0]: result_ for _, result_ in all_forecast_horizons_df.groupby("datetime_utc")
     }
     # loop through each date group in the dictionary and add to traces
-    len_colours = len(line_color)
-    # loop through each date group in the dictionary and add to traces
     for i in result:
         # sort results by day
         results_for_day = result[i]
@@ -157,7 +155,7 @@ def make_mae_vs_forecast_horizon_group_by_date(
                 y=results_for_day["MAE"],
                 name=results_for_day["datetime_utc"].iloc[0].strftime("%Y-%m-%d"),
                 mode="lines+markers",
-                line=dict(color=line_color[i % len_colours]),
+                line=dict(color=line_color[i % len(line_color)]),
             )
         )
     fig.add_traces(traces)

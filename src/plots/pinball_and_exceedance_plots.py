@@ -23,7 +23,7 @@ def make_pinball_or_exceedance_plot(
     assert metric_name in ["Pinball loss", "Exceedance"]
 
     if metric_name == "Pinball loss":
-        x_label = "MAE [MW}"
+        x_label = "MAE [MW]"
     else:
         x_label = "Exceedance [%]"
 
@@ -38,7 +38,7 @@ def make_pinball_or_exceedance_plot(
     )
 
     for plevel in [10, 90]:
-        for forecast_horizon in forecast_horizon_selection:
+        for i, forecast_horizon in enumerate(forecast_horizon_selection):
             # read database metric values
             metric_values = get_metric_value(
                 session=session,
@@ -64,9 +64,7 @@ def make_pinball_or_exceedance_plot(
                         y=y_horizon,
                         name=f"p{plevel}_{forecast_horizon}-minute horizon",
                         mode="lines",
-                        line=dict(
-                            color=line_color[forecast_horizon_selection.index(forecast_horizon)]
-                        ),
+                        line=dict(color=line_color[i%len(line_color)]),
                     )
                 ]
             )
