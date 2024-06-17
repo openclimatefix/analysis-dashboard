@@ -1,5 +1,8 @@
 from nowcasting_datamodel.models import MetricValue
 from itertools import cycle
+from nowcasting_datamodel.read.read_models import get_models
+import os
+from datetime import datetime, timedelta
 
 line_color = [
     "#9EC8FA",
@@ -70,6 +73,43 @@ def get_x_y(metric_values):
     y = [round(float(value.value), 2) for value in metric_values]
 
     return x, y
+
+
+def model_is_probabilistic(model_name):
+    """Return whether the model is probabilistic given its name"""
+    is_prob = (
+        (model_name in ["National_xg", "blend"])
+        or
+        (model_name.startswith("pvnet_v2") and not model_name.endswith("_gsp_sum"))
+    )
+    return is_prob
+
+
+def model_is_gsp_regional(model_name):
+    """Return whether the model has GSP results given its name"""
+    is_regional = (
+        (model_name=="cnn")
+        or
+        (model_name.startswith("pvnet_v2") and not model_name.endswith("_gsp_sum"))
+    )
+    return is_regional
+
+
+def get_recent_available_model_names(session):
+    """Get recent available model names"""
+
+    available_models = get_models(
+        session=session,
+        with_forecasts=True,
+        forecast_created_utc=datetime.today() - timedelta(days=7),
+    )
+    available_models = [model.name for model in available_models]
+
+    show_gsp_sum = os.getenv("SHOW_PVNET_GSP_SUM", "False").lower() == "true"
+    
+    if not show_gsp_sum:
+        available_models = [m for m in available_models if not m.endswith("_gsp_sum")]
+    return available_models
 
 
 MAE_LIMIT_DEFAULT = 800

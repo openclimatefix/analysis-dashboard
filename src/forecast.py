@@ -12,12 +12,24 @@ from nowcasting_datamodel.read.read import (
     get_all_locations,
 )
 from nowcasting_datamodel.read.read_gsp import get_gsp_yield, get_gsp_yield_sum
-from nowcasting_datamodel.read.read_models import get_models
 
-from plots.utils import get_colour_from_model_name
+from plots.utils import (
+    get_colour_from_model_name, model_is_probabilistic, get_recent_available_model_names
+)
 
-show_pvnet_gsp_sum = os.getenv("SHOW_PVNET_GSP_SUM", "False").lower() == "true"
 
+class GSPLabeler:
+    """A function class to add the GSP name to the GSP IDs"""
+    def __init__(self, gsp_ids, gsp_names):
+        """A function class to add the GSP name to the GSP IDs"""
+        self.gsp_ids = gsp_ids
+        self.gsp_names = gsp_names
+
+    def __call__(self, gsp_id):
+        """Get GSP label"""
+        i = self.gsp_ids.index(gsp_id)
+        return f"{gsp_id}: {self.gsp_names[i]}"
+    
 
 def forecast_page():
     """Main page for status"""
@@ -32,53 +44,41 @@ def forecast_page():
     connection = DatabaseConnection(url=os.environ["DB_URL"], echo=True)
     with connection.get_session() as session:
                 
-        # Get all GSP regions
+        # Add dropdown to select GSP region
         locations = get_all_locations(session=session)
         locations = [Location.from_orm(loc) for loc in locations if loc.gsp_id < 318]
-
-        gsps = [f"{loc.gsp_id}: {loc.region_name}" for loc in locations]
+        gsp_ids = [loc.gsp_id for loc in locations]
+        gsp_names = [loc.region_name for loc in locations]
         
-        # Add dropdown to select GSP region
-        gsp_id = st.sidebar.selectbox("Select a region", gsps, index=0)
+        gsp_labeler = GSPLabeler(gsp_ids, gsp_names)
         
-        # Get selected GSP ID and its effective capacity
-        gsp_id = int(gsp_id.split(":")[0])
-        capacity_mw = next(loc.installed_capacity_mw for loc in locations if loc.gsp_id == gsp_id)
+        gsp_id = st.sidebar.selectbox(
+            "Select a region", 
+            gsp_ids, 
+            index=0, 
+            format_func=gsp_labeler
+        )
+        
+        # Get effective capacity of selected GSP
+        capacity_mw = locations[gsp_ids.get_index(gsp_id)].installed_capacity_mw
         
         # Find recent available models
-        available_models = get_models(
-            session=session,
-            with_forecasts=True,
-            forecast_created_utc=datetime.today() - timedelta(days=7),
-        )
-        available_models = [model.name for model in available_models]
-
-        if not show_pvnet_gsp_sum:
-            available_models = [m for m in available_models if not m.endswith("_gsp_sum")]
+        available_models = get_recent_available_model_names(session)
             
         # Add selection for models
         selected_models = st.sidebar.multiselect("Select models", available_models, ["pvnet_v2"])
 
         # If any selected models are probabilistic add checkbox to show quantiles
-        selected_prob_models = []
-        for model in selected_models:
-            is_prob = (
-                (model in ["National_xg", "blend"])
-                or
-                (model.startswith("pvnet_v2") and not model.endswith("_gsp_sum"))
-            )
-            if is_prob:
-                selected_prob_models.append(model)
+        selected_prob_models = [model for model in selected_models if model_is_probabilistic(model)]
         
         if len(selected_prob_models)>0:
             show_prob = st.sidebar.checkbox("Show Probabilities Forecast", value=False)
         else:
             show_prob = False
         
-        if gsp_id != 0:
-            if "National_xg" in selected_models:
-                selected_models.remove("National_xg")
-                st.sidebar.warning("National_xg only available for National forecast.")
+        if gsp_id!=0 and ("National_xg" in selected_models):
+            selected_models.remove("National_xg")
+            st.sidebar.warning("National_xg only available for National forecast.")
         
         # Add selection for adjuster
         use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
@@ -112,7 +112,6 @@ def forecast_page():
                 [initial_times[x] for x in [14, 20, 26, 32, 38]],
             )
             
-            #### fix this part
             select_init_times = sorted(select_init_times)
 
             start_datetimes = select_init_times
@@ -152,7 +151,7 @@ def forecast_page():
                 elif forecast_type == "Creation Time":
                     forecast_values = get_forecast_values(
                         session=session,
-                        gsp_ids=[gsp_id],
+                        gsp_ids=gsp_id,
                         model_name=model,
                         start_datetime=start_dt,
                         created_utc_limit=start_dt,
@@ -223,12 +222,12 @@ def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_su
         x = [i.datetime_utc for i in v]
         y = [i.solar_generation_kw / 1000 for i in v]
 
-        if k == "PVLive Initial Estimate":
-            line = dict(color=get_colour_from_model_name(k), dash="dash")
-        elif k == "PVLive Updated Estimate":
-            line = dict(color=get_colour_from_model_name(k))
+        line = {"color": get_colour_from_model_name(k)}
+        if k == "PVLive Updated Estimate":
+            line["dash"] = "dash"
 
         fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
+    
     # pvlive gsp sum dictionary of values and chart for national forecast
     if gsp_id == 0:
         pvlive_gsp_sum_data = {}
@@ -242,11 +241,10 @@ def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_su
         for k, v in pvlive_gsp_sum_data.items():
             x = [i.datetime_utc for i in v]
             y = [i.solar_generation_kw / 1000 for i in v]
-
+                
+            line = {"color": get_colour_from_model_name(k)}
             if k == "PVLive GSP Sum Estimate":
-                line = dict(color=get_colour_from_model_name(k), dash="dash")
-            elif k == "PVLive GSP Sum Updated":
-                line = dict(color=get_colour_from_model_name(k))
+                line["dash"] = "dash"
 
             fig.add_trace(
                 go.Scatter(x=x, y=y, mode="lines", name=k, line=line, visible="legendonly")

@@ -9,7 +9,6 @@ import pandas as pd
 import streamlit as st
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.metric import MetricValue
-from nowcasting_datamodel.read.read_models import get_models
 
 from auth import check_password
 from forecast import forecast_page
@@ -23,7 +22,9 @@ from plots.forecast_horizon import (
 from plots.mae_and_rmse import make_rmse_and_mae_plot, make_mae_plot
 from plots.pinball_and_exceedance_plots import make_pinball_or_exceedance_plot
 from plots.ramp_rate import make_ramp_rate_plot
-from plots.utils import get_x_y
+from plots.utils import (
+    get_x_y, get_recent_available_model_names, model_is_probabilistic, model_is_gsp_regional
+)
 from pvsite_forecast import pvsite_forecast_page
 from sites_toolbox import sites_toolbox_page
 from status import status_page
@@ -37,41 +38,31 @@ from adjuster import adjuster_page
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
 
-show_pvnet_gsp_sum = os.getenv("SHOW_PVNET_GSP_SUM", "False").lower() == "true"
 
 def metric_page():
-    # set up title and subheader
-    # set up sidebar
+    # Set up sidebar
+    
+    # Select start and end date
     st.sidebar.subheader("Select date range for charts")
-    # select start and end date
-    starttime = st.sidebar.date_input(
-        "Start Date", datetime.today() - timedelta(days=30)
-    )
+    starttime = st.sidebar.date_input("Start Date", datetime.today() - timedelta(days=30))
     endtime = st.sidebar.date_input("End Date", datetime.today())
-
+    
+    # Adjuster option
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
+    # Select model
     st.sidebar.subheader("Select Forecast Model")
 
-    # set up database connection
-    url = os.environ["DB_URL"]
-    connection = DatabaseConnection(url=url, echo=True)
-
+    # Get the models run in the last week
+    connection = DatabaseConnection(url=os.environ["DB_URL"], echo=True)
+    
     with connection.get_session() as session:
-        # this gets all the models used in the last week
-        models = get_models(
-            session=session,
-            with_forecasts=True,
-            forecast_created_utc=datetime.today() - timedelta(days=7),
-        )
-        models = [model.name for model in models]
+        models = get_recent_available_model_names(session)
+    
+    # Default model is pvnet_v2
+    model_name = st.sidebar.selectbox("Select model", models, index=models.index("pvnet_v2"))
 
-    if show_pvnet_gsp_sum:
-        models.append("pvnet_gsp_sum")
-    model_name = st.sidebar.selectbox("Select", models, 3)
-
-    # get metrics for comparing MAE and RMSE without forecast horizon
-
+    # Get metrics for comparing MAE and RMSE without forecast horizon
     with connection.get_session() as session:
         # read database metric values
         name_mae = "Daily Latest MAE"
@@ -102,7 +93,7 @@ def metric_page():
             end_datetime_utc=endtime,
             model_name=model_name,
         )
-        # get metric value for mae with pvlive gsp sum truths for comparison
+        # Get metric value for mae with pvlive gsp sum truths for comparison
         metric_values_mae_gsp_sum = get_metric_value(
             session=session,
             name=name_mae_gsp_sum,
@@ -145,26 +136,8 @@ def metric_page():
     st.sidebar.subheader("Select Forecast Horizon")
     forecast_horizon_selection = st.sidebar.multiselect(
         "Select",
-        [
-            0,
-            60,
-            90,
-            120,
-            150,
-            180,
-            240,
-            300,
-            360,
-            420,
-            8 * 60,
-            12 * 60,
-            15 * 60,
-            18 * 60,
-            21 * 60,
-            24 * 60,
-            30 * 60,
-            35 * 60,
-        ],
+        # 0-8 hours in 30 mintue chunks, 8-36 hours in 3 hour chunks
+        list(range(0, 480, 30)) + list(range(480, 36 * 60, 180)),
         [60, 120, 240, 420],
     )
 
@@ -236,7 +209,7 @@ def metric_page():
 
     fig6 = make_all_gsps_plots(x_mae_all_gsp, y_mae_all_gsp)
 
-    if model_name in ["pvnet_v2", "cnn"]:
+    if model_is_gsp_regional(model_name):
         with st.expander("MAE All GSPs"):
             st.plotly_chart(fig6, theme="streamlit")
 
@@ -244,7 +217,7 @@ def metric_page():
     with st.expander("Ramp Rate"):
         st.plotly_chart(fig7, theme="streamlit")
 
-    if model_name in ["pvnet_v2", "National_xg"]:
+    if model_is_probabilistic(model_name):
         with connection.get_session() as session:
             with st.expander("Pinball loss"):
                 fig7 = make_pinball_or_exceedance_plot(
