@@ -80,7 +80,7 @@ def model_is_probabilistic(model_name):
     is_prob = (
         (model_name in ["National_xg", "blend"])
         or
-        (model_name.startswith("pvnet_v2") and not model_name.endswith("_gsp_sum"))
+        (model_name.startswith("pvnet") and not model_name.endswith("_gsp_sum"))
     )
     return is_prob
 
@@ -90,7 +90,7 @@ def model_is_gsp_regional(model_name):
     is_regional = (
         (model_name=="cnn")
         or
-        (model_name.startswith("pvnet_v2") and not model_name.endswith("_gsp_sum"))
+        (model_name.startswith("pvnet") and not model_name.endswith("_gsp_sum"))
     )
     return is_regional
 
