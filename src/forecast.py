@@ -60,7 +60,7 @@ def forecast_page():
         )
         
         # Get effective capacity of selected GSP
-        capacity_mw = locations[gsp_ids.get_index(gsp_id)].installed_capacity_mw
+        capacity_mw = locations[gsp_ids.index(gsp_id)].installed_capacity_mw
         
         # Find recent available models
         available_models = get_recent_available_model_names(session)
