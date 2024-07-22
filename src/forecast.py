@@ -223,7 +223,7 @@ def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_su
         y = [i.solar_generation_kw / 1000 for i in v]
 
         line = {"color": get_colour_from_model_name(k)}
-        if k == "PVLive Updated Estimate":
+        if k == "PVLive Initial Estimate":
             line["dash"] = "dash"
 
         fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
