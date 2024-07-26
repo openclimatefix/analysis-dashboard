@@ -53,7 +53,9 @@ def make_mae_plot(df_mae):
         df_mae,
         x="datetime_utc",
         y="MAE",
-        title="Quartz Solar MAE",
+        title="Quartz Solar MAE - 0 forecast horizon* "
+              "<br><sup>Its actually the MAE for the last forecast made, which is normally the same as the "
+              "0 minute forecast horizon</sup>",
         hover_data=["MAE", "datetime_utc"],
         color_discrete_sequence=["#FFAC5F"],
     )
