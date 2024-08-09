@@ -34,6 +34,7 @@ class GSPLabeler:
 
 
 def forecast_page():
+    """Main page for status"""
     st.markdown(
         f'<h1 style="color:#63BCAF;font-size:48px;">{"National and GSP Forecasts"}</h1>',
         unsafe_allow_html=True,
@@ -58,7 +59,6 @@ def forecast_page():
         )
 
         capacity_mw = locations[gsp_ids.index(gsp_id)].installed_capacity_mw
-
 
         available_models = get_recent_available_model_names(session)
 
@@ -91,9 +91,7 @@ def forecast_page():
 
         elif forecast_type == "Creation Time":
 
-
             date_sel = st.sidebar.date_input("Forecast creation date:", yesterday)
-
             dt_sel = datetime.combine(date_sel, time(0, 0))
             initial_times = [dt_sel - timedelta(days=1) + timedelta(hours=3 * i) for i in range(8)]
             initial_times += [dt_sel + timedelta(minutes=30 * i) for i in range(48)]
@@ -198,9 +196,9 @@ def forecast_page():
 
     # Elexon Solar Forecast
     st.title("Elexon Solar Forecast")
-
-    start_datetime_utc = st.date_input("Start Date", datetime.utcnow() - timedelta(days=3))
-    end_datetime_utc = st.date_input("End Date", datetime.utcnow() + timedelta(days=3))
+    st.sidebar.subheader("Select Elexon Forecast Dates")
+    start_datetime_utc = st.sidebar.date_input("Start Date", datetime.utcnow() - timedelta(days=3))
+    end_datetime_utc = st.sidebar.date_input("End Date", datetime.utcnow() + timedelta(days=3))
 
     if start_datetime_utc < end_datetime_utc:
         # Fetch data for each process type
