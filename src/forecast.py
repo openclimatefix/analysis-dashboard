@@ -16,7 +16,6 @@ from nowcasting_datamodel.read.read_gsp import get_gsp_yield, get_gsp_yield_sum
 from plots.utils import (
     get_colour_from_model_name, model_is_probabilistic, get_recent_available_model_names
 )
-from datetime import datetime, timedelta, time
 from elexonpy.api_client import ApiClient
 from elexonpy.api.generation_forecast_api import GenerationForecastApi
 
@@ -31,7 +30,6 @@ class GSPLabeler:
         """Get GSP label"""
         i = self.gsp_ids.index(gsp_id)
         return f"{gsp_id}: {self.gsp_names[i]}"
-
 
 def forecast_page():
     """Main page for status"""
@@ -192,10 +190,7 @@ def forecast_page():
             )
         )
 
-    st.plotly_chart(fig, theme="streamlit")
-
-    # Elexon Solar Forecast
-    st.title("Elexon Solar Forecast")
+    # Fetch and plot Elexon Solar Forecast data
     st.sidebar.subheader("Select Elexon Forecast Dates")
     start_datetime_utc = st.sidebar.date_input("Start Date", datetime.utcnow() - timedelta(days=3))
     end_datetime_utc = st.sidebar.date_input("End Date", datetime.utcnow() + timedelta(days=3))
@@ -203,11 +198,10 @@ def forecast_page():
     if start_datetime_utc < end_datetime_utc:
         # Fetch data for each process type
         process_types = ["Day Ahead", "Intraday Process", "Intraday Total"]
-        colors = ["red", "blue", "green"]  # Colors for each process type
+        line_styles = ["solid", "dash", "dot"]
         forecasts = [fetch_forecast_data(forecast_generation_wind_and_solar_day_ahead_get, start_datetime_utc, end_datetime_utc, pt) for pt in process_types]
 
-        fig = go.Figure()
-        for i, (forecast, color) in enumerate(zip(forecasts, colors)):
+        for i, (forecast, line_style) in enumerate(zip(forecasts, line_styles)):
             if forecast.empty:
                 st.write(f"No data available for process type: {process_types[i]}")
                 continue
@@ -217,30 +211,18 @@ def forecast_page():
 
             full_time_range = pd.date_range(start=start_datetime_utc, end=end_datetime_utc, freq='30T', tz=forecast["start_time"].dt.tz)
             full_time_df = pd.DataFrame(full_time_range, columns=['start_time'])
-
             forecast = full_time_df.merge(forecast, on='start_time', how='left')
 
             fig.add_trace(go.Scatter(
                 x=forecast["start_time"],
                 y=forecast["quantity"],
                 mode='lines',
-                name=process_types[i],
-                line=dict(color=color),
+                name=f"Elexon {process_types[i]}",
+                line=dict(color='#318CE7', dash=line_style),
                 connectgaps=False
             ))
 
-        fig.update_layout(
-            title="Elexon Solar Forecast",
-            xaxis_title="Date and Time",
-            yaxis_title="Forecast (MW)",
-            xaxis=dict(
-                tickformat='%Y-%m-%d %H:%M',
-                tickangle=45
-            ),
-            legend_title="Process Type"
-        )
-
-        st.plotly_chart(fig)
+        st.plotly_chart(fig, theme="streamlit")
 
 # Function to fetch and process data
 def fetch_forecast_data(api_func, start_date, end_date, process_type):
@@ -309,7 +291,6 @@ def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_su
                 go.Scatter(x=x, y=y, mode="lines", name=k, line=line, visible="legendonly")
             )
 
-
 def plot_forecasts(fig, forecast_per_model, selected_prob_models, show_prob):
 
     index_forecast_per_model = 0
@@ -373,12 +354,10 @@ def plot_forecasts(fig, forecast_per_model, selected_prob_models, show_prob):
                         )
                     )
 
-
             except Exception as e:
                 print(e)
                 print("Could not add plevel to chart")
                 raise e
-
 
 def get_pvlive_data(end_datetime, gsp_id, session, start_datetime):
     pvlive_inday = get_gsp_yield(
