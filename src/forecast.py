@@ -199,39 +199,60 @@ def forecast_page():
             )
         )
 
-    # Fetch and plot Elexon Solar Forecast data
-    st.sidebar.subheader("Select Elexon Forecast Dates")
-    start_datetime_utc = st.sidebar.date_input("Start Date", datetime.utcnow() - timedelta(days=3))
-    end_datetime_utc = st.sidebar.date_input("End Date", datetime.utcnow() + timedelta(days=3))
+        #  start_datetimes is not empty
+        if not start_datetimes:
+            st.error("No start dates available. Please check your date inputs.")
+        else:
+            start_datetime_utc = start_datetimes[0]
+            # Check if end_datetimes is empty or the last element is None
+            if not end_datetimes or end_datetimes[-1] is None:
+                # Ensure start_datetime_utc is a datetime object
+                if isinstance(start_datetime_utc, datetime):
+                    # Set end_datetime to 7 days after start_datetime or to current date
+                    end_datetime_utc = max(start_datetime_utc + timedelta(days=7), datetime.utcnow())
+                else:
+                    # If start_datetime_utc is a date object, convert it to datetime
+                    start_datetime_utc = datetime.combine(start_datetime_utc, datetime.min.time())
+                    end_datetime_utc = max(start_datetime_utc + timedelta(days=7), datetime.utcnow())
 
-    if start_datetime_utc < end_datetime_utc:
-        # Fetch data for each process type
-        process_types = ["Day Ahead", "Intraday Process", "Intraday Total"]
-        line_styles = ["solid", "dash", "dot"]
-        forecasts = [fetch_forecast_data(forecast_generation_wind_and_solar_day_ahead_get, start_datetime_utc, end_datetime_utc, pt) for pt in process_types]
+            else:
+                end_datetime_utc = end_datetimes[-1]
+                if isinstance(end_datetime_utc, datetime.date):
+                    end_datetime_utc = datetime.combine(end_datetime_utc, datetime.min.time())
 
-        for i, (forecast, line_style) in enumerate(zip(forecasts, line_styles)):
-            if forecast.empty:
-                st.write(f"No data available for process type: {process_types[i]}")
-                continue
+            # Check if both dates are valid
+            if start_datetime_utc is not None and end_datetime_utc is not None:
+                if start_datetime_utc < end_datetime_utc:
+                    process_types = ["Day Ahead", "Intraday Process", "Intraday Total"]
+                    line_styles = ["solid", "dash", "dot"]
+                    forecasts = [fetch_forecast_data(forecast_generation_wind_and_solar_day_ahead_get, start_datetime_utc, end_datetime_utc, pt) for pt in process_types]
 
-            # Remove NaNs and zero values to ensure clean data for plotting
-            forecast = forecast[forecast["quantity"].notna() & (forecast["quantity"] > 0)]
+                    for i, (forecast, line_style) in enumerate(zip(forecasts, line_styles)):
+                        if forecast.empty:
+                            st.write(f"No data available for process type: {process_types[i]}")
+                            continue
 
-            full_time_range = pd.date_range(start=start_datetime_utc, end=end_datetime_utc, freq='30T', tz=forecast["start_time"].dt.tz)
-            full_time_df = pd.DataFrame(full_time_range, columns=['start_time'])
-            forecast = full_time_df.merge(forecast, on='start_time', how='left')
+                        # Remove NaNs and zero values to ensure clean data for plotting
+                        forecast = forecast[forecast["quantity"].notna() & (forecast["quantity"] > 0)]
 
-            fig.add_trace(go.Scatter(
-                x=forecast["start_time"],
-                y=forecast["quantity"],
-                mode='lines',
-                name=f"Elexon {process_types[i]}",
-                line=dict(color='#318CE7', dash=line_style),
-                connectgaps=False
-            ))
+                        full_time_range = pd.date_range(start=start_datetime_utc, end=end_datetime_utc, freq='30T', tz=forecast["start_time"].dt.tz)
+                        full_time_df = pd.DataFrame(full_time_range, columns=['start_time'])
+                        forecast = full_time_df.merge(forecast, on='start_time', how='left')
 
-        st.plotly_chart(fig, theme="streamlit")
+                        fig.add_trace(go.Scatter(
+                            x=forecast["start_time"],
+                            y=forecast["quantity"],
+                            mode='lines',
+                            name=f"Elexon {process_types[i]}",
+                            line=dict(color='#318CE7', dash=line_style),
+                            connectgaps=False
+                        ))
+
+                    st.plotly_chart(fig, theme="streamlit")
+                else:
+                    st.error("Start date must be before end date.")
+            else:
+                st.error("Invalid date selection. Please check your inputs.")
 
 # Function to fetch and process data
 def fetch_forecast_data(api_func, start_date, end_date, process_type):
