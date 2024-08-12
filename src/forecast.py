@@ -199,7 +199,7 @@ def forecast_page():
             )
         )
 
-        #  start_datetimes is not empty
+        # Ensure start_datetimes is not empty
         if not start_datetimes:
             st.error("No start dates available. Please check your date inputs.")
         else:
@@ -214,15 +214,22 @@ def forecast_page():
                     # If start_datetime_utc is a date object, convert it to datetime
                     start_datetime_utc = datetime.combine(start_datetime_utc, datetime.min.time())
                     end_datetime_utc = max(start_datetime_utc + timedelta(days=7), datetime.utcnow())
-
             else:
                 end_datetime_utc = end_datetimes[-1]
+                # Ensure end_datetime_utc is a datetime object
                 if isinstance(end_datetime_utc, datetime.date):
                     end_datetime_utc = datetime.combine(end_datetime_utc, datetime.min.time())
 
             # Check if both dates are valid
             if start_datetime_utc is not None and end_datetime_utc is not None:
                 if start_datetime_utc < end_datetime_utc:
+
+                    # Initialize Elexon API client
+                    api_client = ApiClient()
+                    forecast_api = GenerationForecastApi(api_client)
+                    forecast_generation_wind_and_solar_day_ahead_get = forecast_api.forecast_generation_wind_and_solar_day_ahead_get
+
+                    # Fetch data for each process type
                     process_types = ["Day Ahead", "Intraday Process", "Intraday Total"]
                     line_styles = ["solid", "dash", "dot"]
                     forecasts = [fetch_forecast_data(forecast_generation_wind_and_solar_day_ahead_get, start_datetime_utc, end_datetime_utc, pt) for pt in process_types]
@@ -280,12 +287,12 @@ def fetch_forecast_data(api_func, start_date, end_date, process_type):
         st.error(f"Error fetching data for process type '{process_type}': {e}")
         return pd.DataFrame()
 
-# Initialize Elexon API client
-api_client = ApiClient()
-forecast_api = GenerationForecastApi(api_client)
-forecast_generation_wind_and_solar_day_ahead_get = (
-    forecast_api.forecast_generation_wind_and_solar_day_ahead_get
-)
+# # Initialize Elexon API client
+# api_client = ApiClient()
+# forecast_api = GenerationForecastApi(api_client)
+# forecast_generation_wind_and_solar_day_ahead_get = (
+#     forecast_api.forecast_generation_wind_and_solar_day_ahead_get
+# )
 
 def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_sum_inday):
     # pvlive on the chart
