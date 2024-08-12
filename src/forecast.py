@@ -161,6 +161,7 @@ def forecast_page():
                     )
                     label = model
 
+                # Make ForecastValue objects with _properties attribute and maybe adjust
                 forecast_per_model[label] = []
                 for f in forecast_values:
                     forecast_value = ForecastValue.from_orm(f)
@@ -168,11 +169,11 @@ def forecast_page():
                     if use_adjuster:
                         forecast_value = forecast_value.adjust(limit=1000)
                     forecast_per_model[label].append(forecast_value)
-
+        # Get pvlive values
         pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_sum_inday = get_pvlive_data(
             end_datetimes[0], gsp_id, session, start_datetimes[0]
         )
-
+    # Make figure
     fig = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(text="Latest Forecast"),
@@ -181,11 +182,12 @@ def forecast_page():
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
         )
     )
-
+    # Plot PVLive values and the forecasts
     plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_sum_inday)
     plot_forecasts(fig, forecast_per_model, selected_prob_models, show_prob)
 
     if end_datetimes[0] is None or now <= max(end_datetimes):
+        # Add vertical line to indicate now
         fig.add_trace(
             go.Scatter(
                 x=[now, now],
