@@ -42,6 +42,7 @@ def forecast_page():
 
     connection = DatabaseConnection(url=os.environ["DB_URL"], echo=True)
     with connection.get_session() as session:
+        # Add dropdown to select GSP region
         locations = get_all_locations(session=session)
         locations = [Location.from_orm(loc) for loc in locations if loc.gsp_id < 318]
         gsp_ids = [loc.gsp_id for loc in locations]
@@ -56,12 +57,14 @@ def forecast_page():
             format_func=gsp_labeler
         )
 
+
+        # Get effective capacity of selected GSP
         capacity_mw = locations[gsp_ids.index(gsp_id)].installed_capacity_mw
-
+        # Find recent available models
         available_models = get_recent_available_model_names(session)
-
+        # Add selection for models
         selected_models = st.sidebar.multiselect("Select models", available_models, ["pvnet_v2"])
-
+        # If any selected models are probabilistic add checkbox to show quantiles
         selected_prob_models = [model for model in selected_models if model_is_probabilistic(model)]
 
         if len(selected_prob_models) > 0:
@@ -72,9 +75,9 @@ def forecast_page():
         if gsp_id != 0 and ("National_xg" in selected_models):
             selected_models.remove("National_xg")
             st.sidebar.warning("National_xg only available for National forecast.")
-
+        # Add selection for adjuster
         use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
-
+        # Add selection for forecast type
         forecast_type = st.sidebar.radio(
             "Forecast Type", ["Now", "Creation Time", "Forecast Horizon"], index=0
         )
@@ -88,8 +91,9 @@ def forecast_page():
             end_datetimes = [None]
 
         elif forecast_type == "Creation Time":
-
+            # Add calendar to select start date - defaults to yesterday
             date_sel = st.sidebar.date_input("Forecast creation date:", yesterday)
+            # Add dropdown selection of init-times
             dt_sel = datetime.combine(date_sel, time(0, 0))
             initial_times = [dt_sel - timedelta(days=1) + timedelta(hours=3 * i) for i in range(8)]
             initial_times += [dt_sel + timedelta(minutes=30 * i) for i in range(48)]
@@ -106,6 +110,7 @@ def forecast_page():
             end_datetimes = [t + timedelta(days=2) for t in select_init_times]
 
         elif forecast_type == "Forecast Horizon":
+            # Add calendar and time selections for datetime
             date_sel = st.sidebar.date_input("Forecast start date:", yesterday)
             time_sel = st.sidebar.time_input("Forecast start time", time(0, 0))
 
@@ -113,12 +118,14 @@ def forecast_page():
             start_datetimes = [dt_sel]
             end_datetimes = [dt_sel + timedelta(days=2)]
 
+            # Add selection for horizon
+            # 0-8 hours in 30 mintue chunks, 8-36 hours in 3 hour chunks
             forecast_horizon = st.sidebar.selectbox(
                 "Forecast Horizon (mins)",
                 list(range(0, 480, 30)) + list(range(480, 36 * 60, 180)),
                 0,
             )
-
+        # Get the data to plot
         forecast_per_model = {}
         for model in selected_models:
             for start_dt, end_dt in zip(start_datetimes, end_datetimes):
