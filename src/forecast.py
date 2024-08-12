@@ -287,13 +287,6 @@ def fetch_forecast_data(api_func, start_date, end_date, process_type):
         st.error(f"Error fetching data for process type '{process_type}': {e}")
         return pd.DataFrame()
 
-# # Initialize Elexon API client
-# api_client = ApiClient()
-# forecast_api = GenerationForecastApi(api_client)
-# forecast_generation_wind_and_solar_day_ahead_get = (
-#     forecast_api.forecast_generation_wind_and_solar_day_ahead_get
-# )
-
 def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_sum_inday):
     # pvlive on the chart
     for k, v in pvlive_data.items():
