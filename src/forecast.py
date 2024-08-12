@@ -213,7 +213,7 @@ def forecast_page():
                 st.write(f"No data available for process type: {process_types[i]}")
                 continue
 
-            # Remove NaNs and zero values
+            # Remove NaNs and zero values to ensure clean data for plotting
             forecast = forecast[forecast["quantity"].notna() & (forecast["quantity"] > 0)]
 
             full_time_range = pd.date_range(start=start_datetime_utc, end=end_datetime_utc, freq='30T', tz=forecast["start_time"].dt.tz)
