@@ -151,7 +151,7 @@ def forecast_page():
                 elif forecast_type == "Creation Time":
                     forecast_values = get_forecast_values(
                         session=session,
-                        gsp_ids=gsp_id,
+                        gsp_ids=[gsp_id],
                         model_name=model,
                         start_datetime=start_dt,
                         created_utc_limit=start_dt,
@@ -162,7 +162,7 @@ def forecast_page():
                 elif forecast_type == "Forecast Horizon":
                     forecast_values = get_forecast_values(
                         session=session,
-                        gsp_id=gsp_id,
+                        gsp_ids=[gsp_id],
                         model_name=model,
                         start_datetime=start_dt,
                         forecast_horizon_minutes=forecast_horizon,
