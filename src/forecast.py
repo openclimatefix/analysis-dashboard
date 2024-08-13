@@ -300,9 +300,7 @@ def determine_start_and_end_datetimes(start_datetimes, end_datetimes):
     if isinstance(end_datetime_utc, date) and not isinstance(end_datetime_utc, datetime):
         end_datetime_utc = datetime.combine(end_datetime_utc, datetime.min.time())
 
-    # Check if start is before end
-    if start_datetime_utc >= end_datetime_utc:
-        return None, None
+    assert start_datetime_utc < end_datetime_utc, "Start datetime must be before end datetime."
 
     return start_datetime_utc, end_datetime_utc
 
