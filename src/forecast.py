@@ -19,6 +19,8 @@ from plots.utils import (
 from elexonpy.api_client import ApiClient
 from elexonpy.api.generation_forecast_api import GenerationForecastApi
 
+from plots.elexon_plots import fetch_forecast_data, determine_start_and_end_datetimes
+
 class GSPLabeler:
     """A function class to add the GSP name to the GSP IDs"""
     def __init__(self, gsp_ids, gsp_names):
@@ -242,67 +244,6 @@ def forecast_page():
         else:
             st.error("Invalid date range. Start date must be before end date.")
 
-# Function to fetch and process data
-def fetch_forecast_data(api_func, start_date, end_date, process_type):
-    try:
-        response = api_func(
-            _from=start_date.isoformat(),
-            to=end_date.isoformat(),
-            process_type=process_type,
-            format="json",
-        )
-        if not response.data:
-            return pd.DataFrame()
-
-        df = pd.DataFrame([item.to_dict() for item in response.data])
-        solar_df = df[df["business_type"] == "Solar generation"]
-        solar_df["start_time"] = pd.to_datetime(solar_df["start_time"])
-        solar_df = solar_df.set_index("start_time")
-
-        # Only resample if there's data
-        if not solar_df.empty:
-            solar_df = solar_df.resample("30T")["quantity"].sum().reset_index()
-
-        return solar_df
-    except Exception as e:
-        st.error(f"Error fetching data for process type '{process_type}': {e}")
-        return pd.DataFrame()
-
-def determine_start_and_end_datetimes(start_datetimes, end_datetimes):
-    """
-    Determines the start and end datetime in UTC.
-    Parameters:
-    - start_datetimes: list of datetime or date objects
-    - end_datetimes: list of datetime or date objects
-    Returns:
-    - start_datetime_utc: datetime object in UTC
-    - end_datetime_utc: datetime object in UTC
-    """
-    now = datetime.utcnow()
-
-    # Determine start_datetime_utc
-    if start_datetimes:
-        start_datetime_utc = start_datetimes[0]
-    else:
-        start_datetime_utc = now - timedelta(days=2)
-
-    # Ensure start_datetime_utc is a datetime object
-    if isinstance(start_datetime_utc, date) and not isinstance(start_datetime_utc, datetime):
-        start_datetime_utc = datetime.combine(start_datetime_utc, datetime.min.time())
-
-    # Determine end_datetime_utc
-    if end_datetimes and end_datetimes[-1]:
-        end_datetime_utc = end_datetimes[-1]
-    else:
-        end_datetime_utc = start_datetime_utc + timedelta(days=7)
-
-    # Ensure end_datetime_utc is a datetime object
-    if isinstance(end_datetime_utc, date) and not isinstance(end_datetime_utc, datetime):
-        end_datetime_utc = datetime.combine(end_datetime_utc, datetime.min.time())
-
-    assert start_datetime_utc < end_datetime_utc, "Start datetime must be before end datetime."
-
-    return start_datetime_utc, end_datetime_utc
 
 def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_sum_inday):
     # pvlive on the chart
