@@ -284,7 +284,7 @@ def determine_start_and_end_datetimes(start_datetimes, end_datetimes):
     if start_datetimes:
         start_datetime_utc = start_datetimes[0]
     else:
-        start_datetime_utc = now
+        start_datetime_utc = now - timedelta(days=2)
 
     # Ensure start_datetime_utc is a datetime object
     if isinstance(start_datetime_utc, date) and not isinstance(start_datetime_utc, datetime):
