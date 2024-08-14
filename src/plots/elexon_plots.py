@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, List, Tuple, Union
 import pandas as pd
 from datetime import datetime, date, timedelta
 from plotly import graph_objects as go
@@ -41,7 +41,10 @@ def fetch_forecast_data(api_func: Callable, start_date: datetime, end_date: date
         st.error(f"Error fetching data for process type '{process_type}': {e}")
         return pd.DataFrame()
 
-def determine_start_and_end_datetimes(start_datetimes, end_datetimes):
+def determine_start_and_end_datetimes(
+    start_datetimes: List[Union[datetime, date]],
+    end_datetimes: List[Union[datetime, date]]
+) -> Tuple[datetime, datetime]:
     """
     Determines the start and end datetime in UTC.
     Parameters:
