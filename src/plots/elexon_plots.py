@@ -6,7 +6,12 @@ import streamlit as st
 from elexonpy.api_client import ApiClient
 from elexonpy.api.generation_forecast_api import GenerationForecastApi
 
-def add_elexon_plot(fig: go.Figure, start_datetimes: List[Optional[datetime]], end_datetimes: List[Optional[datetime]]) -> go.Figure:
+
+def add_elexon_plot(
+    fig: go.Figure,
+    start_datetimes: List[Optional[datetime]],
+    end_datetimes: List[Optional[datetime]],
+) -> go.Figure:
     """
     Adds Elexon forecast data to the given Plotly figure.
 
@@ -18,13 +23,17 @@ def add_elexon_plot(fig: go.Figure, start_datetimes: List[Optional[datetime]], e
     Returns:
     - go.Figure: The modified Plotly figure with Elexon data added.
     """
-    start_datetime_utc, end_datetime_utc = determine_start_and_end_datetimes(start_datetimes, end_datetimes)
+    start_datetime_utc, end_datetime_utc = determine_start_and_end_datetimes(
+        start_datetimes, end_datetimes
+    )
 
     if start_datetime_utc and end_datetime_utc:
         # Initialize Elexon API client
         api_client = ApiClient()
         forecast_api = GenerationForecastApi(api_client)
-        forecast_generation_wind_and_solar_day_ahead_get = forecast_api.forecast_generation_wind_and_solar_day_ahead_get
+        forecast_generation_wind_and_solar_day_ahead_get = (
+            forecast_api.forecast_generation_wind_and_solar_day_ahead_get
+        )
         # Fetch data for each process type
         process_types = ["Day Ahead", "Intraday Process", "Intraday Total"]
         line_styles = ["solid", "dash", "dot"]
@@ -33,8 +42,9 @@ def add_elexon_plot(fig: go.Figure, start_datetimes: List[Optional[datetime]], e
                 forecast_generation_wind_and_solar_day_ahead_get,
                 start_datetime_utc,
                 end_datetime_utc,
-                pt
-            ) for pt in process_types
+                pt,
+            )
+            for pt in process_types
         ]
 
         for i, (forecast, line_style) in enumerate(zip(forecasts, line_styles)):
@@ -43,23 +53,32 @@ def add_elexon_plot(fig: go.Figure, start_datetimes: List[Optional[datetime]], e
             # Remove NaNs and zero values to ensure clean data for plotting
             forecast = forecast[forecast["quantity"].notna() & (forecast["quantity"] > 0)]
 
-            full_time_range = pd.date_range(start=start_datetime_utc, end=end_datetime_utc, freq='30T', tz=forecast["start_time"].dt.tz)
-            full_time_df = pd.DataFrame(full_time_range, columns=['start_time'])
-            forecast = full_time_df.merge(forecast, on='start_time', how='left')
+            full_time_range = pd.date_range(
+                start=start_datetime_utc,
+                end=end_datetime_utc,
+                freq="30T",
+                tz=forecast["start_time"].dt.tz,
+            )
+            full_time_df = pd.DataFrame(full_time_range, columns=["start_time"])
+            forecast = full_time_df.merge(forecast, on="start_time", how="left")
 
-            fig.add_trace(go.Scatter(
-                x=forecast["start_time"],
-                y=forecast["quantity"],
-                mode='lines',
-                name=f"Elexon {process_types[i]}",
-                line=dict(color='#318CE7', dash=line_style),
-                connectgaps=False
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    x=forecast["start_time"],
+                    y=forecast["quantity"],
+                    mode="lines",
+                    name=f"Elexon {process_types[i]}",
+                    line=dict(color="#318CE7", dash=line_style),
+                    connectgaps=False,
+                )
+            )
 
     return fig
 
 
-def fetch_forecast_data(api_func: Callable, start_date: datetime, end_date: datetime, process_type: str) -> pd.DataFrame:
+def fetch_forecast_data(
+    api_func: Callable, start_date: datetime, end_date: datetime, process_type: str
+) -> pd.DataFrame:
     """
     Fetches forecast data from an API and processes it.
 
@@ -96,9 +115,9 @@ def fetch_forecast_data(api_func: Callable, start_date: datetime, end_date: date
         st.error(f"Error fetching data for process type '{process_type}': {e}")
         return pd.DataFrame()
 
+
 def determine_start_and_end_datetimes(
-    start_datetimes: List[Union[datetime, date]],
-    end_datetimes: List[Union[datetime, date]]
+    start_datetimes: List[Union[datetime, date]], end_datetimes: List[Union[datetime, date]]
 ) -> Tuple[datetime, datetime]:
     """
     Determines the start and end datetime in UTC.
