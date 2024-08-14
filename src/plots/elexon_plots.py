@@ -1,9 +1,22 @@
+from typing import Callable
 import pandas as pd
 from datetime import datetime, date, timedelta
 from plotly import graph_objects as go
 import streamlit as st
 
-def fetch_forecast_data(api_func, start_date, end_date, process_type):
+def fetch_forecast_data(api_func: Callable, start_date: datetime, end_date: datetime, process_type: str) -> pd.DataFrame:
+    """
+    Fetches forecast data from an API and processes it.
+
+    Parameters:
+    api_func (Callable): The API function to call for fetching data.
+    start_date (datetime): The start date for the data fetch.
+    end_date (datetime): The end date for the data fetch.
+    process_type (str): The type of process for which data is being fetched.
+
+    Returns:
+    pd.DataFrame: A DataFrame containing the processed solar generation data.
+    """
     try:
         response = api_func(
             _from=start_date.isoformat(),
