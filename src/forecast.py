@@ -19,7 +19,7 @@ from plots.utils import (
 from elexonpy.api_client import ApiClient
 from elexonpy.api.generation_forecast_api import GenerationForecastApi
 
-from plots.elexon_plots import fetch_forecast_data, determine_start_and_end_datetimes
+from plots.elexon_plots import add_elexon_plot
 
 class GSPLabeler:
     """A function class to add the GSP name to the GSP IDs"""
@@ -201,49 +201,10 @@ def forecast_page():
             )
         )
 
-        start_datetime_utc, end_datetime_utc = determine_start_and_end_datetimes(start_datetimes, end_datetimes)
+        # Call the function to add Elexon plot and capture the returned figure
+        fig = add_elexon_plot(fig, start_datetimes, end_datetimes)
 
-        if start_datetime_utc and end_datetime_utc:
-            # Initialize Elexon API client
-            api_client = ApiClient()
-            forecast_api = GenerationForecastApi(api_client)
-            forecast_generation_wind_and_solar_day_ahead_get = forecast_api.forecast_generation_wind_and_solar_day_ahead_get
-            # Fetch data for each process type
-            process_types = ["Day Ahead", "Intraday Process", "Intraday Total"]
-            line_styles = ["solid", "dash", "dot"]
-            forecasts = [
-                fetch_forecast_data(
-                    forecast_generation_wind_and_solar_day_ahead_get,
-                    start_datetime_utc,
-                    end_datetime_utc,
-                    pt
-                ) for pt in process_types
-            ]
-
-            for i, (forecast, line_style) in enumerate(zip(forecasts, line_styles)):
-                if forecast.empty:
-                    st.write(f"No data available for process type: {process_types[i]}")
-                    continue
-                # Remove NaNs and zero values to ensure clean data for plotting
-                forecast = forecast[forecast["quantity"].notna() & (forecast["quantity"] > 0)]
-
-                full_time_range = pd.date_range(start=start_datetime_utc, end=end_datetime_utc, freq='30T', tz=forecast["start_time"].dt.tz)
-                full_time_df = pd.DataFrame(full_time_range, columns=['start_time'])
-                forecast = full_time_df.merge(forecast, on='start_time', how='left')
-
-                fig.add_trace(go.Scatter(
-                    x=forecast["start_time"],
-                    y=forecast["quantity"],
-                    mode='lines',
-                    name=f"Elexon {process_types[i]}",
-                    line=dict(color='#318CE7', dash=line_style),
-                    connectgaps=False
-                ))
-
-            st.plotly_chart(fig, theme="streamlit")
-        else:
-            st.error("Invalid date range. Start date must be before end date.")
-
+    st.plotly_chart(fig, theme="streamlit")
 
 def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_sum_inday):
     # pvlive on the chart
