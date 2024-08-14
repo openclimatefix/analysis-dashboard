@@ -14,13 +14,17 @@ from nowcasting_datamodel.read.read import (
 from nowcasting_datamodel.read.read_gsp import get_gsp_yield, get_gsp_yield_sum
 
 from plots.utils import (
-    get_colour_from_model_name, model_is_probabilistic, get_recent_available_model_names
+    get_colour_from_model_name,
+    model_is_probabilistic,
+    get_recent_available_model_names,
 )
 
 from plots.elexon_plots import add_elexon_plot
 
+
 class GSPLabeler:
     """A function class to add the GSP name to the GSP IDs"""
+
     def __init__(self, gsp_ids, gsp_names):
         """A function class to add the GSP name to the GSP IDs"""
         self.gsp_ids = gsp_ids
@@ -30,6 +34,7 @@ class GSPLabeler:
         """Get GSP label"""
         i = self.gsp_ids.index(gsp_id)
         return f"{gsp_id}: {self.gsp_names[i]}"
+
 
 def forecast_page():
     """Main page for status"""
@@ -50,13 +55,7 @@ def forecast_page():
 
         gsp_labeler = GSPLabeler(gsp_ids, gsp_names)
 
-        gsp_id = st.sidebar.selectbox(
-            "Select a region",
-            gsp_ids,
-            index=0,
-            format_func=gsp_labeler
-        )
-
+        gsp_id = st.sidebar.selectbox("Select a region", gsp_ids, index=0, format_func=gsp_labeler)
 
         # Get effective capacity of selected GSP
         capacity_mw = locations[gsp_ids.index(gsp_id)].installed_capacity_mw
@@ -131,10 +130,7 @@ def forecast_page():
             for start_dt, end_dt in zip(start_datetimes, end_datetimes):
                 if forecast_type == "Now":
                     forecast_values = get_forecast_values_latest(
-                        session=session,
-                        gsp_id=gsp_id,
-                        model_name=model,
-                        start_datetime=start_dt,
+                        session=session, gsp_id=gsp_id, model_name=model, start_datetime=start_dt
                     )
                     label = model
 
@@ -204,6 +200,7 @@ def forecast_page():
 
     st.plotly_chart(fig, theme="streamlit")
 
+
 def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_sum_inday):
     # pvlive on the chart
     for k, v in pvlive_data.items():
@@ -237,6 +234,7 @@ def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_su
             fig.add_trace(
                 go.Scatter(x=x, y=y, mode="lines", name=k, line=line, visible="legendonly")
             )
+
 
 def plot_forecasts(fig, forecast_per_model, selected_prob_models, show_prob):
 
@@ -305,6 +303,7 @@ def plot_forecasts(fig, forecast_per_model, selected_prob_models, show_prob):
                 print(e)
                 print("Could not add plevel to chart")
                 raise e
+
 
 def get_pvlive_data(end_datetime, gsp_id, session, start_datetime):
     pvlive_inday = get_gsp_yield(
