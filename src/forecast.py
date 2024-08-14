@@ -16,8 +16,6 @@ from nowcasting_datamodel.read.read_gsp import get_gsp_yield, get_gsp_yield_sum
 from plots.utils import (
     get_colour_from_model_name, model_is_probabilistic, get_recent_available_model_names
 )
-from elexonpy.api_client import ApiClient
-from elexonpy.api.generation_forecast_api import GenerationForecastApi
 
 from plots.elexon_plots import add_elexon_plot
 
