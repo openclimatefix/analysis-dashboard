@@ -4,6 +4,8 @@ import pytest
 from datetime import datetime
 from plotly import graph_objects as go
 from plots.elexon_plots import  add_elexon_plot, determine_start_and_end_datetimes, fetch_forecast_data
+from elexonpy.api_client import ApiClient
+from elexonpy.api.generation_forecast_api import GenerationForecastApi
 
 def test_determine_start_and_end_datetimes_no_input():
     # Test with no input
@@ -70,3 +72,28 @@ def test_add_elexon_plot_no_data(mock_fetch):
 
     # Assert
     assert len(updated_fig.data) == 0, "Figure should have no traces added if no data is available"
+
+@pytest.mark.integration
+def test_fetch_forecast_data_integration():
+    # Initialize the actual API client and the function to be tested
+    api_client = ApiClient()
+    forecast_api = GenerationForecastApi(api_client)
+    forecast_generation_wind_and_solar_day_ahead_get = forecast_api.forecast_generation_wind_and_solar_day_ahead_get
+
+    # Define the start and end date for fetching the data
+    start_date = datetime(2024, 8, 1)
+    end_date = datetime(2024, 8, 2)
+
+    # Call the function with real data
+    result = fetch_forecast_data(forecast_generation_wind_and_solar_day_ahead_get, start_date, end_date, "Day Ahead")
+
+    # Assertions to check the returned DataFrame
+    assert isinstance(result, pd.DataFrame), "Result should be a DataFrame"
+
+    # If data exists for the given dates, the DataFrame shouldn't be empty
+    if not result.empty:
+        assert "start_time" in result.columns, "DataFrame should contain 'start_time' column"
+        assert result["quantity"].notna().all(), "Quantity values should not be NaN"
+    else:
+        # If the DataFrame is empty, it indicates no data was returned for the given date range
+        print("No data returned for the given date range.")
