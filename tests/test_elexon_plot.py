@@ -89,11 +89,7 @@ def test_fetch_forecast_data_integration():
 
     # Assertions to check the returned DataFrame
     assert isinstance(result, pd.DataFrame), "Result should be a DataFrame"
-
-    # If data exists for the given dates, the DataFrame shouldn't be empty
-    if not result.empty:
-        assert "start_time" in result.columns, "DataFrame should contain 'start_time' column"
-        assert result["quantity"].notna().all(), "Quantity values should not be NaN"
-    else:
-        # If the DataFrame is empty, it indicates no data was returned for the given date range
-        print("No data returned for the given date range.")
+    assert not result.empty, "DataFrame should not be empty"
+    assert "start_time" in result.columns, "DataFrame should contain 'start_time' column"
+    assert "quantity" in result.columns, "DataFrame should contain 'quantity' column"
+    assert result["quantity"].notna().all(), "Quantity values should not be NaN"
