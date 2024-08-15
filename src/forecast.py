@@ -1,7 +1,7 @@
 import os
-from datetime import datetime, timedelta, time, timezone
+from datetime import date, datetime, timedelta, time, timezone
 import numpy as np
-
+import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 from nowcasting_datamodel.connection import DatabaseConnection
@@ -14,12 +14,17 @@ from nowcasting_datamodel.read.read import (
 from nowcasting_datamodel.read.read_gsp import get_gsp_yield, get_gsp_yield_sum
 
 from plots.utils import (
-    get_colour_from_model_name, model_is_probabilistic, get_recent_available_model_names
+    get_colour_from_model_name,
+    model_is_probabilistic,
+    get_recent_available_model_names,
 )
+
+from plots.elexon_plots import add_elexon_plot
 
 
 class GSPLabeler:
     """A function class to add the GSP name to the GSP IDs"""
+
     def __init__(self, gsp_ids, gsp_names):
         """A function class to add the GSP name to the GSP IDs"""
         self.gsp_ids = gsp_ids
@@ -29,78 +34,64 @@ class GSPLabeler:
         """Get GSP label"""
         i = self.gsp_ids.index(gsp_id)
         return f"{gsp_id}: {self.gsp_names[i]}"
-    
+
 
 def forecast_page():
     """Main page for status"""
-
     st.markdown(
         f'<h1 style="color:#63BCAF;font-size:48px;">{"National and GSP Forecasts"}</h1>',
         unsafe_allow_html=True,
     )
-    
+
     st.sidebar.subheader("Select Forecast Model")
-    
+
     connection = DatabaseConnection(url=os.environ["DB_URL"], echo=True)
     with connection.get_session() as session:
-                
         # Add dropdown to select GSP region
         locations = get_all_locations(session=session)
         locations = [Location.from_orm(loc) for loc in locations if loc.gsp_id < 318]
         gsp_ids = [loc.gsp_id for loc in locations]
         gsp_names = [loc.region_name for loc in locations]
-        
+
         gsp_labeler = GSPLabeler(gsp_ids, gsp_names)
-        
-        gsp_id = st.sidebar.selectbox(
-            "Select a region", 
-            gsp_ids, 
-            index=0, 
-            format_func=gsp_labeler
-        )
-        
+
+        gsp_id = st.sidebar.selectbox("Select a region", gsp_ids, index=0, format_func=gsp_labeler)
+
         # Get effective capacity of selected GSP
         capacity_mw = locations[gsp_ids.index(gsp_id)].installed_capacity_mw
-        
         # Find recent available models
         available_models = get_recent_available_model_names(session)
-            
         # Add selection for models
         selected_models = st.sidebar.multiselect("Select models", available_models, ["pvnet_v2"])
-
         # If any selected models are probabilistic add checkbox to show quantiles
         selected_prob_models = [model for model in selected_models if model_is_probabilistic(model)]
-        
-        if len(selected_prob_models)>0:
+
+        if len(selected_prob_models) > 0:
             show_prob = st.sidebar.checkbox("Show Probabilities Forecast", value=False)
         else:
             show_prob = False
-        
-        if gsp_id!=0 and ("National_xg" in selected_models):
+
+        if gsp_id != 0 and ("National_xg" in selected_models):
             selected_models.remove("National_xg")
             st.sidebar.warning("National_xg only available for National forecast.")
-        
         # Add selection for adjuster
         use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
-
         # Add selection for forecast type
         forecast_type = st.sidebar.radio(
             "Forecast Type", ["Now", "Creation Time", "Forecast Horizon"], index=0
         )
-        
+
         now = datetime.now()
         today = now.date()
         yesterday = today - timedelta(days=1)
-        
+
         if forecast_type == "Now":
             start_datetimes = [today - timedelta(days=2)]
             end_datetimes = [None]
-        
+
         elif forecast_type == "Creation Time":
             # Add calendar to select start date - defaults to yesterday
-            
             date_sel = st.sidebar.date_input("Forecast creation date:", yesterday)
-            
             # Add dropdown selection of init-times
             dt_sel = datetime.combine(date_sel, time(0, 0))
             initial_times = [dt_sel - timedelta(days=1) + timedelta(hours=3 * i) for i in range(8)]
@@ -111,7 +102,7 @@ def forecast_page():
                 initial_times,
                 [initial_times[x] for x in [14, 20, 26, 32, 38]],
             )
-            
+
             select_init_times = sorted(select_init_times)
 
             start_datetimes = select_init_times
@@ -121,7 +112,7 @@ def forecast_page():
             # Add calendar and time selections for datetime
             date_sel = st.sidebar.date_input("Forecast start date:", yesterday)
             time_sel = st.sidebar.time_input("Forecast start time", time(0, 0))
-            
+
             dt_sel = datetime.combine(date_sel, time_sel)
             start_datetimes = [dt_sel]
             end_datetimes = [dt_sel + timedelta(days=2)]
@@ -133,21 +124,16 @@ def forecast_page():
                 list(range(0, 480, 30)) + list(range(480, 36 * 60, 180)),
                 0,
             )
-
         # Get the data to plot
         forecast_per_model = {}
         for model in selected_models:
             for start_dt, end_dt in zip(start_datetimes, end_datetimes):
-
                 if forecast_type == "Now":
                     forecast_values = get_forecast_values_latest(
-                        session=session,
-                        gsp_id=gsp_id,
-                        model_name=model,
-                        start_datetime=start_dt,
+                        session=session, gsp_id=gsp_id, model_name=model, start_datetime=start_dt
                     )
                     label = model
-                
+
                 elif forecast_type == "Creation Time":
                     forecast_values = get_forecast_values(
                         session=session,
@@ -158,7 +144,7 @@ def forecast_page():
                         only_return_latest=True,
                     )
                     label = f"{model} {start_dt}"
-                
+
                 elif forecast_type == "Forecast Horizon":
                     forecast_values = get_forecast_values(
                         session=session,
@@ -179,13 +165,10 @@ def forecast_page():
                     if use_adjuster:
                         forecast_value = forecast_value.adjust(limit=1000)
                     forecast_per_model[label].append(forecast_value)
-
-
         # Get pvlive values
         pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_sum_inday = get_pvlive_data(
             end_datetimes[0], gsp_id, session, start_datetimes[0]
         )
-
     # Make figure
     fig = go.Figure(
         layout=go.Layout(
@@ -195,7 +178,6 @@ def forecast_page():
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
         )
     )
-    
     # Plot PVLive values and the forecasts
     plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_sum_inday)
     plot_forecasts(fig, forecast_per_model, selected_prob_models, show_prob)
@@ -213,6 +195,9 @@ def forecast_page():
             )
         )
 
+        # Call the function to add Elexon plot and capture the returned figure
+        fig = add_elexon_plot(fig, start_datetimes, end_datetimes)
+
     st.plotly_chart(fig, theme="streamlit")
 
 
@@ -227,7 +212,7 @@ def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_su
             line["dash"] = "dash"
 
         fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name=k, line=line))
-    
+
     # pvlive gsp sum dictionary of values and chart for national forecast
     if gsp_id == 0:
         pvlive_gsp_sum_data = {}
@@ -241,7 +226,7 @@ def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_su
         for k, v in pvlive_gsp_sum_data.items():
             x = [i.datetime_utc for i in v]
             y = [i.solar_generation_kw / 1000 for i in v]
-                
+
             line = {"color": get_colour_from_model_name(k)}
             if k == "PVLive GSP Sum Estimate":
                 line["dash"] = "dash"
@@ -273,7 +258,7 @@ def plot_forecasts(fig, forecast_per_model, selected_prob_models, show_prob):
                 y=y,
                 mode="lines",
                 name=model,
-                line=dict(color=get_colour_from_model_name(model)), 
+                line=dict(color=get_colour_from_model_name(model)),
                 opacity=opacity,
                 hovertemplate="<br>%{x}<br>" + "<b>%{y:.2f}</b>MW",
                 legendgroup=model,
@@ -300,7 +285,7 @@ def plot_forecasts(fig, forecast_per_model, selected_prob_models, show_prob):
                             showlegend=False,
                         )
                     )
-                    
+
                     fig.add_trace(
                         go.Scatter(
                             x=x,
@@ -313,8 +298,7 @@ def plot_forecasts(fig, forecast_per_model, selected_prob_models, show_prob):
                             showlegend=False,
                         )
                     )
-                    
-                    
+
             except Exception as e:
                 print(e)
                 print("Could not add plevel to chart")
