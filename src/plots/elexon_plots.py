@@ -62,6 +62,12 @@ def add_elexon_plot(
             full_time_df = pd.DataFrame(full_time_range, columns=["start_time"])
             forecast = full_time_df.merge(forecast, on="start_time", how="left")
 
+            # Set visibility based on process type
+            if process_types[i] in ["Intraday Process", "Intraday Total"]:
+                visibility = 'legendonly'
+            else:
+                visibility = True
+
             fig.add_trace(
                 go.Scatter(
                     x=forecast["start_time"],
@@ -70,6 +76,7 @@ def add_elexon_plot(
                     name=f"Elexon {process_types[i]}",
                     line=dict(color="#318CE7", dash=line_style),
                     connectgaps=False,
+                    visible=visibility
                 )
             )
 
@@ -143,7 +150,7 @@ def determine_start_and_end_datetimes(
     if end_datetimes and end_datetimes[-1]:
         end_datetime_utc = end_datetimes[-1]
     else:
-        end_datetime_utc = start_datetime_utc + timedelta(days=7)
+        end_datetime_utc = start_datetime_utc + timedelta(days=3)
 
     # Ensure end_datetime_utc is a datetime object
     if isinstance(end_datetime_utc, date) and not isinstance(end_datetime_utc, datetime):
