@@ -195,11 +195,11 @@ def forecast_page():
             )
         )
 
-        # Call the function to add Elexon plot and capture the returned figure
-        fig = add_elexon_plot(fig, start_datetimes, end_datetimes)
+        # Only add Elexon plot if the National region is selected
+        if gsp_id == 0:
+            fig = add_elexon_plot(fig, start_datetimes, end_datetimes)
 
     st.plotly_chart(fig, theme="streamlit")
-
 
 def plot_pvlive(fig, gsp_id, pvlive_data, pvlive_gsp_sum_dayafter, pvlive_gsp_sum_inday):
     # pvlive on the chart
