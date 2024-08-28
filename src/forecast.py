@@ -195,9 +195,9 @@ def forecast_page():
             )
         )
 
-        # Only add Elexon plot if the National region is selected
-        if gsp_id == 0:
-            fig = add_elexon_plot(fig, start_datetimes, end_datetimes)
+    # Only add Elexon plot if the National region is selected
+    if gsp_id == 0:
+        fig = add_elexon_plot(fig, start_datetimes, end_datetimes)
 
     st.plotly_chart(fig, theme="streamlit")
 
