@@ -10,6 +10,19 @@ import ocf_blosc2
 region = os.getenv("REGION", "UK")
 environment = os.getenv("ENVIRONMENT", "development")
 
+all_nwps = {
+    "uk": {
+        "UKV": f"s3://nowcasting-nwp-{environment}/data-national/latest.zarr",
+        "ECMWF": f"s3://nowcasting-nwp-{environment}/ecmwf/data/latest.zarr",
+    },
+    "india": {
+        "ECMWF": f"s3://india-nwp-{environment}/ecmwf/data/latest.zarr",
+        "GFS": f"s3://nowcasting-nwp-{environment}/gfs/data/latest.zarr",
+    },
+}
+
+nwp_key_list = list(all_nwps[region].keys()) + ["Other"]
+
 
 def get_data(zarr_file):
 
@@ -52,20 +65,6 @@ def get_data(zarr_file):
     return ds
 
 
-all_nwps = {
-    "UK": {
-        "UKV": f"s3://nowcasting-nwp-{environment}/data-national/latest.zarr",
-        "ECMWF": f"s3://nowcasting-nwp-{environment}/ecmwf/data/latest.zarr",
-    },
-    "India": {
-        "ECMWF": f"s3://india-nwp-{environment}/ecmwf/data/latest.zarr",
-        "GFS": f"s3://nowcasting-nwp-{environment}/gfs/data/latest.zarr",
-    },
-}
-
-nwp_key_list = list(all_nwps[region].keys()) + ["Other"]
-
-
 def nwp_page():
     """Main page for pvsite forecast"""
 
@@ -75,13 +74,13 @@ def nwp_page():
     )
 
     # text input box
-    zarr_file = st.selectbox(
-        "Select the zarr file you want to explore", nwp_key_list
-    )
+    zarr_file = st.selectbox("Select the zarr file you want to explore", nwp_key_list)
 
     if zarr_file in [None, "", "Other"]:
-        zarr_file = st.text_input(label="Or enter the zarr file you want to explore",
-                                  value=all_nwps[region][nwp_key_list[0]])
+        zarr_file = st.text_input(
+            label="Or enter the zarr file you want to explore",
+            value=all_nwps[region][nwp_key_list[0]],
+        )
     else:
         zarr_file = all_nwps[region][zarr_file]
         st.text(f"Selected {zarr_file}")

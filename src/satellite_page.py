@@ -11,6 +11,19 @@ region = os.getenv("REGION", "UK")
 environment = os.getenv("ENVIRONMENT", "development")
 
 
+all_satellite = {
+    "uk": {
+        "0deg": f"s3://nowcasting-sat-{environment}/data/latest/latest.zarr.zip",
+        "0deg_HRV": f"s3://nowcasting-sat-{environment}/data/latest/hrv_latest.zarr.zip",
+        "9deg": f"s3://nowcasting-sat-{environment}/data/latest/15_latest.zarr.zip",
+        "9deg_HRV": f"s3://nowcasting-sat-{environment}/data/latest/15_hrv_latest.zarr.zip",
+    },
+    "india": {"45.5deg": f"s3://india-nwp-{environment}/data/latest/latest.zarr.zip"},
+}
+
+satellite_key_list = list(all_satellite[region].keys()) + ["Other"]
+
+
 def get_data(zarr_file):
 
     # hash filename
@@ -55,19 +68,6 @@ def get_data(zarr_file):
     print("Loading")
 
     return ds
-
-
-all_satellite = {
-    "UK": {
-        "0deg": f"s3://nowcasting-sat-{environment}/data/latest/latest.zarr.zip",
-        "0deg_HRV": f"s3://nowcasting-sat-{environment}/data/latest/hrv_latest.zarr.zip",
-        "9deg": f"s3://nowcasting-sat-{environment}/data/latest/15_latest.zarr.zip",
-        "9deg_HRV": f"s3://nowcasting-sat-{environment}/data/latest/15_hrv_latest.zarr.zip",
-    },
-    "INDIA": {"45.5deg": f"s3://india-nwp-{environment}/data/latest/latest.zarr.zip"},
-}
-
-satellite_key_list = list(all_satellite[region].keys()) + ["Other"]
 
 
 def satellite_page():
