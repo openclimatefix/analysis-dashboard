@@ -15,11 +15,17 @@ from pvsite_datamodel.read.user import (
 
 from plots.users import make_api_requests_plot, make_api_frequency_requests_plot
 
+region = os.getenv("REGION", "UK")
 
-get_all_last_api_request_dict = {
-    "National": get_all_last_api_request,
-    "Sites": get_all_last_api_request_sites,
-}
+if region == "UK":
+    get_all_last_api_request_dict = {
+        "National": get_all_last_api_request,
+        "Sites": get_all_last_api_request_sites,
+    }
+else:
+    get_all_last_api_request_dict = {
+        "Sites": get_all_last_api_request_sites,
+    }
 
 
 def user_page():

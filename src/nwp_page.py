@@ -7,6 +7,22 @@ from datetime import datetime, timedelta
 # need this for some zarr files
 import ocf_blosc2
 
+region = os.getenv("REGION", "uk")
+environment = os.getenv("ENVIRONMENT", "development")
+
+all_nwps = {
+    "uk": {
+        "UKV": f"s3://nowcasting-nwp-{environment}/data-national/latest.zarr",
+        "ECMWF": f"s3://nowcasting-nwp-{environment}/ecmwf/data/latest.zarr",
+    },
+    "india": {
+        "ECMWF": f"s3://india-nwp-{environment}/ecmwf/data/latest.zarr",
+        "GFS": f"s3://nowcasting-nwp-{environment}/gfs/data/latest.zarr",
+    },
+}
+
+nwp_key_list = list(all_nwps[region].keys()) + ["Other"]
+
 
 def get_data(zarr_file):
 
@@ -58,10 +74,16 @@ def nwp_page():
     )
 
     # text input box
-    st.write("Enter the zarr file you want to explore")
-    zarr_file = st.text_input(
-        "Zarr File", "s3://nowcasting-nwp-development/data-national/latest.zarr"
-    )
+    zarr_file = st.selectbox("Select the zarr file you want to explore", nwp_key_list)
+
+    if zarr_file in [None, "", "Other"]:
+        zarr_file = st.text_input(
+            label="Or enter the zarr file you want to explore",
+            value=all_nwps[region][nwp_key_list[0]],
+        )
+    else:
+        zarr_file = all_nwps[region][zarr_file]
+        st.text(f"Selected {zarr_file}")
 
     # open zarr file
     ds = get_data(zarr_file)
@@ -103,6 +125,12 @@ def nwp_page():
         # get values
         if "ECMWF_NW-INDIA" in d_one_channel_one_step.variables:
             values = d_one_channel_one_step["ECMWF_NW-INDIA"]
+            x = d_one_channel_one_step.longitude.values
+            y = d_one_channel_one_step.latitude.values
+            xaxis_title = "Longitude"
+            yaxis_title = "Latitude"
+        elif "NOAA_GLOBAL" in d_one_channel_one_step.variables:
+            values = d_one_channel_one_step["NOAA_GLOBAL"]
             x = d_one_channel_one_step.longitude.values
             y = d_one_channel_one_step.latitude.values
             xaxis_title = "Longitude"
@@ -167,17 +195,22 @@ def nwp_page():
             yaxis_title = "latitude"
 
         # reduce by lat lon
-        x = f'{d_one_channel.__getitem__(xaxis_title).min().values},{d_one_channel.__getitem__(xaxis_title).max().values}'
-        y = f'{d_one_channel.__getitem__(yaxis_title).min().values},{d_one_channel.__getitem__(yaxis_title).max().values}'
+        x = f"{d_one_channel.__getitem__(xaxis_title).min().values},{d_one_channel.__getitem__(xaxis_title).max().values}"
+        y = f"{d_one_channel.__getitem__(yaxis_title).min().values},{d_one_channel.__getitem__(yaxis_title).max().values}"
         x = st.text_input(f"{xaxis_title} Limits", x)
         y = st.text_input(f"{yaxis_title} Limits", y)
         x = x.split(",")
         y = y.split(",")
 
         # swap lat limits round if wrong way
-        if d_one_channel.__getitem__(yaxis_title).values[0] > d_one_channel.__getitem__(yaxis_title).values[-1]:
+        if (
+            d_one_channel.__getitem__(yaxis_title).values[0]
+            > d_one_channel.__getitem__(yaxis_title).values[-1]
+        ):
             y = y[::-1]
-        d_one_channel = d_one_channel.sel({xaxis_title: slice(x[0], x[1]), yaxis_title:slice(y[0], y[1])})
+        d_one_channel = d_one_channel.sel(
+            {xaxis_title: slice(x[0], x[1]), yaxis_title: slice(y[0], y[1])}
+        )
 
         # mean over x and y
         df = d_one_channel.mean(dim=[xaxis_title, yaxis_title])

@@ -77,6 +77,9 @@ With any push to `main`, in order to deploy changes, the `Terraform Cloud` varia
 - DB_URL: The database url which will be queried for  forecasts
 - password: The password for accessing the code 
 - SHOW_PVNET_GSP_SUM: Option to show `pvnet_gsp_sum` model or not. This defaults to zero
+- REGION: Option can be UK or India. This effects the default values on the NWP and Satellite pages
+- ENVIRONMENT: Option can be `development` or `production`. 
+This effects the default values on the NWP and Satellite pages
 
 ## Contributors 
 
