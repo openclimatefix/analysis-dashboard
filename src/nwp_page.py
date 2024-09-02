@@ -52,16 +52,18 @@ def get_data(zarr_file):
     return ds
 
 
-if region == "UK":
-    nwp_list = [
-        f"s3://nowcasting-nwp-{environment}/data-national/latest.zarr",
-        f"s3://nowcasting-nwp-{environment}/ecmwf/data/latest.zarr",
-    ]
-elif region == "INDIA":
-    nwp_list = [
-        f"s3://india-nwp-{environment}/ecmwf/data/latest.zarr",
-        f"s3://nowcasting-nwp-{environment}/gfs/data/latest.zarr",
-    ]
+all_nwps = {
+    "UK": {
+        "UKV": f"s3://nowcasting-nwp-{environment}/data-national/latest.zarr",
+        "ECMWF": f"s3://nowcasting-nwp-{environment}/ecmwf/data/latest.zarr",
+    },
+    "India": {
+        "ECMWF": f"s3://india-nwp-{environment}/ecmwf/data/latest.zarr",
+        "GFS": f"s3://nowcasting-nwp-{environment}/gfs/data/latest.zarr",
+    },
+}
+
+nwp_key_list = list(all_nwps[region].keys()) + ["Other"]
 
 
 def nwp_page():
@@ -73,11 +75,16 @@ def nwp_page():
     )
 
     # text input box
-    zarr_file_select = st.selectbox("Select the zarr file you want to explore", nwp_list)
-    zarr_file = st.text_input(label="Or enter the zarr file you want to explore", value=None)
+    zarr_file = st.selectbox(
+        "Select the zarr file you want to explore", nwp_key_list
+    )
 
-    if zarr_file in [None, ""]:
-        zarr_file = zarr_file_select
+    if zarr_file in [None, "", "Other"]:
+        zarr_file = st.text_input(label="Or enter the zarr file you want to explore",
+                                  value=all_nwps[region][nwp_key_list[0]])
+    else:
+        zarr_file = all_nwps[region][zarr_file]
+        st.text(f"Selected {zarr_file}")
 
     # open zarr file
     ds = get_data(zarr_file)

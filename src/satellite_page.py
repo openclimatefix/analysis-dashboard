@@ -57,15 +57,17 @@ def get_data(zarr_file):
     return ds
 
 
-if region == "UK":
-    satellite_list = [
-        f"s3://nowcasting-sat-{environment}/data/latest/latest.zarr.zip",
-        f"s3://nowcasting-sat-{environment}/data/latest/hrv_latest.zarr.zip",
-        f"s3://nowcasting-sat-{environment}/data/latest/15_latest.zarr.zip",
-        f"s3://nowcasting-sat-{environment}/data/latest/15_hrv_latest.zarr.zip",
-    ]
-elif region == "INDIA":
-    satellite_default = [f"s3://india-nwp-{environment}/data/latest/latest.zarr.zip"]
+all_satellite = {
+    "UK": {
+        "0deg": f"s3://nowcasting-sat-{environment}/data/latest/latest.zarr.zip",
+        "0deg_HRV": f"s3://nowcasting-sat-{environment}/data/latest/hrv_latest.zarr.zip",
+        "9deg": f"s3://nowcasting-sat-{environment}/data/latest/15_latest.zarr.zip",
+        "9deg_HRV": f"s3://nowcasting-sat-{environment}/data/latest/15_hrv_latest.zarr.zip",
+    },
+    "INDIA": {"45.5deg": f"s3://india-nwp-{environment}/data/latest/latest.zarr.zip"},
+}
+
+satellite_key_list = list(all_satellite[region].keys()) + ["Other"]
 
 
 def satellite_page():
@@ -77,11 +79,22 @@ def satellite_page():
     )
 
     # text input box
-    zarr_file_select = st.selectbox("Select the zarr file you want to explore", satellite_list)
-    zarr_file = st.text_input(label="Or enter the zarr file you want to explore", value=None)
+    zarr_file = st.selectbox("Select the zarr file you want to explore", satellite_key_list)
 
-    if zarr_file in [None, ""]:
-        zarr_file = zarr_file_select
+    if zarr_file in [None, "", "Other"]:
+        zarr_file = st.text_input(
+            label="Or enter the zarr file you want to explore",
+            value=all_satellite[region][satellite_key_list[0]],
+        )
+    else:
+        zarr_file = all_satellite[region][zarr_file]
+        st.text(f"Selected {zarr_file}")
+
+    if region == "UK":
+        st.text(
+            "The 0deg satellite, is 5 minute data. The 9deg satellite is 15 minute data. \n"
+            "We currently only pull 15 minute data, if 5 minute data is not available"
+        )
 
     # open zarr file
     ds = get_data(zarr_file)
