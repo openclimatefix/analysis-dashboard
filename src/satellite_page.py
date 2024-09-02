@@ -18,7 +18,7 @@ all_satellite = {
         "9deg": f"s3://nowcasting-sat-{environment}/data/latest/15_latest.zarr.zip",
         "9deg_HRV": f"s3://nowcasting-sat-{environment}/data/latest/15_hrv_latest.zarr.zip",
     },
-    "india": {"45.5deg": f"s3://india-nwp-{environment}/data/latest/latest.zarr.zip"},
+    "india": {"45.5deg": f"s3://india-satellite-{environment}/data/latest/iodc_latest.zarr.zip"},
 }
 
 satellite_key_list = list(all_satellite[region].keys()) + ["Other"]
