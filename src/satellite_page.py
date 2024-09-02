@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 # need this for some zarr files
 import ocf_blosc2
 
-region = os.getenv("REGION", "UK")
+region = os.getenv("REGION", "uk")
 environment = os.getenv("ENVIRONMENT", "development")
 
 
