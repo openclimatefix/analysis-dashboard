@@ -17,7 +17,7 @@ all_nwps = {
     },
     "india": {
         "ECMWF": f"s3://india-nwp-{environment}/ecmwf/data/latest.zarr",
-        "GFS": f"s3://nowcasting-nwp-{environment}/gfs/data/latest.zarr",
+        "GFS": f"s3://india-nwp-{environment}/gfs/data/latest.zarr",
     },
 }
 
