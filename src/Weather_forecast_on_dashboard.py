@@ -5,7 +5,6 @@ from herbie import FastHerbie
 from datetime import datetime, timedelta, time
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
-import os
 
 @st.cache_data(show_spinner=False)
 def fetch_data_for_init_time(init_time, forecast_date, lat, lon, parameter, model="ifs"):
@@ -20,12 +19,6 @@ def fetch_data_for_init_time(init_time, forecast_date, lat, lon, parameter, mode
         st.error(f"Failed to download data for initialization time {init_datetime}. Error: {e}")
         return None, None
 
-    # Check if the file exists and is valid
-    file_path = FH.get_local_filepath()
-    if not file_path.exists() or os.stat(file_path).st_size == 0:
-        st.error(f"Data file for {init_datetime} does not exist or is empty.")
-        return None, None
-
     variable_subset = ":10[u|v]" if parameter == "u10:v10" else ":100[u|v]" if parameter == "u100:v100" else "2t"
     
     try:
@@ -34,6 +27,9 @@ def fetch_data_for_init_time(init_time, forecast_date, lat, lon, parameter, mode
             ds = ds[0]
     except EOFError as e:
         st.error(f"Failed to read data file for {init_datetime}. Error: {e}")
+        return None, None
+    except Exception as e:
+        st.error(f"An unexpected error occurred while reading data: {e}")
         return None, None
 
     return ds, init_datetime
