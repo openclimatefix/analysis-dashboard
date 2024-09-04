@@ -19,3 +19,4 @@ s3fs==2024.2.0
 ocf_blosc2==0.0.4
 zarr==2.14.2
 elexonpy
+fiona==1.9.6
