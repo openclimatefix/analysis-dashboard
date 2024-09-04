@@ -2,114 +2,135 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from herbie import FastHerbie
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 import numpy as np
+from concurrent.futures import ThreadPoolExecutor
 import os
 
-# Function to get weather data based on the selected parameter and user input lat/lon
-def get_weather_data(date_time, lat, lon, parameter):
+@st.cache_data(show_spinner=False)
+def fetch_data_for_init_time(init_time, forecast_date, lat, lon, parameter, model="ifs"):
+    # Adjust the initialization datetime based on the init_time offset in hours
+    init_datetime = forecast_date - timedelta(hours=init_time)  # This will be a datetime object
+    
+    FH = FastHerbie([init_datetime], model=model, fxx=range(0, 24, 1), fast=True)
+    
     try:
-        FH = FastHerbie([date_time], model="ifs", fxx=range(0, 12, 3), fast=True)
         FH.download()  # Ensure the file is downloaded
+    except Exception as e:
+        st.error(f"Failed to download data for initialization time {init_datetime}. Error: {e}")
+        return None, None
 
-        variable_subset = ":10[u|v]" if parameter == "u10:v10" else ":100[u|v]" if parameter == "u100:v100" else "2t"
+    # Check if the file exists and is valid
+    file_path = FH.get_local_filepath()
+    if not file_path.exists() or os.stat(file_path).st_size == 0:
+        st.error(f"Data file for {init_datetime} does not exist or is empty.")
+        return None, None
+
+    variable_subset = ":10[u|v]" if parameter == "u10:v10" else ":100[u|v]" if parameter == "u100:v100" else "2t"
+    
+    try:
         ds = FH.xarray(variable_subset, remove_grib=False)
         if isinstance(ds, list):
             ds = ds[0]
+    except EOFError as e:
+        st.error(f"Failed to read data file for {init_datetime}. Error: {e}")
+        return None, None
 
-        interpolated_data = []
-        for step in ds.step:
+    return ds, init_datetime
+
+def process_initialization(init_time, forecast_date, lat, lon, parameter, model="ifs"):
+    ds, init_datetime = fetch_data_for_init_time(init_time, forecast_date, lat, lon, parameter, model)
+    if ds is None:
+        return []
+
+    interpolated_data = []
+
+    time_dim = ds['step'] if 'step' in ds.dims else ds['time'] if 'time' in ds.dims else None
+    if time_dim is None:
+        st.error("Neither 'step' nor 'time' dimension is present in the dataset. Unable to proceed with forecast.")
+        return []
+
+    for time_val in time_dim:
+        actual_forecast_time = init_datetime + pd.to_timedelta(time_val.values)
+        if actual_forecast_time.date() == forecast_date.date():
             if parameter == "u10:v10":
-                u = ds['u10'].interp(latitude=lat, longitude=lon, method="nearest", step=step).values
-                v = ds['v10'].interp(latitude=lat, longitude=lon, method="nearest", step=step).values
-                value = np.sqrt(u**2 + v**2)  # Calculate wind speed at 10m
+                u = ds['u10'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
+                v = ds['v10'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
+                value = np.sqrt(u**2 + v**2)
             elif parameter == "u100:v100":
-                u = ds['u100'].interp(latitude=lat, longitude=lon, method="nearest", step=step).values
-                v = ds['v100'].interp(latitude=lat, longitude=lon, method="nearest", step=step).values
-                value = np.sqrt(u**2 + v**2)  # Calculate wind speed at 100m
+                u = ds['u100'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
+                v = ds['v100'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
+                value = np.sqrt(u**2 + v**2)
             else:  # temp
-                value = ds['t2m'].interp(latitude=lat, longitude=lon, method="nearest", step=step).values - 273.15  # Convert temperature from Kelvin to Celsius
+                value = ds['t2m'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val) - 273.15
 
             interpolated_data.append({
-                'date_time': date_time + step.values,
+                'date_time': actual_forecast_time,
                 'latitude': lat,
                 'longitude': lon,
-                'value': value
+                'value': value.compute().item(),
+                'init_time': f"{init_time} hours before"
             })
 
-        return pd.DataFrame(interpolated_data)
-    except FileNotFoundError as fnf_error:
-        st.error(f"File not found: {fnf_error}")
-        st.warning(f"Check if the model data is available for {date_time}. Ensure the directory '{os.path.dirname(fnf_error.filename)}' exists.")
-        return pd.DataFrame()
-    except Exception as e:
-        st.error(f"Error processing data for {date_time}: {e}")
-        return pd.DataFrame()
+    return interpolated_data
+
+def get_forecast(forecast_date, lat, lon, parameter, init_times, model="ifs"):
+    all_data = []
+    with ThreadPoolExecutor() as executor:
+        results = list(executor.map(lambda init_time: process_initialization(init_time, forecast_date, lat, lon, parameter, model), init_times))
+    for result in results:
+        all_data.extend(result)
+    return pd.DataFrame(all_data)
 
 # Streamlit app
-st.title("Weather Data Visualization")
+st.title("Weather Forecasts from Different Initialization Times")
 
-# Dropdown menu mapping user-friendly names to internal parameters
 parameter_mapping = {
     "Wind Speed (10m)": "u10:v10",
     "Wind Speed (100m)": "u100:v100",
     "Temperature": "2t"
 }
 
-# Sidebar for parameter selection
-parameter_option = st.sidebar.selectbox(
-    "Select Parameter",
-    options=list(parameter_mapping.keys())  # Display user-friendly names
+parameter_option = st.sidebar.selectbox("Select Parameter", options=list(parameter_mapping.keys()))
+parameter_value = parameter_mapping[parameter_option]
+lat = st.sidebar.number_input("Enter Latitude", value=27.035, format="%.6f")
+lon = st.sidebar.number_input("Enter Longitude", value=70.515, format="%.6f")
+
+# Use datetime.combine to set the forecast_date to midnight
+forecast_date = st.sidebar.date_input("Select Forecast Date", datetime.today().date())
+forecast_date = datetime.combine(forecast_date, time(hour=0))
+
+# Multiselect for initialization times in hours
+init_time_options = st.sidebar.multiselect(
+    "Select Initialization Times (in hours before forecast date)",
+    options=[24, 18, 12, 6, 0],
+    default=[24, 12, 0]  # Default selections: 24 hours before, 12 hours before, and current day
 )
 
-# Get the actual parameter value to use in the Herbie function
-parameter_value = parameter_mapping[parameter_option]
-
-# Input fields for user to enter latitude and longitude
-lat = st.number_input("Enter Latitude", value=27.035, format="%.6f")
-lon = st.number_input("Enter Longitude", value=70.515, format="%.6f")
-
-# Input date range
-start_date = st.date_input("Select start date", datetime(2024, 7, 20))
-end_date = st.date_input("Select end date", start_date + timedelta(days=1))
-
-# Fetch data button
 if st.button("Fetch Data"):
-    date_range = pd.date_range(start=start_date, end=end_date, freq="6h")
-
-    all_data = []
-    for current_date in date_range:
-        data = get_weather_data(current_date, lat, lon, parameter_value)
-        if not data.empty:
-            all_data.append(data)
-
-    if all_data:
-        final_data = pd.concat(all_data, ignore_index=True)
-
-        # Plot: Value over time
-        fig = px.line(
-            final_data,
-            x='date_time',
-            y='value',
-            labels={
-                'date_time': 'Date and Time',
-                'value': f'{parameter_option} ({"m/s" if "Wind Speed" in parameter_option else "°C"})',
-                'latitude': 'Latitude',
-                'longitude': 'Longitude'
-            },
-            title=f"{parameter_option} Over Time at ({lat}, {lon})"
-        )
-        st.plotly_chart(fig)
-
-        # Download as CSV button
-        csv = final_data.to_csv(index=False)
-        start_datetime_str = start_date.strftime('%Y-%m-%d_%H-%M')
-        file_name = f"{start_datetime_str}_{parameter_option}_data.csv"
-        st.download_button(
-            label="Download data as CSV",
-            data=csv,
-            file_name=file_name,
-            mime='text/csv',
-        )
+    if not init_time_options:
+        st.warning("Please select at least one initialization time.")
     else:
-        st.warning("No data was collected.")
+        st.write("Note: Data loading may take up to 30 seconds. Please be patient...")
+        data = get_forecast(forecast_date, lat, lon, parameter_value, init_times=init_time_options)
+
+        if not data.empty:
+            fig = px.line(
+                data,
+                x='date_time',
+                y='value',
+                color='init_time',
+                labels={
+                    'date_time': 'Date and Time',
+                    'value': f'{parameter_option} ({"m/s" if "Wind Speed" in parameter_option else "°C"})',
+                    'init_time': 'Initialization Time'
+                },
+                title=f"Forecast of {parameter_option} at ({lat}, {lon}) for {forecast_date.strftime('%Y-%m-%d')}"
+            )
+            st.plotly_chart(fig)
+
+            csv = data.to_csv(index=False)
+            file_name = f"{forecast_date.strftime('%Y-%m-%d')}_{parameter_option}_comparison_data.csv"
+            st.download_button(label="Download data as CSV", data=csv, file_name=file_name, mime='text/csv')
+        else:
+            st.warning("No data was collected.")
