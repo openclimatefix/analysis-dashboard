@@ -7,6 +7,22 @@ from datetime import datetime, timedelta
 # need this for some zarr files
 import ocf_blosc2
 
+region = os.getenv("REGION", "uk")
+environment = os.getenv("ENVIRONMENT", "development")
+
+
+all_satellite = {
+    "uk": {
+        "0deg": f"s3://nowcasting-sat-{environment}/data/latest/latest.zarr.zip",
+        "0deg_HRV": f"s3://nowcasting-sat-{environment}/data/latest/hrv_latest.zarr.zip",
+        "9deg": f"s3://nowcasting-sat-{environment}/data/latest/15_latest.zarr.zip",
+        "9deg_HRV": f"s3://nowcasting-sat-{environment}/data/latest/15_hrv_latest.zarr.zip",
+    },
+    "india": {"45.5deg": f"s3://india-satellite-{environment}/data/latest/iodc_latest.zarr.zip"},
+}
+
+satellite_key_list = list(all_satellite[region].keys()) + ["Other"]
+
 
 def get_data(zarr_file):
 
@@ -62,13 +78,23 @@ def satellite_page():
         unsafe_allow_html=True,
     )
 
-    default = "s3://nowcasting-sat-development/data/latest/latest.zarr.zip"
-
     # text input box
-    st.write("Enter the zarr file you want to explore")
-    zarr_file = st.text_input(
-        "Zarr File", default
-    )
+    zarr_file = st.selectbox("Select the zarr file you want to explore", satellite_key_list)
+
+    if zarr_file in [None, "", "Other"]:
+        zarr_file = st.text_input(
+            label="Or enter the zarr file you want to explore",
+            value=all_satellite[region][satellite_key_list[0]],
+        )
+    else:
+        zarr_file = all_satellite[region][zarr_file]
+        st.text(f"Selected {zarr_file}")
+
+    if region == "UK":
+        st.text(
+            "The 0deg satellite, is 5 minute data. The 9deg satellite is 15 minute data. \n"
+            "We currently only pull 15 minute data, if 5 minute data is not available"
+        )
 
     # open zarr file
     ds = get_data(zarr_file)
@@ -147,17 +173,22 @@ def satellite_page():
         yaxis_title = "y_geostationary"
 
         # reduce by lat lon
-        x = f'{d_one_channel.__getitem__(xaxis_title).min().values},{d_one_channel.__getitem__(xaxis_title).max().values}'
-        y = f'{d_one_channel.__getitem__(yaxis_title).min().values},{d_one_channel.__getitem__(yaxis_title).max().values}'
+        x = f"{d_one_channel.__getitem__(xaxis_title).min().values},{d_one_channel.__getitem__(xaxis_title).max().values}"
+        y = f"{d_one_channel.__getitem__(yaxis_title).min().values},{d_one_channel.__getitem__(yaxis_title).max().values}"
         x = st.text_input(f"{xaxis_title} Limits", x)
         y = st.text_input(f"{yaxis_title} Limits", y)
         x = x.split(",")
         y = y.split(",")
 
         # swap x limits round if wrong way
-        if d_one_channel.__getitem__(xaxis_title).values[0] > d_one_channel.__getitem__(xaxis_title).values[-1]:
+        if (
+            d_one_channel.__getitem__(xaxis_title).values[0]
+            > d_one_channel.__getitem__(xaxis_title).values[-1]
+        ):
             x = x[::-1]
-        d_one_channel = d_one_channel.sel({xaxis_title: slice(x[0], x[1]), yaxis_title:slice(y[0], y[1])})
+        d_one_channel = d_one_channel.sel(
+            {xaxis_title: slice(x[0], x[1]), yaxis_title: slice(y[0], y[1])}
+        )
 
         # mean over x and y
         df = d_one_channel.mean(dim=[xaxis_title, yaxis_title])

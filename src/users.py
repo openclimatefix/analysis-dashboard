@@ -15,11 +15,17 @@ from pvsite_datamodel.read.user import (
 
 from plots.users import make_api_requests_plot, make_api_frequency_requests_plot
 
+region = os.getenv("REGION", "uk")
 
-get_all_last_api_request_dict = {
-    "National": get_all_last_api_request,
-    "Sites": get_all_last_api_request_sites,
-}
+if region == "uk":
+    get_all_last_api_request_dict = {
+        "National": get_all_last_api_request,
+        "Sites": get_all_last_api_request_sites,
+    }
+else:
+    get_all_last_api_request_dict = {
+        "Sites": get_all_last_api_request_sites,
+    }
 
 
 def user_page():
@@ -50,28 +56,23 @@ def user_page():
 
     # if both databases are available, let the user choose which one to use
     # if none, show error
-    if db_url is not None and db_url_sites is not None:
-        db_connection = st.sidebar.selectbox("Select", ["National", "Sites"], index=0)
-    elif db_url is not None:
-        db_connection = "National"
-    elif db_url_sites is not None:
-        db_connection = "Sites"
+    if region == 'uk':
+        national_or_sites = st.sidebar.selectbox("Select", ["National", "Sites"], index=0)
     else:
-        st.error("No database URL found")
-        return
+        national_or_sites = "Sites"
 
     # depending on which database has been selected, we choose the
     # 1. connection function
     # 2. get_all_last_api_request function
     # 3. get_api_requests_for_one_user function
-    if db_connection == "National":
+    if national_or_sites == "National":
         connection = DatabaseConnection(url=db_url, echo=True)
         get_api_requests_for_one_user_func = get_api_requests_for_one_user
     else:
         connection = SitesDatabaseConnection(url=db_url_sites, echo=True)
         get_api_requests_for_one_user_func = get_api_requests_for_one_user_sites
 
-    last_request = get_last_request_by_user(_connection=connection, national_or_sites=db_connection)
+    last_request = get_last_request_by_user(_connection=connection, national_or_sites=national_or_sites)
 
     last_request = pd.DataFrame(last_request, columns=["email", "last API request"])
     last_request = last_request.sort_values(by="last API request", ascending=False)

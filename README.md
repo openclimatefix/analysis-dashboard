@@ -3,10 +3,6 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
-
 Internal dashboard for OCF to track UK forecast statistics. 
 
 The analysis dashboard is a tool that was developed for OCF’s internal use and continues to evolve. 
@@ -77,6 +73,9 @@ With any push to `main`, in order to deploy changes, the `Terraform Cloud` varia
 - DB_URL: The database url which will be queried for  forecasts
 - password: The password for accessing the code 
 - SHOW_PVNET_GSP_SUM: Option to show `pvnet_gsp_sum` model or not. This defaults to zero
+- REGION: Option can be UK or India. This effects the default values on the NWP and Satellite pages
+- ENVIRONMENT: Option can be `development` or `production`. 
+This effects the default values on the NWP and Satellite pages
 
 ## Contributors 
 
