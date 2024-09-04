@@ -14,3 +14,4 @@ jobs:
       pytest_cov_dir: "src"
       #      brew_install: "proj geos librttopo"
       os_list: '["ubuntu-latest"]'
+      requirements: "requirements.txt" 
