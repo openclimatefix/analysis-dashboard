@@ -5,9 +5,17 @@ from herbie import FastHerbie
 from datetime import datetime, timedelta, time
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
+from typing import List, Optional, Tuple
 
 @st.cache_data(show_spinner=False)
-def fetch_data_for_init_time(init_time, forecast_date, lat, lon, parameter, model="ifs"):
+def fetch_data_for_init_time(
+    init_time: datetime, 
+    forecast_date: datetime, 
+    lat: float, 
+    lon: float, 
+    parameter: str, 
+    model: str = "ifs"
+) -> Tuple[Optional['xarray.Dataset'], Optional[datetime]]:
     """
     Fetch the weather forecast data for a specific initialization time and forecast date.
 
@@ -20,8 +28,8 @@ def fetch_data_for_init_time(init_time, forecast_date, lat, lon, parameter, mode
     - model (str): The weather model to use for fetching data (default: "ifs").
 
     Returns:
-    - ds (xarray.Dataset): The forecast dataset for the specified parameters.
-    - init_time (datetime): The initialization time for the dataset.
+    - ds (xarray.Dataset or None): The forecast dataset for the specified parameters.
+    - init_time (datetime or None): The initialization time for the dataset.
     """
     # Adjust the initialization datetime
     FH = FastHerbie([init_time], model=model, fxx=range(init_time.hour, 24 + init_time.hour, 1), fast=True)
@@ -48,7 +56,14 @@ def fetch_data_for_init_time(init_time, forecast_date, lat, lon, parameter, mode
 
     return ds, init_time
 
-def process_initialization(init_time, forecast_date, lat, lon, parameter, model="ifs"):
+def process_initialization(
+    init_time: datetime, 
+    forecast_date: datetime, 
+    lat: float, 
+    lon: float, 
+    parameter: str, 
+    model: str = "ifs"
+) -> List[dict]:
     """
     Process the weather forecast for a specific initialization time, 
     interpolate data for the given latitude and longitude.
@@ -86,7 +101,7 @@ def process_initialization(init_time, forecast_date, lat, lon, parameter, model=
                 value = np.sqrt(u**2 + v**2)
             elif parameter == "u100:v100":
                 u = ds['u100'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
-                v = ds['v100'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
+                v = ds['u100'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
                 value = np.sqrt(u**2 + v**2)
             else:  # Temperature (in Kelvin, converted to Celsius)
                 value = ds['t2m'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val) - 273.15
@@ -101,7 +116,14 @@ def process_initialization(init_time, forecast_date, lat, lon, parameter, model=
 
     return interpolated_data
 
-def get_forecast(forecast_date, lat, lon, parameter, init_times, model="ifs"):
+def get_forecast(
+    forecast_date: datetime, 
+    lat: float, 
+    lon: float, 
+    parameter: str, 
+    init_times: List[datetime], 
+    model: str = "ifs"
+) -> pd.DataFrame:
     """
     Get the weather forecast data for multiple initialization times.
 
@@ -123,7 +145,7 @@ def get_forecast(forecast_date, lat, lon, parameter, init_times, model="ifs"):
         all_data.extend(result)
     return pd.DataFrame(all_data)
 
-def weather_forecast_page():
+def weather_forecast_page() -> None:
     """
     The main page for displaying weather forecasts with user inputs.
 
