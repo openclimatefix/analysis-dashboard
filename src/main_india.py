@@ -13,6 +13,7 @@ from sites_toolbox import sites_toolbox_page
 from satellite_page import satellite_page
 from status import status_page
 from users import user_page
+from weather_forecast import weather_forecast_page
 
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
@@ -26,6 +27,7 @@ if check_password():
         "API Users": user_page,
         "NWP": nwp_page,
         "Satellite": satellite_page,
+        "Weather Forecast": weather_forecast_page, 
     }
 
     demo_name = st.sidebar.selectbox("Choose a page", page_names_to_funcs.keys(), 1)
