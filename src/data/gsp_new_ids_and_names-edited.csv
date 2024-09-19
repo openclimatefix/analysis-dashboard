@@ -1,0 +1,319 @@
+,gsp_id_x,gsp_name,region_name
+0,0,NATIONAL, National
+1,1,ABHA1,Abham
+2,2,ABNE_P,Abernethy
+3,3,ABTH_1,Aberthaw
+4,4,ACTL_2|CBNK_H|GREE_H|PERI_H,Willesden (Zone 1)
+5,5,ACTL_C|WISD_1|WISD_6,Willesden (Zone 2)
+6,6,ALNE_P,Alness
+7,7,ALST_3|USKM_1,Uskmouth
+8,8,ALVE1,Alverdiscott
+9,9,AMEM_1,Amersham Main
+10,10,ARBR_P,Arbroath
+11,11,ARDK_P|CLAC_P,Clachan
+12,12,ARMO_P,Ardmore
+13,13,AXMI1,Axminster
+14,14,AYRR,Ayr
+15,15,BAGA,Bathgate
+16,16,BAIN,Bainsford
+17,17,BARKC1|BARKW3,Barking
+18,18,BEAU_P|ORRI_P,Beauly
+19,19,BEDDT1,Beddington (Zone 1)
+20,20,BEDD_1,Beddington (Zone 2)
+21,21,BERB_P|CAIF_P|DALL_P|GLEF_P|KEIT_P,Keith
+22,22,BERW,Berwick
+23,23,BESW_1,Berkswell
+24,24,BICF_1,Bicker Fen
+25,25,BIRK_1,Birkenhead
+26,26,BISW_1,Bishops Wood
+27,27,BLYTB1,Blyth (Zone 1)
+28,28,BLYTH132,Blyth (Zone 2)
+30,29,BOAG_P,Boat of Garten
+31,30,BOLN_1,Bolney
+32,31,BONN,Bonnybridge
+33,32,BOTW_1,Botley Wood
+34,33,BRAC_P,Braco West
+35,34,BRAI_1,Braintree
+36,35,BRAP,Braehead Park
+37,36,BRAW_1,Bradford West
+38,37,BRED_1,Bredbury
+39,38,BRFO_1|CLT03,Bramford
+40,39,BRID_P,Bridge of Dun
+41,40,BRIM_1,Brimsdown
+42,41,BRLE_1|FLEE_1,Bramley
+43,42,BROA_P,Broadford
+44,43,BROR_P,Brora
+45,44,BROX,Broxburn
+46,45,BRWA1,Bridgewater
+47,46,BUMU_P,Burghmuir
+48,47,BURM_1,Burwell Main
+49,48,BUSH_1,Bushbury
+50,49,BUST_1,Bustleholme
+51,50,CAAD_P,Carradale
+52,51,CAFA|EAST|GLLE|KEOO|TONG,Tongland
+53,52,CAMB_01,Camblesforth
+54,53,CANTN1|RICH_J|RICH1,Canterbury
+55,54,CAPEA1,Capenhurst
+57,55,CARE_1,Cardiff East
+58,56,CARR_1,Carrington
+60,57,CASS_P,Cassley
+61,58,CATY,Carntyne
+62,59,CEAN_P,Ceannacroc
+63,60,CELL_1,Cellarhead
+64,61,CHAP,Chapelcross
+65,62,CHAR_P,Charleston
+66,63,CHAS,Charlotte Street
+67,64,CHIC_1,Chickerell
+68,65,CHSI_1,Chessington
+70,66,CHTE_1,Chesterfield
+71,67,CITR_1,City Road
+72,68,CLAY_P,Clayhills
+73,69,CLYM,Clyde’s Mill
+74,70,COAT,Coatbridge
+76,71,COCK,Cockenzie
+77,72,CONQA1|SASA,Connahs Quay
+78,73,COUA_P,Coupar Angus
+79,74,COVE_1,Coventry
+80,75,COWL_1|ECLA_H,Cowley
+81,76,COYL,Coylton
+82,77,CRAI_P,Craigiebuckler
+83,78,CREB_1,Creyke Beck
+84,79,CROO,Crookston
+86,80,CUMB,Cumbernauld
+87,81,CUPA,Cupar
+88,82,CURR,Currie
+89,83,DALM3,Dalmarnock
+90,84,DEVM,Devol Moor
+91,85,DEVO,Devonside
+92,86,DEWP,Dewar Place
+93,87,DOUN_P,Dounreay
+94,88,DRAK_1,Drakelow
+95,89,DRAX_1,Drax
+96,90,DRCR,Drumcross
+97,91,DRUM,Drumchapel
+98,92,DUBE_P,Dunbeath
+99,93,DUDH_P,Dudhope
+100,94,DUGR_P,Dunvegan
+101,95,DUMF,Dumfries
+104,96,DUNB,Dunbar
+105,97,DUNF,Dunfermline
+106,98,DUNO_P,Dunoon
+107,99,DYCE_P,Dyce
+108,100,EALI_6,Ealing
+109,101,EASO_1,Eaton Socon
+110,102,ECCL,Eccles
+111,103,ECLA_1,East Claydon
+112,104,EERH,Easterhouse
+113,105,EKIL,East Kilbride
+114,106,EKIS,East Kilbride South
+115,107,ELDE,Elderslie
+116,108,ELGI_P,Elgin
+117,109,ELLA_1,Elland
+118,110,ELST_1,Elstree
+121,111,ENDE_1,Enderby
+122,112,ERSK,Erskine
+123,113,EXET1,Exeter
+124,114,FASN_P,Fasnakyle
+125,115,FAUG_P,Fort Augustus
+126,116,FAWL_1,Fawley
+127,117,FECK_6,Feckenham
+128,118,FERRA2,Ferrybridge (Zone 1)
+129,119,FERRB_M|FERRB1,Ferrybridge (Zone 2)
+130,120,FETT_P|KINT_P,Kintore
+131,121,FIDD_P,Fiddes
+132,122,FIDF_1,Fiddlers Ferry
+133,123,FINN,Finnieston
+134,124,FOUR_1,Fourstones
+135,125,FRAS_P,Fraserburgh
+136,126,FROD_1,Frodsham
+137,127,FWIL_P,Fort William
+138,128,GALA,Galashiels
+139,129,GIFF,Giffnock
+140,130,GLLU,Glenluce
+141,131,GLNI,Glenniston
+142,132,GLRO,Glenrothes
+143,133,GORG,Gorgie
+144,134,GOVA,Govan
+145,135,GREN_1,Grendon
+146,136,GRIW_1,Grimsby West
+147,137,GRMO,Grangemouth
+149,138,GRUB_P,Grudie Bridge
+150,139,G_EXTRA_12,G_EXTRA_12
+151,140,HACK_1|HACK_6,Hackney
+152,141,HAGR,Haggs Road
+153,142,HAMHC1,Hams Hall
+154,143,HARK_1|HUTT_1|RRIG,Hutton
+155,144,HARM_6,Hart Moor
+156,145,HAWI,Hawick
+157,146,HAWP_6,Hawthorn Pit
+158,147,HELE,Helensburgh
+159,148,HEYS_1|HEYS1|ORMO,Heysham
+160,149,HUER,Hunterston Farm
+161,150,HURS_1,Hurst
+162,151,IMPK_1,Imperial Park
+163,152,INDQ1,Indian Queens
+164,153,INKE,Inverkeithing
+165,154,INNE_P,Inverness
+166,155,IROA1,Iron Acton
+167,156,IRONB1,Ironbridge
+168,157,ISLI_1|WHAM_1,West Ham
+169,158,IVER_1|IVER_6,Iver
+170,159,JOHN,Johnstone
+171,160,JORD_3,Jordanthorpe
+172,161,KAIM,Kaimes
+173,162,KEAD_1,Keadby
+174,163,KEAR_1|KEAR_3,Kearsley
+175,164,KEMS_1,Kemsley
+177,165,KIBY_1,Kirkby (Zone 1)
+178,166,KIBY_G|WASF_1,Kirkby (Zone 2)
+179,167,KIER,Killermont
+180,168,KIIN_P,Killin
+181,169,KILB,Kilbowie
+183,170,KILS,Kilmarnock South
+184,171,KILT,Kilmarnock Town
+185,172,KILW,Kilwinning
+186,173,KINL_P,Kinlochleven
+187,174,KINO_1,Kingsnorth
+188,175,KIRKB1,Kirkstall
+189,176,KITW_1,Kitwell
+190,177,KNAR,Knaresborough
+191,178,LACK_6,Lackenby
+192,179,LAIR_P,Lairg
+193,180,LALE1SG003,Laleham
+194,181,LAND1,Landulph
+195,182,LEGA_1,Legacy
+196,183,LEVE,Leven
+197,184,LING,Livingston East
+198,185,LINM,Linnmill
+199,186,LISD_1,Lister Drive
+200,187,LITT_C,Littlebrook (Zone 1)
+201,188,LITT_J,Littlebrook (Zone 2)
+202,189,LODR_6,Lodge Road
+203,190,LOUD_H,Loudwater
+204,191,LOVE_1,Lovedean
+205,192,LUNA_P,Lunanhead
+206,193,LYND_P,Lyndhurst
+207,194,MACC_3,Macclesfield
+208,195,MACD_P,Macduff
+209,196,MAGA_6,Margam
+210,197,MANN_1,Mannington
+211,198,MAYB,Maybole
+212,199,MELK_1,Melksham
+213,200,MILC_P,Milton of Craigie
+214,201,MILH_1,Mill Hill
+215,202,MITY_1,Minety
+216,203,MYBS_P,Mybster
+217,204,NAIR_P,Nairn
+218,205,NEAR,Newarthill
+219,206,NECE_1,Nechells
+221,207,NEEP_3,Neepsend
+222,208,NETS,Newton Stewart
+223,209,NEWX_6,New Cross
+225,210,NFLE,Northfleet East
+226,211,NHYD_6,North Hyde
+227,212,NINF_1,Ninfield
+228,213,NORL_3,Norton Lees
+229,214,NORM_1|SALL1,Norwich Main
+230,215,NORT_1,Norton
+231,216,NURS_1,Nursling
+232,217,OCKH_1,Ocker Hill
+233,218,OFFE_3,Offerton
+234,219,OLDB_1,Oldbury
+235,220,OSBA_1,Osbaldwick
+236,221,PADIB1,Padiham
+237,222,PAIS,Paisley
+238,223,PART,Partick
+239,224,PEHG_P,Peterhead Grange
+240,225,PEHS_P|STRI_P,Peterhead Shell
+241,226,PELH_1,Pelham
+242,227,PEMB_1,Pembroke
+243,228,PENE_1,Penwortham
+244,229,PENN_1,Penn
+245,230,PENT_1,Pentir
+246,231,PENW_1|STAH_1|WABO,Penwortham
+247,232,PERS_P,Persley
+248,233,PITS_3,Pitsmoor
+250,234,POOB,Portobello
+251,235,POPP_3,Poppleton
+252,236,PORA_P,Port Ann
+253,237,PORD,Port Dundas
+254,238,PYLE_1,Pyle
+255,239,QUOI_P,Quoich
+256,240,RAIN_1,Rainhill
+257,241,RANN_P,Rannoch
+258,242,RASS_1,Rassau
+259,243,RATS_1,Ratcliffe
+260,244,RAVE|WISH,Ravenscraig
+261,245,RAYL_1,Rayleigh
+262,246,REBR_3,Redbridge
+263,247,REDH,Redhouse
+264,248,REDM_P,Redmoss
+265,249,ROCH_1,Rochdale
+266,250,RUGEB1,Rugeley
+267,251,RYEH_1,Rye House
+268,252,SACO,Saltcoats
+270,253,SALH_1,Saltholme
+271,254,SALT_1,Saltend North
+272,255,SANX,St Andrews Cross
+273,256,SBAR,Stoke Bardolph
+274,257,SEAB1,Seabank
+275,258,SELL_1,Sellindge
+277,259,SFEG_P,St Fergus Gas Terminal
+278,260,SFIL_P,St Fillans
+279,261,SHEC_3,Sheffield City
+280,262,SHIN_P,Shin
+281,263,SHRU,Shrubhill
+282,264,SHRW_1,Shrewsbury
+283,265,SIGH,Sighthill
+284,266,SJOW_1,St Johns Wood
+285,267,SKLGB1,Skelton Grange
+286,268,SLOY_P,Sloy
+287,269,SMAN_1,South Manchester
+288,270,SPAV,Spango Valley
+289,271,SPEN_1,Spennymoor
+290,272,SSHI_3,South Shields
+291,273,STAL_1,Stalybridge
+292,274,STAY_1,Staythorpe
+293,275,STEN_1,Stella North
+294,276,STES_1,Stella South
+295,277,STHA,Strathaven
+296,278,STIR,Stirling
+297,279,STLE,Strathleven
+298,280,SUND_1,Sundon
+299,281,SWAN_1,Swansea North
+300,282,TARL_P,Tarland
+301,283,TAUN1,Taunton
+302,284,TAYN_P,Taynuilt
+303,285,TELR,Telford Road
+304,286,TEMP_3,Templeborough
+305,287,THOM_6,Thorpe Marsh
+306,288,THSO_P,Thurso
+307,289,THUR_6,Thurcroft
+308,290,TILBB_1,Tilbury
+310,291,TOTT_1,Tottenham
+311,292,TRAW_1,Trawsfynydd
+312,293,TUMB_P,Tummel Bridge
+313,294,TYNE_1|TYNE_2,Tynemouth
+314,295,UPPB_1|UPPB_3,Upper Boat
+315,296,WALH_1,Walham
+316,297,WALP_1,Walpole (Zone 1)
+317,298,WALP_B,Walpole (Zone 2)
+318,299,WARL_1,Warley
+319,300,WATFS_1,Watford South
+320,301,WBOL_6,West Boldon
+321,302,WBUR_1,West Burton
+322,303,WFIE,Westfield
+323,304,WGEO,West George Street
+324,305,WHGA_1,Whitegate
+325,306,WHHO,Whitehouse
+326,307,WIBA_3,Wincobank
+327,308,WIEN_1,Willenhall
+328,309,WILL_1,Willington
+329,310,WIMBN1|WIMBS1,Wimbledon
+330,311,WIOW_P,Willowdale
+331,312,WMEL_1,West Melton
+332,313,WOHI_P,Woodhill
+333,314,WTHU31,West Thurrock
+334,315,WWEY_1,West Weybridge
+335,316,WYLF_1,Wylfa
+336,317,WYMOM_1,Wymondley
