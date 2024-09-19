@@ -42,10 +42,17 @@ def pvsite_forecast_page():
     forecast_type = st.sidebar.selectbox("Select Forecast Type", ["Latest", "Forecast_horizon", "DA"], 0)
 
     if forecast_type == "Latest":
-        created = st.sidebar.text_input("Created Before", pd.Timestamp.now().ceil('15min'))
+        created = pd.Timestamp.utcnow().ceil('15min')
+        created = created.astimezone(timezone.utc)
+        created = created.astimezone(timezone_selected)
+        created = created.replace(tzinfo=None)
+        created = st.sidebar.text_input("Created Before", created)
 
         if created == "":
-            created = datetime.utcnow()
+            created = pd.Timestamp.utcnow().ceil('15min')
+            created = created.astimezone(timezone.utc)
+            created = created.astimezone(timezone_selected)
+            created = created.replace(tzinfo=None)
         else:
             created = datetime.fromisoformat(created)
         st.write("Forecast for", site_selection, "starting on", starttime, "created by", created, "ended on", endtime)
