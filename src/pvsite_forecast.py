@@ -12,6 +12,7 @@ from pvsite_datamodel.read import (
 )
 
 import plotly.graph_objects as go
+import pytz
 
 
 def pvsite_forecast_page():
@@ -30,6 +31,10 @@ def pvsite_forecast_page():
             sites.site_uuid for sites in site_uuids if sites.site_uuid is not None
         ]
     site_selection = st.sidebar.selectbox("Select sites by site_uuid", site_uuids,)
+
+    timezone_selected = st.sidebar.selectbox("Select timezone", ['UTC', 'Asia/Calcutta'])
+    timezone_selected = pytz.timezone(timezone_selected)
+
     day_after_tomorrow = datetime.today() + timedelta(days=3)
     starttime = st.sidebar.date_input("Start Date", min_value=datetime.today() - timedelta(days=365), max_value=datetime.today())
     endtime = st.sidebar.date_input("End Date",day_after_tomorrow)
@@ -40,7 +45,7 @@ def pvsite_forecast_page():
         created = st.sidebar.text_input("Created Before", pd.Timestamp.now().ceil('15min'))
 
         if created == "":
-            created = datetime.now()
+            created = datetime.utcnow()
         else:
             created = datetime.fromisoformat(created)
         st.write("Forecast for", site_selection, "starting on", starttime, "created by", created, "ended on", endtime)
@@ -55,7 +60,12 @@ def pvsite_forecast_page():
     if forecast_type == "DA":
         # TODO make these more flexible
         day_ahead_hours = 9
-        day_ahead_timezone_delta_hours = 5.5
+
+        # find the difference in hours for the timezone
+        now = datetime.now()
+        d = timezone_selected.localize(now) - now.replace(tzinfo=timezone.utc)
+        day_ahead_timezone_delta_hours = (24 - d.seconds/3600) % 24
+
         st.write(f"Forecast for {day_ahead_hours} oclock the day before "
                  f"with {day_ahead_timezone_delta_hours} hour timezone delta")
     else:
@@ -64,6 +74,22 @@ def pvsite_forecast_page():
 
     # an option to resample to the data
     resample = st.sidebar.selectbox("Resample data", [None, "15T", "30T"], None)
+
+    # change date to datetime
+    starttime = datetime.combine(starttime, time.min)
+    endtime = datetime.combine(endtime, time.min)
+
+    # change to the correct timezone
+    starttime = timezone_selected.localize(starttime)
+    endtime = timezone_selected.localize(endtime)
+
+    # change to utc
+    starttime = starttime.astimezone(pytz.utc)
+    endtime = endtime.astimezone(pytz.utc)
+
+    if created is not None:
+        created = timezone_selected.localize(created)
+        created = created.astimezone(pytz.utc)
 
     # get forecast values for selected sites and plot
     with connection.get_session() as session:
@@ -83,6 +109,10 @@ def pvsite_forecast_page():
             x = [i.start_utc for i in forecast]
             y = [i.forecast_power_kw for i in forecast]
 
+            # convert to timezone
+            x = [i.replace(tzinfo=pytz.utc) for i in x]
+            x = [i.astimezone(timezone_selected) for i in x]
+
     # get generation values for selected sites and plot
     with connection.get_session() as session:
         generations = get_pv_generation_by_sites(
@@ -95,6 +125,10 @@ def pvsite_forecast_page():
 
         yy = [generation.generation_power_kw for generation in generations if generation is not None]
         xx = [generation.start_utc for generation in generations if generation is not None]
+
+        # convert to timezone
+        xx = [i.replace(tzinfo=pytz.utc) for i in xx]
+        xx = [i.astimezone(timezone_selected) for i in xx]
 
     df_forecast = pd.DataFrame({'forecast_datetime': x, 'forecast_power_kw': y})
     df_generation = pd.DataFrame({'generation_datetime': xx, 'generation_power_kw': yy})
@@ -117,7 +151,7 @@ def pvsite_forecast_page():
     fig = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(text="Latest Forecast for Selected Site"),
-            xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text="Time [UTC]")),
+            xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text=f"Time [{timezone_selected}]")),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="KW")),
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
         )
