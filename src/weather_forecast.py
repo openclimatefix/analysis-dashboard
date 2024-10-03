@@ -184,6 +184,7 @@ def weather_forecast_page() -> None:
     lat = st.sidebar.number_input("Enter Latitude", value=27.035, format="%.6f")
     lon = st.sidebar.number_input("Enter Longitude", value=70.515, format="%.6f")
 
+
     # Forecast date selection
     forecast_date = st.sidebar.date_input("Select Forecast Date", datetime.today().date())
     forecast_date = datetime.combine(forecast_date, time(hour=0))
