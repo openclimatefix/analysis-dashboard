@@ -31,8 +31,18 @@ def fetch_data_for_init_time(
     - ds (xarray.Dataset or None): The forecast dataset for the specified parameters.
     - init_time (datetime or None): The initialization time for the dataset.
     """
-    # Adjust the initialization datetime
-    FH = FastHerbie([init_time], model=model, fxx=range(init_time.hour, 24 + init_time.hour, 1), fast=True)
+    
+    # Adjust fxx range based on initialization time
+    if init_time.hour == 6:
+        forecast_hours = range(18, 42 + 1)  # Fetch up to 42 hours from initialization time
+    elif init_time.hour == 12:
+        forecast_hours = range(12, 36 + 1)  # Fetch up to 36 hours from initialization time
+    elif init_time.hour == 18:
+        forecast_hours = range(6, 30 + 1)  # Fetch up to 30 hours from initialization time
+    else:
+        forecast_hours = range(24, 48 + 1)  # Default 24 hours for other initialization times
+
+    FH = FastHerbie([init_time], model=model, fxx=forecast_hours, fast=True)
     
     try:
         FH.download()  # Ensure the file is downloaded
@@ -94,6 +104,10 @@ def process_initialization(
     # Iterate over the forecast steps and interpolate the data
     for time_val in time_dim:
         actual_forecast_time = init_time + pd.to_timedelta(time_val.values)
+
+        # Debugging: Show the actual forecast time to check if the full day is captured
+        st.write(f"Forecast time: {actual_forecast_time}")
+
         if actual_forecast_time.date() == forecast_date.date():
             if parameter == "u10:v10":
                 u = ds['u10'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
@@ -101,7 +115,7 @@ def process_initialization(
                 value = np.sqrt(u**2 + v**2)
             elif parameter == "u100:v100":
                 u = ds['u100'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
-                v = ds['u100'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
+                v = ds['100'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
                 value = np.sqrt(u**2 + v**2)
             else:  # Temperature (in Kelvin, converted to Celsius)
                 value = ds['t2m'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val) - 273.15
@@ -196,7 +210,7 @@ def weather_forecast_page() -> None:
         if not selected_init_times:
             st.warning("Please select at least one initialization time.")
         else:
-            st.write("Note: Data loading may take up to 30 seconds. Please be patient...")
+            st.write("Note: Data loading may take up to 5 minutes. Please be patient...")
             data = get_forecast(forecast_date, lat, lon, parameter_value, selected_init_times, model="ifs")
 
             if not data.empty:
