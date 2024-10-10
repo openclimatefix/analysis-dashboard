@@ -81,7 +81,7 @@ def pvsite_forecast_page():
 
         for forecast in forecasts:
             x = [i.start_utc for i in forecast]
-            y = [i.forecast_power_kw for i in forecast]
+            y = [max(i.forecast_power_kw, 0) for i in forecast]
 
     # get generation values for selected sites and plot
     with connection.get_session() as session:
@@ -93,7 +93,7 @@ def pvsite_forecast_page():
         )
         capacity = get_site_capacity(session = session, site_uuidss = site_selection)
 
-        yy = [generation.generation_power_kw for generation in generations if generation is not None]
+        yy = [max(generation.generation_power_kw, 0) for generation in generations if generation is not None]
         xx = [generation.start_utc for generation in generations if generation is not None]
 
     df_forecast = pd.DataFrame({'forecast_datetime': x, 'forecast_power_kw': y})
