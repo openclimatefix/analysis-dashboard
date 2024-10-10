@@ -114,7 +114,7 @@ def pvsite_forecast_page():
 
         for forecast in forecasts:
             x = [i.start_utc for i in forecast]
-            y = [i.forecast_power_kw for i in forecast]
+            y = [max(i.forecast_power_kw, 0) for i in forecast]
 
             # convert to timezone
             x = [i.replace(tzinfo=pytz.utc) for i in x]
@@ -130,7 +130,7 @@ def pvsite_forecast_page():
         )
         capacity = get_site_capacity(session = session, site_uuidss = site_selection)
 
-        yy = [generation.generation_power_kw for generation in generations if generation is not None]
+        yy = [max(generation.generation_power_kw, 0) for generation in generations if generation is not None]
         xx = [generation.start_utc for generation in generations if generation is not None]
 
         # convert to timezone
