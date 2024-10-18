@@ -216,6 +216,7 @@ def pvsite_forecast_page():
 
     if resample is None:
          st.caption("Please resample to '15T' to get MAE")
+ 
 
     elif mae_rounded_kw < 2000:
          st.write(f"Mean Absolute Error {mae_rounded_kw} KW")
