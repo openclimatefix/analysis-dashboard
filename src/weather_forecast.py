@@ -115,7 +115,7 @@ def process_initialization(
                 value = np.sqrt(u**2 + v**2)
             elif parameter == "u100:v100":
                 u = ds['u100'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
-                v = ds['100'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
+                v = ds['v100'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
                 value = np.sqrt(u**2 + v**2)
             else:  # Temperature (in Kelvin, converted to Celsius)
                 value = ds['t2m'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val) - 273.15
