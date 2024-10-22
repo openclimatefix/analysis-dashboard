@@ -3,7 +3,7 @@
 FROM python:3.11-slim
 
 # install unzip
-RUN apt-get update && apt-get install -y unzip postgresql-dev
+RUN apt-get update && apt-get install -y unzip libpq-dev
 
 WORKDIR /app
 # copy everything in to the app folder (which we're already in)
