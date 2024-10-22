@@ -7,6 +7,25 @@ import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Optional, Tuple
 
+# Function to compute forecast hours
+def compute_forecast_hours(init_time: datetime, forecast_date: datetime) -> range:
+    """
+    Computes the range of forecast hours based on the delta between the initialization time
+    and the forecast date, fetching up to 24 hours from the calculated difference.
+
+    Parameters:
+    - init_time (datetime): The initialization time.
+    - forecast_date (datetime): The target forecast date.
+
+    Returns:
+    - forecast_hours (range): Range of forecast hours to fetch.
+    """
+    delta_hours = int((forecast_date - init_time).total_seconds() // 3600) # Convert difference to hours
+    forecast_hours = range(delta_hours, delta_hours + 24 + 1)  # Fetch up to 24 hours
+    #print(delta_hours, init_time, forecast_date )
+    return forecast_hours
+    
+
 @st.cache_data(show_spinner=False)
 def fetch_data_for_init_time(
     init_time: datetime, 
@@ -32,15 +51,8 @@ def fetch_data_for_init_time(
     - init_time (datetime or None): The initialization time for the dataset.
     """
     
-    # Adjust fxx range based on initialization time
-    if init_time.hour == 6:
-        forecast_hours = range(18, 42 + 1)  # Fetch up to 42 hours from initialization time
-    elif init_time.hour == 12:
-        forecast_hours = range(12, 36 + 1)  # Fetch up to 36 hours from initialization time
-    elif init_time.hour == 18:
-        forecast_hours = range(6, 30 + 1)  # Fetch up to 30 hours from initialization time
-    else:
-        forecast_hours = range(24, 48 + 1)  # Default 24 hours for other initialization times
+    # Calculate forecast hours using the new logic
+    forecast_hours = compute_forecast_hours(init_time, forecast_date)
 
     FH = FastHerbie([init_time], model=model, fxx=forecast_hours, fast=True)
     
@@ -63,7 +75,7 @@ def fetch_data_for_init_time(
     except Exception as e:
         st.error(f"An unexpected error occurred while reading data: {e}")
         return None, None
-
+    #print (ds, init_time)
     return ds, init_time
 
 def process_initialization(
@@ -184,7 +196,6 @@ def weather_forecast_page() -> None:
     lat = st.sidebar.number_input("Enter Latitude", value=27.035, format="%.6f")
     lon = st.sidebar.number_input("Enter Longitude", value=70.515, format="%.6f")
 
-
     # Forecast date selection
     forecast_date = st.sidebar.date_input("Select Forecast Date", datetime.today().date())
     forecast_date = datetime.combine(forecast_date, time(hour=0))
@@ -192,10 +203,10 @@ def weather_forecast_page() -> None:
     # Create initialization times for yesterday at 00:00, 06:00, 12:00, and 18:00
     yesterday = forecast_date - timedelta(days=1)
     init_times = [
+        yesterday.replace(hour=0)-timedelta(hours=12),
         yesterday.replace(hour=0),
-        yesterday.replace(hour=6),
         yesterday.replace(hour=12),
-        yesterday.replace(hour=18)
+        yesterday.replace(hour=0)+timedelta(hours=24)
     ]
 
     # Multi-selection for initialization times
