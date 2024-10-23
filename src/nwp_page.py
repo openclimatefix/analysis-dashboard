@@ -124,7 +124,7 @@ def nwp_page():
 
         # get values
         if ("ECMWF_NW-INDIA" in d_one_channel_one_step.variables) \
-                or ("ECMWF-INDIA" in d_one_channel_one_step.variables):
+                or ("ECMWF_INDIA" in d_one_channel_one_step.variables):
             values = d_one_channel_one_step["ECMWF_NW-INDIA"]
             x = d_one_channel_one_step.longitude.values
             y = d_one_channel_one_step.latitude.values
