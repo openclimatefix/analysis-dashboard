@@ -268,8 +268,9 @@ def pvsite_forecast_page():
     penalty, total_penalty = calculate_penalty(df, avc)
 
     # Show penalty-related calculations
-    st.write(f"Total Penalty: {round(total_penalty, 2)} INR")
-    st.caption("Penalty calculated based on deviation percentage bands.")
+    if st.checkbox("Show penalty and error calculations"):
+        st.write(f"Total Penalty: {round(total_penalty, 2)} INR")
+        st.caption("Penalty calculated based on deviation percentage bands.")
 
     #CSV download button
     st.download_button(
