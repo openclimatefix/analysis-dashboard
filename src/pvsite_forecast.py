@@ -14,7 +14,35 @@ from pvsite_datamodel.read import (
 import plotly.graph_objects as go
 import pytz
 
+# Penalty Calculator
+def calculate_penalty(df, avc=250):
+    # Deviation between actual and forecast (in kW)
+    deviation = df['generation_power_kw'] - df['forecast_power_kw']
+    
+    # Deviation percentage relative to AVC (as % of contracted capacity)
+    deviation_percentage = (deviation / avc) * 100
 
+    # Define penalty based on deviation bands
+    penalty = pd.Series(0, index=df.index)
+    
+    # 7-15% deviation: 0.25 INR/kWh
+    penalty_7_15 = deviation_percentage.between(7, 15)
+    penalty[penalty_7_15] = abs(deviation[penalty_7_15]) * 0.25 / 1000  # converting kW to MW
+
+    # 15-23% deviation: 0.5 INR/kWh
+    penalty_15_23 = deviation_percentage.between(15, 23)
+    penalty[penalty_15_23] = abs(deviation[penalty_15_23]) * 0.5 / 1000  # converting kW to MW
+
+    # Above 23% deviation: 0.75 INR/kWh
+    penalty_above_23 = deviation_percentage > 23
+    penalty[penalty_above_23] = abs(deviation[penalty_above_23]) * 0.75 / 1000  # converting kW to MW
+
+    # Sum of all penalties
+    total_penalty = penalty.sum()
+
+    return penalty, total_penalty
+
+#Internal Dashboard
 def pvsite_forecast_page():
     """Main page for pvsite forecast"""
 
@@ -199,34 +227,6 @@ def pvsite_forecast_page():
     csv = convert_df(df)
     now = datetime.now().isoformat()
 
-     # Penalty Calculator
-    def calculate_penalty(df, avc=250):
-       # Deviation between actual and forecast (in kW)
-        deviation = df['generation_power_kw'] - df['forecast_power_kw']
-    
-    # Deviation percentage relative to AVC (as % of contracted capacity)
-        deviation_percentage = (deviation / avc) * 100
-
-    # Define penalty based on deviation bands
-        penalty = pd.Series(0, index=df.index)
-    
-    # 7-15% deviation: 0.25 INR/kWh
-        penalty_7_15 = deviation_percentage.between(7, 15)
-        penalty[penalty_7_15] = abs(deviation[penalty_7_15]) * 0.25 / 1000  # converting kW to MW
-
-    # 15-23% deviation: 0.5 INR/kWh
-        penalty_15_23 = deviation_percentage.between(15, 23)
-        penalty[penalty_15_23] = abs(deviation[penalty_15_23]) * 0.5 / 1000  # converting kW to MW
-
-    # Above 23% deviation: 0.75 INR/kWh
-        penalty_above_23 = deviation_percentage > 23
-        penalty[penalty_above_23] = abs(deviation[penalty_above_23]) * 0.75 / 1000  # converting kW to MW
-
-    # Sum of all penalties
-        total_penalty = penalty.sum()
-
-        return penalty, total_penalty
-
     #MAE and NMAE Calculator
     mae_kw = (df['generation_power_kw'] - df['forecast_power_kw']).abs().mean()
     mean_generation = df['generation_power_kw'].mean()
@@ -268,7 +268,7 @@ def pvsite_forecast_page():
     penalty, total_penalty = calculate_penalty(df, avc)
 
     # Show penalty-related calculations
-    if st.checkbox("Show penalty and error calculations"):
+    if st.checkbox("Show penalty calculations"):
         st.write(f"Total Penalty: {round(total_penalty, 2)} INR")
         st.caption("Penalty calculated based on deviation percentage bands.")
 
