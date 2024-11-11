@@ -12,7 +12,7 @@ environment = os.getenv("ENVIRONMENT", "development")
 
 all_nwps = {
     "uk": {
-        "UKV": f"s3://nowcasting-nwp-{environment}/data-national/latest.zarr",
+        "UKV": f"s3://nowcasting-nwp-{environment}/data-metoffice/latest.zarr",
         "ECMWF": f"s3://nowcasting-nwp-{environment}/ecmwf/data/latest.zarr",
     },
     "india": {
