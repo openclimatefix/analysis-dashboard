@@ -73,6 +73,12 @@ def pvsite_forecast_page():
         d = timezone_selected.localize(now) - now.replace(tzinfo=timezone.utc)
         day_ahead_timezone_delta_hours = (24 - d.seconds/3600) % 24
 
+        # get site from database, if india set day_ahead_timezone_delta_hours to 5.5 hours
+        with connection.get_session() as session:
+            site = get_site_by_uuid(session, site_selection)
+            if site.country == 'india':
+                day_ahead_timezone_delta_hours = 5.5
+
         st.write(f"Forecast for {day_ahead_hours} oclock the day before "
                  f"with {day_ahead_timezone_delta_hours} hour timezone delta")
     else:
