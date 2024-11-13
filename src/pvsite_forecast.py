@@ -263,8 +263,6 @@ def pvsite_forecast_page():
             name = model.name
             forecast_column = f"forecast_power_kw_{name}"
 
-            st.write(f"Model Name: {name}")
-
             # MAE and NMAE Calculator
             mae_kw = (df["generation_power_kw"] - df[forecast_column]).abs().mean()
             mae_mw = (df["generation_power_kw"] - df[forecast_column]).abs().mean() / 1000
