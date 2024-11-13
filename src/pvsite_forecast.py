@@ -3,12 +3,13 @@ import pandas as pd
 import streamlit as st
 from datetime import datetime, timedelta, time, timezone
 from pvsite_datamodel.read import get_site_by_uuid
+from pvsite_datamodel.read.model import get_models
 from sqlalchemy.orm import Session
 from pvsite_datamodel.connection import DatabaseConnection
 from pvsite_datamodel.read import (
     get_all_sites,
     get_pv_generation_by_sites,
-    get_latest_forecast_values_by_site
+    get_latest_forecast_values_by_site,
 )
 
 import plotly.graph_objects as go
@@ -27,40 +28,54 @@ def pvsite_forecast_page():
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         site_uuids = get_all_sites(session=session)
-        site_uuids = [
-            sites.site_uuid for sites in site_uuids if sites.site_uuid is not None
-        ]
-    site_selection = st.sidebar.selectbox("Select sites by site_uuid", site_uuids,)
+        site_uuids = [sites.site_uuid for sites in site_uuids if sites.site_uuid is not None]
+    site_selection = st.sidebar.selectbox(
+        "Select sites by site_uuid",
+        site_uuids,
+    )
 
-    timezone_selected = st.sidebar.selectbox("Select timezone", ['UTC', 'Asia/Calcutta'])
+    timezone_selected = st.sidebar.selectbox("Select timezone", ["UTC", "Asia/Calcutta"])
     timezone_selected = pytz.timezone(timezone_selected)
 
     day_after_tomorrow = datetime.today() + timedelta(days=3)
-    starttime = st.sidebar.date_input("Start Date", min_value=datetime.today() - timedelta(days=365), max_value=datetime.today())
-    endtime = st.sidebar.date_input("End Date",day_after_tomorrow)
+    starttime = st.sidebar.date_input(
+        "Start Date", min_value=datetime.today() - timedelta(days=365), max_value=datetime.today()
+    )
+    endtime = st.sidebar.date_input("End Date", day_after_tomorrow)
 
-    forecast_type = st.sidebar.selectbox("Select Forecast Type", ["Latest", "Forecast_horizon", "DA"], 0)
+    forecast_type = st.sidebar.selectbox(
+        "Select Forecast Type", ["Latest", "Forecast_horizon", "DA"], 0
+    )
 
     if forecast_type == "Latest":
-        created = pd.Timestamp.utcnow().ceil('15min')
+        created = pd.Timestamp.utcnow().ceil("15min")
         created = created.astimezone(timezone.utc)
         created = created.astimezone(timezone_selected)
         created = created.replace(tzinfo=None)
         created = st.sidebar.text_input("Created Before", created)
 
         if created == "":
-            created = pd.Timestamp.utcnow().ceil('15min')
+            created = pd.Timestamp.utcnow().ceil("15min")
             created = created.astimezone(timezone.utc)
             created = created.astimezone(timezone_selected)
             created = created.replace(tzinfo=None)
         else:
             created = datetime.fromisoformat(created)
-        st.write("Forecast for", site_selection, "starting on", starttime, "created by", created, "ended on", endtime)
+        st.write(
+            "Forecast for",
+            site_selection,
+            "starting on",
+            starttime,
+            "created by",
+            created,
+            "ended on",
+            endtime,
+        )
     else:
         created = None
 
     if forecast_type == "Forecast_horizon":
-        forecast_horizon = st.sidebar.selectbox("Select Forecast Horizon", range(0,2880,15), 6)
+        forecast_horizon = st.sidebar.selectbox("Select Forecast Horizon", range(0, 2880, 15), 6)
     else:
         forecast_horizon = None
 
@@ -71,16 +86,18 @@ def pvsite_forecast_page():
         # find the difference in hours for the timezone
         now = datetime.now()
         d = timezone_selected.localize(now) - now.replace(tzinfo=timezone.utc)
-        day_ahead_timezone_delta_hours = (24 - d.seconds/3600) % 24
+        day_ahead_timezone_delta_hours = (24 - d.seconds / 3600) % 24
 
         # get site from database, if india set day_ahead_timezone_delta_hours to 5.5 hours
         with connection.get_session() as session:
             site = get_site_by_uuid(session, site_selection)
-            if site.country == 'india':
+            if site.country == "india":
                 day_ahead_timezone_delta_hours = 5.5
 
-        st.write(f"Forecast for {day_ahead_hours} oclock the day before "
-                 f"with {day_ahead_timezone_delta_hours} hour timezone delta")
+        st.write(
+            f"Forecast for {day_ahead_hours} oclock the day before "
+            f"with {day_ahead_timezone_delta_hours} hour timezone delta"
+        )
     else:
         day_ahead_hours = None
         day_ahead_timezone_delta_hours = None
@@ -104,27 +121,46 @@ def pvsite_forecast_page():
         created = timezone_selected.localize(created)
         created = created.astimezone(pytz.utc)
 
+    # great ml model names for this site
+
     # get forecast values for selected sites and plot
     with connection.get_session() as session:
-        forecasts = get_latest_forecast_values_by_site(
+
+        # great ml model names for this site
+        ml_models = get_models(
             session=session,
-            site_uuids=[site_selection],
-            start_utc=starttime,
-            created_by=created,
-            forecast_horizon_minutes=forecast_horizon,
-            day_ahead_hours=day_ahead_hours,
-            day_ahead_timezone_delta_hours=day_ahead_timezone_delta_hours,
-            end_utc=endtime,
+            start_datetime=starttime,
+            end_datetime=endtime,
+            site_uuid=site_selection,
         )
-        forecasts = forecasts.values()
 
-        for forecast in forecasts:
-            x = [i.start_utc for i in forecast]
-            y = [i.forecast_power_kw for i in forecast]
+        ys = {}
+        xs = {}
+        for model in ml_models:
 
-            # convert to timezone
-            x = [i.replace(tzinfo=pytz.utc) for i in x]
-            x = [i.astimezone(timezone_selected) for i in x]
+            forecasts = get_latest_forecast_values_by_site(
+                session=session,
+                site_uuids=[site_selection],
+                start_utc=starttime,
+                created_by=created,
+                forecast_horizon_minutes=forecast_horizon,
+                day_ahead_hours=day_ahead_hours,
+                day_ahead_timezone_delta_hours=day_ahead_timezone_delta_hours,
+                end_utc=endtime,
+                model_name=model.name,
+            )
+            forecasts = forecasts.values()
+
+            for forecast in forecasts:
+                x = [i.start_utc for i in forecast]
+                y = [i.forecast_power_kw for i in forecast]
+
+                # convert to timezone
+                x = [i.replace(tzinfo=pytz.utc) for i in x]
+                x = [i.astimezone(timezone_selected) for i in x]
+
+            ys[model.name] = y
+            xs[model.name] = x
 
     # get generation values for selected sites and plot
     with connection.get_session() as session:
@@ -134,32 +170,43 @@ def pvsite_forecast_page():
             start_utc=starttime,
             end_utc=endtime,
         )
-        capacity = get_site_capacity(session = session, site_uuidss = site_selection)
+        capacity = get_site_capacity(session=session, site_uuidss=site_selection)
 
-        yy = [generation.generation_power_kw for generation in generations if generation is not None]
+        yy = [
+            generation.generation_power_kw for generation in generations if generation is not None
+        ]
         xx = [generation.start_utc for generation in generations if generation is not None]
 
         # convert to timezone
         xx = [i.replace(tzinfo=pytz.utc) for i in xx]
         xx = [i.astimezone(timezone_selected) for i in xx]
 
-    df_forecast = pd.DataFrame({'forecast_datetime': x, 'forecast_power_kw': y})
-    df_generation = pd.DataFrame({'generation_datetime': xx, 'generation_power_kw': yy})
+    df_forecast = []
+    for model in ml_models:
+        name = model.name
+        if len(df_forecast) == 0:
+            df_forecast = pd.DataFrame(
+                {"forecast_datetime": xs[name], f"forecast_power_kw_{name}": ys[name]}
+            )
+        else:
+            temp = pd.DataFrame(
+                {"forecast_datetime": xs[name], f"forecast_power_kw_{name}": ys[name]}
+            )
+            df_forecast = df_forecast.merge(temp, on="forecast_datetime", how="outer")
+    df_generation = pd.DataFrame({"generation_datetime": xx, "generation_power_kw": yy})
 
     if resample is not None:
-        df_forecast.set_index('forecast_datetime', inplace=True)
-        df_generation.set_index('generation_datetime', inplace=True)
+        df_forecast.set_index("forecast_datetime", inplace=True)
+        df_generation.set_index("generation_datetime", inplace=True)
         df_forecast = df_forecast.resample(resample).mean()
         df_generation = df_generation.resample(resample).mean()
 
         # merge together
-        df_all = df_forecast.merge(df_generation, left_index=True, right_index=True, how='outer')
+        df_all = df_forecast.merge(df_generation, left_index=True, right_index=True, how="outer")
 
         # select variables
         xx = df_all.index
-        x = df_all.index
-        yy = df_all['generation_power_kw']
-        y = df_all['forecast_power_kw']
+        yy = df_all["generation_power_kw"]
 
     fig = go.Figure(
         layout=go.Layout(
@@ -170,21 +217,23 @@ def pvsite_forecast_page():
         )
     )
 
-    fig.add_trace(
-        go.Scatter(
-            x=x,
-            y=y,
-            mode="lines",
-            name="selected site forecast",
-            line=dict(color="#4c9a8e"),
-        )
+    for model in ml_models:
+        name = model.name
+        fig.add_trace(
+            go.Scatter(
+                x=df_forecast.index,
+                y=df_forecast[f"forecast_power_kw_{name}"],
+                mode="lines",
+                name=f"forecast_{name}",
+                # line=dict(color="#4c9a8e"),
+            )
         )
     fig.add_trace(
         go.Scatter(
             x=xx,
             y=yy,
             mode="lines",
-            name="selected site generation",
+            name="generation",
             line=dict(color="#FF9736"),
         )
     )
@@ -195,7 +244,7 @@ def pvsite_forecast_page():
     @st.cache_data
     def convert_df(df: pd.DataFrame):
         # IMPORTANT: Cache the conversion to prevent computation on every rerun
-        return df.to_csv().encode('utf-8')
+        return df.to_csv().encode("utf-8")
 
     # join data together
     if resample is not None:
@@ -205,52 +254,80 @@ def pvsite_forecast_page():
     csv = convert_df(df)
     now = datetime.now().isoformat()
 
-    #MAE and NMAE Calculator
-    mae_kw = (df['generation_power_kw'] - df['forecast_power_kw']).abs().mean()
-    mean_generation = df['generation_power_kw'].mean()
-    nmae = mae_kw / mean_generation
-    nmae_rounded = round(nmae*100,ndigits=4)
-    nma2 = (df['generation_power_kw'] - df['forecast_power_kw']).abs()
-    gen = df['generation_power_kw']
-    nmae2 = nma2/gen
-    nmae2_mean = nmae2.mean()
-    nmae2_rounded = round(nmae2_mean*100,ndigits=4)
-    mae_rounded_kw = round(mae_kw*100,ndigits=3)
-    mae_rounded_mw = round(mae_kw/1000,ndigits=3)
-    nmae_capacity = mae_kw / capacity
-    nmae_rounded_capcity = round(nmae_capacity*100,ndigits=3)
-
     if resample is None:
-         st.caption("Please resample to '15T' to get MAE")
-
-    elif mae_rounded_kw < 2000:
-         st.write(f"Mean Absolute Error {mae_rounded_kw} KW")
-         st.write(f"Normalised Mean Absolute Error is : {nmae_rounded} %")
-         st.caption(f"NMAE is calculated by MAE / (mean generation)")
-         st.write(f"Normalised Mean Absolute Error is : {nmae2_rounded} %")
-         st.caption(f"NMAE is calculated by current generation (kw)")
-         st.write(f"Normalised Mean Absolute Error is : {nmae_rounded_capcity} %")
-         st.caption(f"NMAE is calculated by generation capacity (mw)")
-
-
+        st.caption("Please resample to '15T' to get MAE")
     else:
-         st.write(f"Mean Absolute Error {mae_rounded_mw} MW")
-         st.write(f"Normalised Mean Absolute Error is : {nmae_rounded} %")
-         st.caption(f"NMAE is calculated by MAE / (mean generation)")
-         st.write(f"Normalised Mean Absolute Error is : {nmae2_rounded} %")
-         st.caption(f"NMAE is calculated by current generation (kw)")
-         st.write(f"Normalised Mean Absolute Error is : {nmae_rounded_capcity} %")
-         st.caption(f"NMAE is calculated by generation capacity (mw)")
 
-    #CSV download button
+        metrics = []
+        for model in ml_models:
+            name = model.name
+            forecast_column = f"forecast_power_kw_{name}"
+
+            st.write(f"Model Name: {name}")
+
+            # MAE and NMAE Calculator
+            mae_kw = (df["generation_power_kw"] - df[forecast_column]).abs().mean()
+            mae_mw = (df["generation_power_kw"] - df[forecast_column]).abs().mean() / 1000
+            me_kw = (df["generation_power_kw"] - df[forecast_column]).mean()
+            mean_generation = df["generation_power_kw"].mean()
+            nmae = mae_kw / mean_generation * 100
+            nma2 = (df["generation_power_kw"] - df[forecast_column]).abs()
+            gen = df["generation_power_kw"]
+            nmae2 = nma2 / gen * 100
+            nmae2_mean = nmae2.mean()
+            nmae_capacity = mae_kw / capacity * 100
+
+            one_metric_data = {
+                "model_name": name,
+                "mae_mw": mae_mw,
+                "mae_kw": mae_kw,
+                "me_kw": me_kw,
+                "nmae_mean [%]": nmae,
+                "nmae_live_gen [%]": nmae2_mean,
+                "nmae_capacity [%]": nmae_capacity,
+                "mean_generation": mean_generation,
+                "capacity": capacity,
+            }
+
+            metrics.append(one_metric_data)
+
+        metrics = pd.DataFrame(metrics)
+
+        # round all columns to 3 decimal places
+        metrics = metrics.round(3)
+
+        # make mode_name the columns by pivoting, and make the index the other columns
+        metrics = metrics.pivot_table(
+            values=[
+                "mean_generation",
+                "capacity",
+                "mae_mw",
+                "mae_kw",
+                "me_kw",
+                "nmae_mean [%]",
+                "nmae_live_gen [%]",
+                "nmae_capacity [%]",
+            ],
+            columns="model_name",
+        )
+
+        # show metrics in a table
+        st.write(metrics)
+
+        st.caption(f"NMAE_mean is calculated by MAE / (mean generation)")
+        st.caption(f"NMAE_live_gen is calculated by current generation (kw)")
+        st.caption(f"NMAE_capacity is calculated by generation capacity (mw)")
+
+    # CSV download button
     st.download_button(
-        label="Download data as CSV",   
+        label="Download data as CSV",
         data=csv,
-        file_name=f'site_forecast_{site_selection}_{now}.csv',
-        mime='text/csv',
+        file_name=f"site_forecast_{site_selection}_{now}.csv",
+        mime="text/csv",
     )
 
-def get_site_capacity(session : Session , site_uuidss: str) -> float:
+
+def get_site_capacity(session: Session, site_uuidss: str) -> float:
     site = get_site_by_uuid(session, site_uuidss)
     capacity_kw = site.capacity_kw
     return capacity_kw
