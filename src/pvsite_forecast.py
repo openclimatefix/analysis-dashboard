@@ -194,10 +194,10 @@ def pvsite_forecast_page():
             )
             df_forecast = df_forecast.merge(temp, on="forecast_datetime", how="outer")
     df_generation = pd.DataFrame({"generation_datetime": xx, "generation_power_kw": yy})
+    df_forecast.set_index("forecast_datetime", inplace=True)
+    df_generation.set_index("generation_datetime", inplace=True)
 
     if resample is not None:
-        df_forecast.set_index("forecast_datetime", inplace=True)
-        df_generation.set_index("generation_datetime", inplace=True)
         df_forecast = df_forecast.resample(resample).mean()
         df_generation = df_generation.resample(resample).mean()
 
