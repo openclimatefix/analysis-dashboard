@@ -19,14 +19,14 @@ import pytz
 # Penalty Calculator
 def calculate_penalty(df, capacity_kw=250000):
     # Deviation between actual and forecast (in kW)
-    deviation = df['generation_power_kw'] - df['forecast_power_kw']
-    
+    deviation = df["generation_power_kw"] - df["forecast_power_kw"]
+
     # Deviation percentage relative to AVC (as % of contracted capacity)
     deviation_percentage = (deviation / capacity_kw) * 100
 
     # Define penalty based on deviation bands
     penalty = pd.Series(0, index=df.index)
-    
+
     # 7-15% deviation: 0.25 INR/kWh
     penalty_7_15 = deviation_percentage.between(7, 15)
     penalty[penalty_7_15] = abs(deviation[penalty_7_15]) * 0.25
@@ -44,7 +44,8 @@ def calculate_penalty(df, capacity_kw=250000):
 
     return penalty, total_penalty
 
-#Internal Dashboard
+
+# Internal Dashboard
 def pvsite_forecast_page():
     """Main page for pvsite forecast"""
 
@@ -56,12 +57,25 @@ def pvsite_forecast_page():
     url = os.environ["SITES_DB_URL"]
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
-        site_uuids = get_all_sites(session=session)
-        site_uuids = [sites.site_uuid for sites in site_uuids if sites.site_uuid is not None]
-    site_selection_uuid = st.sidebar.selectbox(
-        "Select sites by site_uuid",
-        site_uuids,
-    )
+        sites = get_all_sites(session=session)
+        site_uuids = [sites.site_uuid for sites in sites if sites.site_uuid is not None]
+
+        # streamlit toggle between site_uuid and client_site_name
+        query_method = st.sidebar.radio("Select site by", ("site_uuid", "client_site_name"))
+
+        if query_method == "site_uuid":
+            site_selection_uuid = st.sidebar.selectbox(
+                "Select sites by site_uuid",
+                site_uuids,
+            )
+        else:
+            site_selection_uuid = st.sidebar.selectbox(
+                "Select sites by client_site_name",
+                [sites.client_site_name for sites in sites],
+            )
+            site_selection_uuid = [
+                sites.site_uuid for sites in sites if sites.client_site_name == site_selection_uuid
+            ][0]
 
     timezone_selected = st.sidebar.selectbox("Select timezone", ["UTC", "Asia/Calcutta"])
     timezone_selected = pytz.timezone(timezone_selected)
