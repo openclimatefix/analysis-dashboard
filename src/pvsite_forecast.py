@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 import streamlit as st
 from datetime import datetime, timedelta, time, timezone
 from pvsite_datamodel.read import get_site_by_uuid
@@ -301,7 +302,7 @@ def pvsite_forecast_page():
             nma2 = (df["generation_power_kw"] - df[forecast_column]).abs()
             gen = df["generation_power_kw"].clip(0)
             nmae2 = nma2 / gen * 100
-            nmae2_mean = nmae2.mean()
+            nmae2_mean = nmae2[nmae2 != np.inf].mean()
             nmae_capacity = mae_kw / capacity * 100
 
             one_metric_data = {
