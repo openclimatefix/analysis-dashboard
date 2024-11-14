@@ -270,7 +270,7 @@ def pvsite_forecast_page():
             mean_generation = df["generation_power_kw"].mean()
             nmae = mae_kw / mean_generation * 100
             nma2 = (df["generation_power_kw"] - df[forecast_column]).abs()
-            gen = df["generation_power_kw"]
+            gen = df["generation_power_kw"].clip(0)
             nmae2 = nma2 / gen * 100
             nmae2_mean = nmae2.mean()
             nmae_capacity = mae_kw / capacity * 100
