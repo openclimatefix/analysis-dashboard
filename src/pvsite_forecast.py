@@ -311,6 +311,7 @@ def pvsite_forecast_page():
             nmae2 = nma2 / gen * 100
             nmae2_mean = nmae2[nmae2 != np.inf].mean()
             nmae_capacity = mae_kw / capacity * 100
+            pearson_corr = df["generation_power_kw"].corr(df[forecast_column])
 
             one_metric_data = {
                 "model_name": name,
@@ -322,6 +323,7 @@ def pvsite_forecast_page():
                 "nmae_capacity [%]": nmae_capacity,
                 "mean_generation": mean_generation,
                 "capacity": capacity,
+                "pearson_corr": pearson_corr,
             }
 
             if country == "india":
