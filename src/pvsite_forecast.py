@@ -76,6 +76,13 @@ def pvsite_forecast_page():
         "Select Forecast Type", ["Latest", "Forecast_horizon", "DA"], 0
     )
 
+    with connection.get_session() as session:
+
+        site = get_site_by_uuid(session, site_selection_uuid)
+        capacity = site.capacity_kw
+        site_client_site_name = site.client_site_name
+        country = site.country
+
     if forecast_type == "Latest":
         created = pd.Timestamp.utcnow().ceil("15min")
         created = created.astimezone(timezone.utc)
@@ -93,7 +100,9 @@ def pvsite_forecast_page():
         st.write(
             "Forecast for",
             site_selection_uuid,
-            "starting on",
+            " - `",
+            site_client_site_name,
+            "`, starting on",
             starttime,
             "created by",
             created,
@@ -199,9 +208,6 @@ def pvsite_forecast_page():
             start_utc=starttime,
             end_utc=endtime,
         )
-        site = get_site_by_uuid(session, site_selection_uuid)
-        capacity = site.capacity_kw
-        country = site.country
 
         yy = [
             generation.generation_power_kw for generation in generations if generation is not None
