@@ -15,7 +15,35 @@ from pvsite_datamodel.read import (
 import plotly.graph_objects as go
 import pytz
 
+# Penalty Calculator
+def calculate_penalty(df, capacity_kw=250000):
+    # Deviation between actual and forecast (in kW)
+    deviation = df['generation_power_kw'] - df['forecast_power_kw']
+    
+    # Deviation percentage relative to AVC (as % of contracted capacity)
+    deviation_percentage = (deviation / capacity_kw) * 100
 
+    # Define penalty based on deviation bands
+    penalty = pd.Series(0, index=df.index)
+    
+    # 7-15% deviation: 0.25 INR/kWh
+    penalty_7_15 = deviation_percentage.between(7, 15)
+    penalty[penalty_7_15] = abs(deviation[penalty_7_15]) * 0.25
+
+    # 15-23% deviation: 0.5 INR/kWh
+    penalty_15_23 = deviation_percentage.between(15, 23)
+    penalty[penalty_15_23] = abs(deviation[penalty_15_23]) * 0.5
+
+    # Above 23% deviation: 0.75 INR/kWh
+    penalty_above_23 = deviation_percentage > 23
+    penalty[penalty_above_23] = abs(deviation[penalty_above_23]) * 0.75
+
+    # Sum of all penalties
+    total_penalty = penalty.sum()
+
+    return penalty, total_penalty
+
+#Internal Dashboard
 def pvsite_forecast_page():
     """Main page for pvsite forecast"""
 
@@ -29,7 +57,7 @@ def pvsite_forecast_page():
     with connection.get_session() as session:
         site_uuids = get_all_sites(session=session)
         site_uuids = [sites.site_uuid for sites in site_uuids if sites.site_uuid is not None]
-    site_selection = st.sidebar.selectbox(
+    site_selection_uuid = st.sidebar.selectbox(
         "Select sites by site_uuid",
         site_uuids,
     )
@@ -63,7 +91,7 @@ def pvsite_forecast_page():
             created = datetime.fromisoformat(created)
         st.write(
             "Forecast for",
-            site_selection,
+            site_selection_uuid,
             "starting on",
             starttime,
             "created by",
@@ -90,7 +118,7 @@ def pvsite_forecast_page():
 
         # get site from database, if india set day_ahead_timezone_delta_hours to 5.5 hours
         with connection.get_session() as session:
-            site = get_site_by_uuid(session, site_selection)
+            site = get_site_by_uuid(session, site_selection_uuid)
             if site.country == "india":
                 day_ahead_timezone_delta_hours = 5.5
 
@@ -131,7 +159,7 @@ def pvsite_forecast_page():
             session=session,
             start_datetime=starttime,
             end_datetime=endtime,
-            site_uuid=site_selection,
+            site_uuid=site_selection_uuid,
         )
 
         ys = {}
@@ -140,7 +168,7 @@ def pvsite_forecast_page():
 
             forecasts = get_latest_forecast_values_by_site(
                 session=session,
-                site_uuids=[site_selection],
+                site_uuids=[site_selection_uuid],
                 start_utc=starttime,
                 created_by=created,
                 forecast_horizon_minutes=forecast_horizon,
@@ -166,11 +194,13 @@ def pvsite_forecast_page():
     with connection.get_session() as session:
         generations = get_pv_generation_by_sites(
             session=session,
-            site_uuids=[site_selection],
+            site_uuids=[site_selection_uuid],
             start_utc=starttime,
             end_utc=endtime,
         )
-        capacity = get_site_capacity(session=session, site_uuidss=site_selection)
+        site = get_site_by_uuid(session, site_selection_uuid)
+        capacity = site.capacity_kw
+        country = site.country
 
         yy = [
             generation.generation_power_kw for generation in generations if generation is not None
@@ -257,7 +287,6 @@ def pvsite_forecast_page():
     if resample is None:
         st.caption("Please resample to '15T' to get MAE")
     else:
-
         metrics = []
         for model in ml_models:
             name = model.name
@@ -287,6 +316,11 @@ def pvsite_forecast_page():
                 "capacity": capacity,
             }
 
+            if country == "india":
+                df["forecast_power_kw"] = df[forecast_column]
+                penalty, total_penalty = calculate_penalty(df, capacity)
+                one_metric_data["total_penalty [INR]"] = total_penalty
+
             metrics.append(one_metric_data)
 
         metrics = pd.DataFrame(metrics)
@@ -295,17 +329,10 @@ def pvsite_forecast_page():
         metrics = metrics.round(3)
 
         # make mode_name the columns by pivoting, and make the index the other columns
+        value_columns = one_metric_data.keys()
+        value_columns = [i for i in value_columns if i != "model_name"]
         metrics = metrics.pivot_table(
-            values=[
-                "mean_generation",
-                "capacity",
-                "mae_mw",
-                "mae_kw",
-                "me_kw",
-                "nmae_mean [%]",
-                "nmae_live_gen [%]",
-                "nmae_capacity [%]",
-            ],
+            values=value_columns,
             columns="model_name",
         )
 
@@ -320,7 +347,7 @@ def pvsite_forecast_page():
     st.download_button(
         label="Download data as CSV",
         data=csv,
-        file_name=f"site_forecast_{site_selection}_{now}.csv",
+        file_name=f"site_forecast_{site_selection_uuid}_{now}.csv",
         mime="text/csv",
     )
 
