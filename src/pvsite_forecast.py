@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 import streamlit as st
 from datetime import datetime, timedelta, time, timezone
 from pvsite_datamodel.read import get_site_by_uuid
@@ -75,6 +76,13 @@ def pvsite_forecast_page():
         "Select Forecast Type", ["Latest", "Forecast_horizon", "DA"], 0
     )
 
+    with connection.get_session() as session:
+
+        site = get_site_by_uuid(session, site_selection_uuid)
+        capacity = site.capacity_kw
+        site_client_site_name = site.client_site_name
+        country = site.country
+
     if forecast_type == "Latest":
         created = pd.Timestamp.utcnow().ceil("15min")
         created = created.astimezone(timezone.utc)
@@ -89,16 +97,6 @@ def pvsite_forecast_page():
             created = created.replace(tzinfo=None)
         else:
             created = datetime.fromisoformat(created)
-        st.write(
-            "Forecast for",
-            site_selection_uuid,
-            "starting on",
-            starttime,
-            "created by",
-            created,
-            "ended on",
-            endtime,
-        )
     else:
         created = None
 
@@ -132,6 +130,19 @@ def pvsite_forecast_page():
 
     # an option to resample to the data
     resample = st.sidebar.selectbox("Resample data", [None, "15T", "30T"], None)
+
+    st.write(
+        "Forecast for",
+        site_selection_uuid,
+        " - `",
+        site_client_site_name,
+        "`, starting on",
+        starttime,
+        "created by",
+        created,
+        "ended on",
+        endtime,
+    )
 
     # change date to datetime
     starttime = datetime.combine(starttime, time.min)
@@ -198,9 +209,6 @@ def pvsite_forecast_page():
             start_utc=starttime,
             end_utc=endtime,
         )
-        site = get_site_by_uuid(session, site_selection_uuid)
-        capacity = site.capacity_kw
-        country = site.country
 
         yy = [
             generation.generation_power_kw for generation in generations if generation is not None
@@ -301,7 +309,7 @@ def pvsite_forecast_page():
             nma2 = (df["generation_power_kw"] - df[forecast_column]).abs()
             gen = df["generation_power_kw"].clip(0)
             nmae2 = nma2 / gen * 100
-            nmae2_mean = nmae2.mean()
+            nmae2_mean = nmae2[nmae2 != np.inf].mean()
             nmae_capacity = mae_kw / capacity * 100
 
             one_metric_data = {
