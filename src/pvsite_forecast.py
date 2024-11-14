@@ -97,18 +97,6 @@ def pvsite_forecast_page():
             created = created.replace(tzinfo=None)
         else:
             created = datetime.fromisoformat(created)
-        st.write(
-            "Forecast for",
-            site_selection_uuid,
-            " - `",
-            site_client_site_name,
-            "`, starting on",
-            starttime,
-            "created by",
-            created,
-            "ended on",
-            endtime,
-        )
     else:
         created = None
 
@@ -142,6 +130,19 @@ def pvsite_forecast_page():
 
     # an option to resample to the data
     resample = st.sidebar.selectbox("Resample data", [None, "15T", "30T"], None)
+
+    st.write(
+        "Forecast for",
+        site_selection_uuid,
+        " - `",
+        site_client_site_name,
+        "`, starting on",
+        starttime,
+        "created by",
+        created,
+        "ended on",
+        endtime,
+    )
 
     # change date to datetime
     starttime = datetime.combine(starttime, time.min)
