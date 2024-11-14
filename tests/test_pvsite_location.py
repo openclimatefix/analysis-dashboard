@@ -8,8 +8,8 @@ def test_calculate_penalty():
     df = pd.DataFrame(
         {
             "datetime": pd.date_range("2021-01-01", periods=5, freq="D"),
-            "forecast": [0.1, 0.2, 0.3, 0.4, 0.5],
-            "actual": [0.2, 0.3, 0.4, 0.5, 0.6],
+            "forecast_power_kw": [0.1, 0.2, 0.3, 0.4, 0.5],
+            "generation_power_kw": [0.2, 0.3, 0.4, 0.5, 0.6],
         }
     )
 
