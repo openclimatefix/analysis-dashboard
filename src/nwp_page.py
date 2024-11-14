@@ -12,7 +12,7 @@ environment = os.getenv("ENVIRONMENT", "development")
 
 all_nwps = {
     "uk": {
-        "UKV": f"s3://nowcasting-nwp-{environment}/data-national/latest.zarr",
+        "UKV": f"s3://nowcasting-nwp-{environment}/data-metoffice/latest.zarr",
         "ECMWF": f"s3://nowcasting-nwp-{environment}/ecmwf/data/latest.zarr",
     },
     "india": {
@@ -125,6 +125,12 @@ def nwp_page():
         # get values
         if "ECMWF_NW-INDIA" in d_one_channel_one_step.variables:
             values = d_one_channel_one_step["ECMWF_NW-INDIA"]
+            x = d_one_channel_one_step.longitude.values
+            y = d_one_channel_one_step.latitude.values
+            xaxis_title = "Longitude"
+            yaxis_title = "Latitude"
+        elif "ECMWF_INDIA" in d_one_channel_one_step.variables:
+            values = d_one_channel_one_step["ECMWF_INDIA"]
             x = d_one_channel_one_step.longitude.values
             y = d_one_channel_one_step.latitude.values
             xaxis_title = "Longitude"

@@ -1,7 +1,7 @@
 altair==4.2.2
 requests<2.32.0
 nowcasting_datamodel==1.5.42
-pvsite-datamodel==1.0.24
+pvsite-datamodel==1.0.41
 numpy==1.24.1
 pandas==1.5.3
 plotly==5.10.0
@@ -20,3 +20,5 @@ ocf_blosc2==0.0.4
 zarr==2.14.2
 elexonpy
 fiona==1.9.6
+psycopg2-binary
+herbie-data
