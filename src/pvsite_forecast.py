@@ -231,6 +231,8 @@ def pvsite_forecast_page():
                 {"forecast_datetime": xs[name], f"forecast_power_kw_{name}": ys[name]}
             )
             df_forecast = df_forecast.merge(temp, on="forecast_datetime", how="outer")
+    if len(ml_models) == 0:
+        df_forecast = pd.DataFrame(columns=["forecast_datetime"])
     df_generation = pd.DataFrame({"generation_datetime": xx, "generation_power_kw": yy})
     df_forecast.set_index("forecast_datetime", inplace=True)
     df_generation.set_index("generation_datetime", inplace=True)
