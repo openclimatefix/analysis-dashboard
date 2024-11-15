@@ -1,24 +1,37 @@
 # uk analysis dashboard
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square)](#contributors-)
+[![ease of contribution: easy](https://img.shields.io/badge/ease%20of%20contribution:%20easy-32bd50)](https://github.com/openclimatefix#how-easy-is-it-to-get-involved) 
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-Internal dashboard for OCF to track UK forecast statistics. 
+Internal dashboard for OCF to track forecast statistics and log the historical data of the forecast performance. 
 
 The analysis dashboard is a tool that was developed for OCF’s internal use and continues to evolve. 
 
-Built with [Streamlit](https://streamlit.io/), a Python-based framework made specifically for creating data apps, the dashboard tracks and displays Quartz Solar and other data model statistics, such as mean absolute error (MAE) on both the national and GSP level. The database provides the error statistic using Sheffield Solar's PVLive day-after updated values as the baseline --the larger the error, the less accurate the forecast. 
+Built with [Streamlit](https://streamlit.io/), a Python-based framework made specifically for creating data apps, the dashboard tracks and displays Quartz Solar and other data model statistics, such as mean absolute error (MAE), normalized mean absolute error (nMAE) for all the client sites. The database provides the error statistic using comparing the live generation with the forecast provided. Internally it has the option of chosing the forecast horizion to check the performance with genration. The larger the error, the less accurate the forecast. 
 
-Thanks to the analysis dashboard, OCF has a valuable feedback tool for understanding the accuracy of both the Quartz Solar forecast and other models in production.
+Thanks to the analysis dashboard, OCF has a valuable feedback tool for understanding the accuracy of the forecasts being provided to it's clients.
 
 ## Installation 
+You can install the `analysis-dashboard` package directly from GitHub.
 
 In the main project folder, install requirements: 
-`pip install -r requirements.txt` or `pip3 install -r requirements.txt`.
+
+```shell
+pip install -r requirements.txt
+``` 
+or 
+
+```shell
+pip3 install -r requirements.txt
+```
 
 Run `streamlit hello` to check that Streamlit installed. A "Welcome to Streamlit!" page should open in the browser.
 
-Create a login secret: `echo "password = example" > src/.streamlit/secrets.toml`. 
+Create a login secret: `
+```shell
+echo "password = example" > src/.streamlit/secrets.toml
+``` 
 
 ## Database connection 
 
@@ -26,11 +39,19 @@ To run the app locally, you'll need to connect it to the `forecast development d
 
 OCF team members can connect to the `forecast development database` using [these Notion instructions](https://www.notion.so/openclimatefix/Connecting-to-AWS-RDS-bf35b3fbd61f40df9c974c240e042354). Add `DB_URL= (db_url from notion documents)` to a `secrets.toml` file. Follow the instructions in the Notion document to connect to the database v. 
 
-Run app: `cd src && streamlit run main.py`.
-## files
+Run app: 
+``` shell
+cd src && streamlit run main.py
+```
+
+## Files
 ### main.py
 
 `main.py` contains functions for the `home page` of the app, which focuses on MAE for the OCF `Quartz Solar` forecast.
+
+### main_india.py
+
+`main_india.py` contains functions for the `home page` of the app, which focuses on MAE for the OCF `Quartz Emnergy` forecast.
 
 ### forecast.py
 
@@ -46,11 +67,11 @@ Run app: `cd src && streamlit run main.py`.
 
 ### pvsite_forecast.py
 
-TODO
+`pvsite_forecast.py` contains the formulas and the metrics used to calculate MAE, nMAE and penalty incured against all sites.
 
 ### site_toolbox.py
 
-TODO
+`site_toolbox.py` is a page on the dashboard that can be used to get details of any particular site that OCF provides forecast to.
 
 ### plots/make_pinball_and_exceedance_plots.py
 
