@@ -98,6 +98,21 @@ With any push to `main`, in order to deploy changes, the `Terraform Cloud` varia
 - ENVIRONMENT: Option can be `development` or `production`. 
 This effects the default values on the NWP and Satellite pages
 
+## Develop
+
+Currently this repository is only used by OCF for internal metric calculations, as it contiains client information. We hope to make it more freely useable in the near future.
+
+### Tests
+
+To run the tests, make sure you have `pytest` installed
+```bash
+pip install pytest
+```
+and then you can run
+```bash
+pytest
+```
+
 ## Contributors and community
 
 
