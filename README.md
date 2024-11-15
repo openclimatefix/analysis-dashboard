@@ -20,11 +20,6 @@ In the main project folder, install requirements:
 ```shell
 pip install -r requirements.txt
 ``` 
-or 
-
-```shell
-pip install -r requirements.txt
-```
 
 Run `streamlit hello` to check that Streamlit installed. A "Welcome to Streamlit!" page should open in the browser.
 
