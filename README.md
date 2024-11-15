@@ -1,8 +1,8 @@
 # uk analysis dashboard
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square)](#contributors-)
-[![ease of contribution: easy](https://img.shields.io/badge/ease%20of%20contribution:%20easy-32bd50)](https://github.com/openclimatefix#how-easy-is-it-to-get-involved) 
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
+[![ease of contribution: easy](https://img.shields.io/badge/ease%20of%20contribution:%20easy-32bd50)](https://github.com/openclimatefix#how-easy-is-it-to-get-involved) 
 
 Internal dashboard for OCF to track forecast statistics and log the historical data of the forecast performance. 
 
@@ -23,7 +23,7 @@ pip install -r requirements.txt
 or 
 
 ```shell
-pip3 install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 Run `streamlit hello` to check that Streamlit installed. A "Welcome to Streamlit!" page should open in the browser.
@@ -51,7 +51,7 @@ cd src && streamlit run main.py
 
 ### main_india.py
 
-`main_india.py` contains functions for the `home page` of the app, which focuses on MAE for the OCF `Quartz Emnergy` forecast.
+`main_india.py` contains functions for the `home page` of the app, which focuses on MAE for the OCF `Quartz Energy` forecast.
 
 ### forecast.py
 
@@ -98,7 +98,16 @@ With any push to `main`, in order to deploy changes, the `Terraform Cloud` varia
 - ENVIRONMENT: Option can be `development` or `production`. 
 This effects the default values on the NWP and Satellite pages
 
-## Contributors 
+## Contributors and community
+
+
+[![issues badge](https://img.shields.io/github/issues/openclimatefix/elexonpy?color=FFAC5F)](https://github.com/openclimatefix/elexonpy/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)
+
+- PR's are welcome! See the [Organisation Profile](https://github.com/openclimatefix) for details on contributing
+- Find out about our other projects in the [OCF Meta Repo](https://github.com/openclimatefix/ocf-meta-repo)
+- Check out the [OCF blog](https://openclimatefix.org/blog) for updates
+- Follow OCF on [LinkedIn](https://uk.linkedin.com/company/open-climate-fix)
+- OCF templete: (https://github.com/openclimatefix/ocf-template?tab=readme-ov-file#contributing-and-community)
 
 The following folks have contributed to this repo.
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
