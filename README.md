@@ -2,23 +2,31 @@
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
+[![ease of contribution: hard](https://img.shields.io/badge/ease%20of%20contribution:%20hard-bb2629)](https://github.com/openclimatefix#how-easy-is-it-to-get-involved)
 
-Internal dashboard for OCF to track UK forecast statistics. 
+Internal dashboard for OCF to track forecast statistics and log the historical data of the forecast performance. 
 
 The analysis dashboard is a tool that was developed for OCF’s internal use and continues to evolve. 
 
-Built with [Streamlit](https://streamlit.io/), a Python-based framework made specifically for creating data apps, the dashboard tracks and displays Quartz Solar and other data model statistics, such as mean absolute error (MAE) on both the national and GSP level. The database provides the error statistic using Sheffield Solar's PVLive day-after updated values as the baseline --the larger the error, the less accurate the forecast. 
+Built with [Streamlit](https://streamlit.io/), a Python-based framework made specifically for creating data apps, the dashboard tracks and displays Quartz Solar and other data model statistics, such as mean absolute error (MAE), normalized mean absolute error (nMAE) for all the client sites. The database provides the error statistic using comparing the live generation with the forecast provided. Internally it has the option of chosing the forecast horizion to check the performance with genration. The larger the error, the less accurate the forecast. 
 
-Thanks to the analysis dashboard, OCF has a valuable feedback tool for understanding the accuracy of both the Quartz Solar forecast and other models in production.
+Thanks to the analysis dashboard, OCF has a valuable feedback tool for understanding the accuracy of the forecasts being provided to it's clients.
 
 ## Installation 
+You can install the `analysis-dashboard` package directly from GitHub.
 
 In the main project folder, install requirements: 
-`pip install -r requirements.txt` or `pip3 install -r requirements.txt`.
+
+```shell
+pip install -r requirements.txt
+``` 
 
 Run `streamlit hello` to check that Streamlit installed. A "Welcome to Streamlit!" page should open in the browser.
 
-Create a login secret: `echo "password = example" > src/.streamlit/secrets.toml`. 
+Create a login secret: `
+```shell
+echo "password = example" > src/.streamlit/secrets.toml
+``` 
 
 ## Database connection 
 
@@ -26,11 +34,19 @@ To run the app locally, you'll need to connect it to the `forecast development d
 
 OCF team members can connect to the `forecast development database` using [these Notion instructions](https://www.notion.so/openclimatefix/Connecting-to-AWS-RDS-bf35b3fbd61f40df9c974c240e042354). Add `DB_URL= (db_url from notion documents)` to a `secrets.toml` file. Follow the instructions in the Notion document to connect to the database v. 
 
-Run app: `cd src && streamlit run main.py`.
-## files
+Run app: 
+``` shell
+cd src && streamlit run main.py
+```
+
+## Files
 ### main.py
 
 `main.py` contains functions for the `home page` of the app, which focuses on MAE for the OCF `Quartz Solar` forecast.
+
+### main_india.py
+
+`main_india.py` contains functions for the `home page` of the app, which focuses on MAE for the OCF `Quartz Energy` forecast.
 
 ### forecast.py
 
@@ -46,11 +62,11 @@ Run app: `cd src && streamlit run main.py`.
 
 ### pvsite_forecast.py
 
-TODO
+`pvsite_forecast.py` contains the formulas and the metrics used to calculate MAE, nMAE and penalty incured against all sites.
 
 ### site_toolbox.py
 
-TODO
+`site_toolbox.py` is a page on the dashboard that can be used to get details of any particular site that OCF provides forecast to.
 
 ### plots/make_pinball_and_exceedance_plots.py
 
@@ -77,7 +93,31 @@ With any push to `main`, in order to deploy changes, the `Terraform Cloud` varia
 - ENVIRONMENT: Option can be `development` or `production`. 
 This effects the default values on the NWP and Satellite pages
 
-## Contributors 
+## Develop
+
+Currently this repository is only used by OCF for internal metric calculations, as it contiains client information. We hope to make it more freely useable in the near future.
+
+### Tests
+
+To run the tests, make sure you have `pytest` installed
+```bash
+pip install pytest
+```
+and then you can run
+```bash
+pytest
+```
+
+## Contributors and community
+
+
+[![issues badge](https://img.shields.io/github/issues/openclimatefix/elexonpy?color=FFAC5F)](https://github.com/openclimatefix/elexonpy/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)
+
+- PR's are welcome! See the [Organisation Profile](https://github.com/openclimatefix) for details on contributing
+- Find out about our other projects in the [OCF Meta Repo](https://github.com/openclimatefix/ocf-meta-repo)
+- Check out the [OCF blog](https://openclimatefix.org/blog) for updates
+- Follow OCF on [LinkedIn](https://uk.linkedin.com/company/open-climate-fix)
+- OCF templete: (https://github.com/openclimatefix/ocf-template?tab=readme-ov-file#contributing-and-community)
 
 The following folks have contributed to this repo.
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
@@ -109,8 +149,11 @@ The following folks have contributed to this repo.
 <!-- prettier-ignore-end -->
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
 
 
+*Part of the [Open Climate Fix](https://github.com/orgs/openclimatefix/people) community.*
 
+[![OCF Logo](https://cdn.prod.website-files.com/62d92550f6774db58d441cca/6324a2038936ecda71599a8b_OCF_Logo_black_trans.png)](https://openclimatefix.org)
 
 
