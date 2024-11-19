@@ -1,3 +1,5 @@
+import os
+import shutil
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -6,6 +8,15 @@ from datetime import datetime, timedelta, time
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Optional, Tuple
+
+# Define the Herbie cache directory path
+HERBIE_CACHE_DIR = "herbie_cache_directory"
+
+# Function to clear Herbie cache before each run
+def clear_herbie_cache(cache_dir: str):
+    if os.path.exists(cache_dir):
+        shutil.rmtree(cache_dir)  # Remove all contents
+    os.makedirs(cache_dir, exist_ok=True)  # Re-create the directory
 
 # Function to compute forecast hours
 def compute_forecast_hours(init_time: datetime, forecast_date: datetime) -> range:
@@ -35,26 +46,12 @@ def fetch_data_for_init_time(
     parameter: str, 
     model: str = "ifs"
 ) -> Tuple[Optional['xarray.Dataset'], Optional[datetime]]:
-    """
-    Fetch the weather forecast data for a specific initialization time and forecast date.
-
-    Parameters:
-    - init_time (datetime): The initialization time (usually yesterday at a specific hour).
-    - forecast_date (datetime): The forecast date for which to get the forecast.
-    - lat (float): Latitude of the location for which the forecast is requested.
-    - lon (float): Longitude of the location for which the forecast is requested.
-    - parameter (str): The weather parameter to retrieve. Examples: "u10:v10", "u100:v100", or "2t".
-    - model (str): The weather model to use for fetching data (default: "ifs").
-
-    Returns:
-    - ds (xarray.Dataset or None): The forecast dataset for the specified parameters.
-    - init_time (datetime or None): The initialization time for the dataset.
-    """
+    # Clear the cache for every new fetch
+    clear_herbie_cache(HERBIE_CACHE_DIR)
     
-    # Calculate forecast hours using the new logic
+    # Calculate forecast hours
     forecast_hours = compute_forecast_hours(init_time, forecast_date)
-
-    FH = FastHerbie([init_time], model=model, fxx=forecast_hours, fast=True)
+    FH = FastHerbie([init_time], model=model, fxx=forecast_hours, cache_dir=HERBIE_CACHE_DIR, fast=True)
     
     try:
         FH.download()  # Ensure the file is downloaded
@@ -75,7 +72,7 @@ def fetch_data_for_init_time(
     except Exception as e:
         st.error(f"An unexpected error occurred while reading data: {e}")
         return None, None
-    #print (ds, init_time)
+
     return ds, init_time
 
 def process_initialization(
@@ -110,7 +107,7 @@ def process_initialization(
     # Determine the time dimension
     time_dim = ds['step'] if 'step' in ds.dims else ds['time'] if 'time' in ds.dims else None
     if time_dim is None:
-        st.error("Neither 'step' nor 'time' dimension is present in the dataset. Unable to proceed with forecast.")
+        st.error("No 'step' or 'time' dimension in dataset.")
         return []
 
     # Iterate over the forecast steps and interpolate the data
@@ -127,9 +124,9 @@ def process_initialization(
                 value = np.sqrt(u**2 + v**2)
             elif parameter == "u100:v100":
                 u = ds['u100'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
-                v = ds['v100'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
+                v = ds['u100'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val)
                 value = np.sqrt(u**2 + v**2)
-            else:  # Temperature (in Kelvin, converted to Celsius)
+            else:
                 value = ds['t2m'].interp(latitude=lat, longitude=lon, method="nearest", step=time_val) - 273.15
 
             interpolated_data.append({
@@ -213,7 +210,7 @@ def weather_forecast_page() -> None:
     init_time_options = st.sidebar.multiselect(
         "Select Initialization Times",
         options=[time.strftime('%Y-%m-%d %H:%M') for time in init_times],
-        default=[time.strftime('%Y-%m-%d %H:%M') for time in init_times]  # Default selects all times
+        default=[time.strftime('%Y-%m-%d %H:%M') for time in init_times]
     )
     selected_init_times = [datetime.strptime(time, '%Y-%m-%d %H:%M') for time in init_time_options]
 
