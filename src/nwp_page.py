@@ -18,6 +18,7 @@ all_nwps = {
     "india": {
         "ECMWF": f"s3://india-nwp-{environment}/ecmwf/data/latest.zarr",
         "GFS": f"s3://india-nwp-{environment}/gfs/data/latest.zarr",
+        "MO Global": f"s3://india-nwp-{environment}/metoffice/data/latest.zarr",
     },
 }
 
@@ -153,6 +154,12 @@ def nwp_page():
             y = d_one_channel_one_step.y.values
             xaxis_title = "x_osgb"
             yaxis_title = "y_osgb"
+        elif "UM-Global" in d_one_channel_one_step.variables:
+            values = d_one_channel_one_step["UM-Global"]
+            x = d_one_channel_one_step.longitude.values
+            y = d_one_channel_one_step.latitude.values
+            xaxis_title = "Longitude"
+            yaxis_title = "Latitude"
 
         else:
             values = d_one_channel_one_step
