@@ -251,6 +251,16 @@ def pvsite_forecast_page():
     df_forecast.set_index("forecast_datetime", inplace=True)
     df_generation.set_index("generation_datetime", inplace=True)
 
+    # get the columns that have the workd adjust in them, and not
+    adjust_columns = [i for i in df_forecast.columns if "adjust" in i]
+    not_adjust_columns = [i for i in df_forecast.columns if "adjust" not in i]
+
+    if len(adjust_columns) > 1:
+
+        # create a new model that is the average of all models
+        df_forecast["forecast_power_kw_avg"] = df_forecast[not_adjust_columns].mean(axis=1)
+        df_forecast["forecast_power_kw_avg_adjust"] = df_forecast[adjust_columns].mean(axis=1)
+
     if resample is not None:
         df_forecast = df_forecast.resample(resample).mean()
         df_generation = df_generation.resample(resample).mean()
@@ -312,9 +322,8 @@ def pvsite_forecast_page():
         st.caption("Please resample to '15T' to get MAE")
     else:
         metrics = []
-        for model in ml_models:
-            name = model.name
-            forecast_column = f"forecast_power_kw_{name}"
+        for forecast_column in [col for col in df.columns if 'generation' not in col]:
+            name = forecast_column.split('forecast_power_kw_')[-1]
 
             # MAE and NMAE Calculator
             mae_kw = (df["generation_power_kw"] - df[forecast_column]).abs().mean()
