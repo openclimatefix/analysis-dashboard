@@ -50,12 +50,14 @@ def test_get_site_details(db_session):
         "site_group_names": [
             site_group.site_group_name for site_group in site.site_groups
         ],
+        'country': 'uk',
         "latitude": str(site.latitude),
         "longitude": str(site.longitude),
         "DNO": str(site.dno),
         "GSP": str(site.gsp),
         "tilt": str(site.tilt),
         "inverter_capacity_kw": f"{site.inverter_capacity_kw} kw",
+        'ml_model_uuid': 'None',
         "module_capacity_kw": f"{site.module_capacity_kw} kw",
         "region": str(site.region),
         "orientation": str(site.orientation),
