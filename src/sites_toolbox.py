@@ -12,11 +12,13 @@ from pvsite_datamodel.read import (
     get_all_sites,
     get_user_by_email,
     get_site_by_uuid,
-    get_site_group_by_name,
+    get_site_group_by_name
 )
+from pvsite_datamodel.read.model import get_models
 
 from get_data import get_all_users, get_all_site_groups, get_site_by_client_site_id
 from pvsite_datamodel.write.user_and_site import (
+    assign_model_name_to_site,
     create_site,
     create_user,
     delete_site,
@@ -56,6 +58,7 @@ def get_site_details(session, site_uuid: str):
         ],
         "latitude": str(site.latitude),
         "longitude": str(site.longitude),
+        "country": str(site.country),
         "region": str(site.region),
         "DNO": str(site.dno),
         "GSP": str(site.gsp),
@@ -64,8 +67,13 @@ def get_site_details(session, site_uuid: str):
         "inverter_capacity_kw": (f"{site.inverter_capacity_kw} kw"),
         "module_capacity_kw": (f"{site.module_capacity_kw} kw"),
         "capacity": (f"{site.capacity_kw} kw"),
+        "ml_model_uuid": str(site.ml_model_uuid),
         "date_added": (site.created_utc.strftime("%Y-%m-%d")),
     }
+
+    if site.ml_model_uuid is not None:
+        site_details["ml_model_name"] = site.ml_model.name
+
     return site_details
 
 
@@ -316,6 +324,21 @@ def sites_toolbox_page():
         st.write(user, "is now in the", user_site_group, "site group.")
         if st.button("Close"):
             st.empty()
+
+    # update ml model to site
+    st.markdown(
+        f'<h1 style="color:#ffd053;font-size:32px;">{"Assign ML Model to Site"}</h1>',
+        unsafe_allow_html=True,
+    )
+    site_uuid = st.selectbox("Select the site", site_uuid_list)
+    with connection.get_session() as session:
+        ml_models = get_models(session=session, site_uuid=site_uuid)
+        ml_model_names = [model.name for model in ml_models]
+        ml_model_name = st.selectbox("Select the ml model", ml_model_names)
+
+        if st.button("Assign ML Model to Site"):
+            assign_model_name_to_site(session=session, site_uuid=site_uuid, model_name=ml_model_name)
+
 
     # create a new site
     st.markdown(
