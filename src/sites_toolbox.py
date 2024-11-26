@@ -338,6 +338,9 @@ def sites_toolbox_page():
 
         if st.button("Assign ML Model to Site"):
             assign_model_name_to_site(session=session, site_uuid=site_uuid, model_name=ml_model_name)
+            st.write(f'{site_uuid} is now in the {ml_model_name} model.')
+            if st.button("Close"):
+                st.empty()
 
 
     # create a new site
