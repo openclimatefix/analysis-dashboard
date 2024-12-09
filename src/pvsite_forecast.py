@@ -187,6 +187,11 @@ def pvsite_forecast_page():
             site_uuid=site_selection_uuid,
         )
 
+        if len(ml_models) == 0:
+            class Models:
+                name = None
+            ml_models = [Models()]
+
         ys = {}
         xs = {}
         for model in ml_models:
