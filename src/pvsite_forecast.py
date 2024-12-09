@@ -359,6 +359,9 @@ def pvsite_forecast_page():
         # round all columns to 3 decimal places
         metrics = metrics.round(3)
 
+        # model name is None change to "None"
+        metrics["model_name"] = metrics["model_name"].fillna("None")
+
         # make mode_name the columns by pivoting, and make the index the other columns
         value_columns = one_metric_data.keys()
         value_columns = [i for i in value_columns if i != "model_name"]
