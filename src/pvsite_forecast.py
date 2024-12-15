@@ -71,7 +71,7 @@ def pvsite_forecast_page():
         else:
             site_selection_uuid = st.sidebar.selectbox(
                 "Select sites by client_site_name",
-                [sites.client_site_name for sites in sites],
+                sorted([sites.client_site_name for sites in sites]),
             )
             site_selection_uuid = [
                 sites.site_uuid for sites in sites if sites.client_site_name == site_selection_uuid
