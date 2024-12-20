@@ -1,2 +1,6 @@
 .env
+myenv
+src/venv.
+shsohos
+*.pyc
 src/.streamlit/secrets.toml
