@@ -171,8 +171,10 @@ def pvsite_forecast_page():
     endtime = endtime.astimezone(pytz.utc)
 
     if created is not None:
-        created = timezone_selected.localize(created)
-        created = created.astimezone(pytz.utc)
+        created_utc = timezone_selected.localize(created)
+        created_utc = created_utc.astimezone(pytz.utc)
+    else:
+        created_utc = None
 
     # great ml model names for this site
 
@@ -200,7 +202,7 @@ def pvsite_forecast_page():
                 session=session,
                 site_uuids=[site_selection_uuid],
                 start_utc=starttime,
-                created_by=created,
+                created_by=created_utc,
                 forecast_horizon_minutes=forecast_horizon,
                 day_ahead_hours=day_ahead_hours,
                 day_ahead_timezone_delta_hours=day_ahead_timezone_delta_hours,
@@ -296,6 +298,18 @@ def pvsite_forecast_page():
             line=dict(color="#FF9736"),
         )
     )
+
+    # if showing latest add a now line
+    if forecast_type == "Latest":
+
+        fig.add_shape(
+            dict(
+                type="line",
+                x0=created,
+                y0=0,
+                x1=created,
+                y1=capacity,
+                line=dict(color="red", width=2, dash='dash')))
 
     st.plotly_chart(fig, theme="streamlit")
 
