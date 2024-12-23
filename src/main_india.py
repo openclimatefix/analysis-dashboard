@@ -14,6 +14,7 @@ from satellite_page import satellite_page
 from status import status_page
 from users import user_page
 from weather_forecast import weather_forecast_page
+from mlmodel import mlmodel_page
 
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
@@ -23,6 +24,7 @@ if check_password():
     page_names_to_funcs = {
         "Status": status_page,
         "Location Forecast": pvsite_forecast_page,
+        "ML Models": mlmodel_page,
         "Sites Toolbox": sites_toolbox_page,
         "API Users": user_page,
         "NWP": nwp_page,
