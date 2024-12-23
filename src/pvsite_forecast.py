@@ -17,13 +17,6 @@ import plotly.graph_objects as go
 import pytz
 
 # Penalty Calculator
-# Give uuids for region + asset type + parse in the capcity from the site
-# Penalty Calculator
-def calculate_penalty(df, region, asset_type, capacity_kw):
-    """
-    Calculate penalties dynamically based on region, asset type, and capacity.
-    """
-    # Define penalty bands for combinations of region and asset type
 def calculate_penalty(df, region, asset_type, capacity_kw):
     """
     Calculate penalties dynamically based on region, asset type, and capacity.
@@ -31,16 +24,16 @@ def calculate_penalty(df, region, asset_type, capacity_kw):
     # Define penalty bands for combinations of region and asset type
     penalty_bands = {
         ("Rajasthan", "solar"): [
-            (10, 15, 0.1),
-            (15, None, 1.0),
+            (10, 15, 0.1),  # Band (lowest bound of the band range, highest bound of the band range, penalty that particular band carries)
+            (15, None, 1.0), # Band (lowest bound of the band range, no highest bound of the band range, penalty that particular band carries)
         ],
         ("Madhya Pradesh", "wind"): [
-            (10, 20, 0.25),
+            (10, 20, 0.25), 
             (20, 30, 0.5),
             (30, None, 0.75),
         ],
         ("Gujarat", "solar"): [
-            (7, 15, 0.25),
+            (7, 15, 0.25), 
             (15, 23, 0.5),
             (23, None, 0.75),
         ],
@@ -96,7 +89,7 @@ def pvsite_forecast_page():
         unsafe_allow_html=True,
     )
     # get site_uuids from database
-    url = 'postgresql://main:vPV%xXs6AiviZ8WP@127.0.0.1:5433/indiadbdevelopment'
+    url = os.environ["SITES_DB_URL"]
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         sites = get_all_sites(session=session)
