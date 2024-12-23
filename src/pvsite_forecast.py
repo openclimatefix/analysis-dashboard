@@ -18,48 +18,53 @@ import pytz
 
 # Penalty Calculator
 # Give uuids for region + asset type + parse in the capcity from the site
-def calculate_penalty(df, site_uuid, capacity_kw):
+# Penalty Calculator
+def calculate_penalty(df, region, asset_type, capacity_kw):
     """
-    Calculate penalties dynamically based on site-specific configurations.
+    Calculate penalties dynamically based on region, asset type, and capacity.
     """
-    # Site-specific configurations
-    site_configs = {
-        "17975e26-c27d-4566-b06c-3a10d4df6023": {  # KA200
-            "bands": [
-                (10, 20, 0.25),
-                (20, 30, 0.5),
-                (30, None, 0.75),
-            ],
-        },
-        "0513e20e-6370-4120-91bb-4dfe199aa805": {  # AP250
-            "bands": [
-                (10, 20, 0.25),
-                (20, 30, 0.5),
-                (30, None, 0.75),
-            ],
-        },
-        "0c4f60a6-eafc-4b67-b904-cd2c4c208bdf": {  # Khavda
-            "bands": [
-                (7, 15, 0.25),
-                (15, 23, 0.5),
-                (23, None, 0.75),
-            ],
-        },
-        "adaf6be8-4e30-4c98-ac27-964447e9c8e6": {  # AEML250
-            "bands": [
-                (10, 15, 0.1),
-                (15, None, 1.0),
-            ],
-        },
+    # Define penalty bands for combinations of region and asset type
+def calculate_penalty(df, region, asset_type, capacity_kw):
+    """
+    Calculate penalties dynamically based on region, asset type, and capacity.
+    """
+    # Define penalty bands for combinations of region and asset type
+    penalty_bands = {
+        ("Rajasthan", "solar"): [
+            (10, 15, 0.1),
+            (15, None, 1.0),
+        ],
+        ("Madhya Pradesh", "wind"): [
+            (10, 20, 0.25),
+            (20, 30, 0.5),
+            (30, None, 0.75),
+        ],
+        ("Gujarat", "solar"): [
+            (7, 15, 0.25),
+            (15, 23, 0.5),
+            (23, None, 0.75),
+        ],
+        ("Gujarat", "wind"): [
+            (12, 20, 0.25),
+            (20, 28, 0.5),
+            (28, None, 0.75),
+        ],
+        ("Karnataka", "solar"): [
+            (10, 20, 0.25),
+            (20, 30, 0.5),
+            (30, None, 0.75),
+        ],
     }
 
-    # Validate site_uuid
-    if site_uuid not in site_configs:
-        raise ValueError(f"Site UUID {site_uuid} not found in configuration.")
+    # Fallback bands if region and asset type combination is missing
+    default_bands = [
+        (10, 20, 0.25),
+        (20, 30, 0.5),
+        (30, None, 0.75),
+    ]
 
-    # Get site-specific configuration
-    config = site_configs[site_uuid]
-    bands = config["bands"]
+    # Fetch penalty bands based on region and asset type
+    bands = penalty_bands.get((region, asset_type.lower()), default_bands)
 
     # Calculate deviation and deviation percentage
     deviation = df["generation_power_kw"] - df["forecast_power_kw"]
@@ -80,6 +85,8 @@ def calculate_penalty(df, site_uuid, capacity_kw):
 
     return penalty, total_penalty
 
+
+
 # Internal Dashboard
 def pvsite_forecast_page():
     """Main page for pvsite forecast"""
@@ -89,7 +96,7 @@ def pvsite_forecast_page():
         unsafe_allow_html=True,
     )
     # get site_uuids from database
-    url = os.environ["SITES_DB_URL"]
+    url = 'postgresql://main:vPV%xXs6AiviZ8WP@127.0.0.1:5433/indiadbdevelopment'
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         sites = get_all_sites(session=session)
@@ -132,6 +139,12 @@ def pvsite_forecast_page():
         capacity = site.capacity_kw
         site_client_site_name = site.client_site_name
         country = site.country
+
+        # Extract region, asset type, and capacity dynamically
+        region = site.region  # Assume site object has a 'region' attribute
+        asset_type = site.asset_type  # Assume site object has an 'asset_type' attribute
+        capacity_kw = site.capacity_kw  # Extract capacity dynamically
+
 
     if forecast_type == "Latest":
         created = pd.Timestamp.utcnow().ceil("15min")
@@ -381,7 +394,7 @@ def pvsite_forecast_page():
         if country == "india":
             df["forecast_power_kw"] = df[forecast_column]
             st.write(f"Selected Site UUID: {site_selection_uuid}")
-            penalties, total_penalty = calculate_penalty(df,str (site_selection_uuid), capacity)
+            penalties, total_penalty = calculate_penalty(df, str(region), str(asset_type), capacity_kw)
             one_metric_data["total_penalty [INR]"] = total_penalty
 
         metrics.append(one_metric_data)
