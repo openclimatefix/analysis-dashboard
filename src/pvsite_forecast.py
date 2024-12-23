@@ -172,7 +172,7 @@ def pvsite_forecast_page():
 
         # get site from database, if india set day_ahead_timezone_delta_hours to 5.5 hours
         with connection.get_session() as session:
-            site = site_uuids(session, site_selection_uuid)
+            site = get_site_by_uuid(session, site_selection_uuid)
             if site.country == "india":
                 day_ahead_timezone_delta_hours = 5.5
 
