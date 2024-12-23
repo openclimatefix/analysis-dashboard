@@ -60,4 +60,5 @@ def mlmodel_page():
         # order by name
         all_models = all_models.sort_values(by="name")
 
+        st.write('ML Models')
         st.write(all_models)
