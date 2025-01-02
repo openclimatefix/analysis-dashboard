@@ -26,14 +26,14 @@ def test_calculate_penalty():
     # Set penalty bands for the region and asset type
     penalty_bands = {
         ("Karnataka", "solar"): [
-            (10, 20, 0.1),  # Band 1
+            (10, 20, 0.1),  # Band 1 (lowest block, highest block, penalty )
             (20, 30, 0.5),  # Band 2
             (30, None, 0.75),  # Open-ended Band
         ]
     }
 
     # Calculate penalty
-    penalty_df, total_penalty = calculate_penalty(df, region, asset_type, capacity_kw, penalty_bands)
+    penalty_df, total_penalty = calculate_penalty(df, str(region), str(asset_type), capacity_kw)
 
     # Expected results for validation
     expected_total_penalty = 0.42  # Adjust based on correct calculations
