@@ -13,15 +13,15 @@ def test_calculate_penalty():
     df = pd.DataFrame(
         {
             "datetime": pd.date_range("2021-01-01", periods=5, freq="D"),
-            "forecast_power_kw": [1, 2, 3, 4, 5],
-            "generation_power_kw": [2, 3, 4, 5, 10],
+            "forecast_power_kw": [0.1, 0.2, 0.3, 0.4, 0.5],
+            "generation_power_kw": [0.2, 0.3, 0.5, 0.5, 1],
         }
     )
 
     # Mock region, asset type, and capacity
     region = "Karnataka"
     asset_type = "solar"
-    capacity_kw = 200  # Capacity specific to the mock site
+    capacity_kw = 2  # Capacity specific to the mock site
 
     # Penalty bands configuration
     penalty_bands = {
@@ -55,4 +55,5 @@ def test_calculate_penalty():
     # Print outputs for debugging
     print("Penalty DataFrame:\n", penalty_df)
     print("Total Penalty:", total_penalty)
+
 
