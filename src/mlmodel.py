@@ -6,6 +6,19 @@ import streamlit as st
 from pvsite_datamodel.connection import DatabaseConnection
 from pvsite_datamodel.read.model import get_models
 from pvsite_datamodel.read.site import get_all_sites
+from pvsite_datamodel.sqlmodels import GenerationSQL, SiteSQL
+
+
+def color_survived(val):
+    now = pd.Timestamp.utcnow()
+    color = (
+        "#ee6b6e"
+        if val < now - pd.Timedelta("4H")
+        else "#e27602"
+        if val < now - pd.Timedelta("1H")
+        else "#3b8132"
+    )
+    return f"color: {color}"
 
 
 def mlmodel_page():
@@ -41,6 +54,18 @@ def mlmodel_page():
             if site.ml_model is not None:
                 site_dict["ml_model_name"] = site.ml_model.name
 
+            # get last generation timestamp
+            last_gen = (
+                session.query(GenerationSQL)
+                .filter(GenerationSQL.site_uuid == site.site_uuid)
+                .order_by(GenerationSQL.created_utc.desc())
+                .limit(1)
+                .one()
+            )
+
+            if last_gen is not None:
+                site_dict["last_generation_datetime"] = pd.Timestamp(last_gen.start_utc, tz="UTC")
+
             all_sites.append(site_dict)
 
         all_sites = pd.DataFrame(all_sites)
@@ -48,7 +73,7 @@ def mlmodel_page():
         # order by name
         all_sites = all_sites.sort_values(by="client_site_name")
 
-        st.write(all_sites)
+        st.table(all_sites.style.applymap(color_survived, subset=["last_generation_datetime"]))
 
         # 2. display all models
         models = get_models(session)
@@ -60,5 +85,5 @@ def mlmodel_page():
         # order by name
         all_models = all_models.sort_values(by="name")
 
-        st.write('ML Models')
+        st.write("ML Models")
         st.write(all_models)
