@@ -389,11 +389,10 @@ def pvsite_forecast_page():
                 "pearson_corr": pearson_corr,
             }
             
-        if country == "india":
-            df["forecast_power_kw"] = df[forecast_column]
-            st.write(f"Selected Site UUID: {site_selection_uuid}")
-            penalties, total_penalty = calculate_penalty(df, str(region), str(asset_type), capacity_kw)
-            one_metric_data["total_penalty [INR]"] = total_penalty
+            if country == "india":
+                df["forecast_power_kw"] = df[forecast_column]
+                penalties, total_penalty = calculate_penalty(df, str(region), str(asset_type), capacity_kw)
+                one_metric_data["total_penalty [INR]"] = total_penalty
 
         metrics.append(one_metric_data)
 
