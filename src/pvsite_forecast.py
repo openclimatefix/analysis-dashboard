@@ -17,32 +17,67 @@ import plotly.graph_objects as go
 import pytz
 
 # Penalty Calculator
-def calculate_penalty(df, capacity_kw=250000):
-    # Deviation between actual and forecast (in kW)
-    deviation = df["generation_power_kw"] - df["forecast_power_kw"]
+def calculate_penalty(df, region, asset_type, capacity_kw):
+    """
+    Calculate penalties dynamically based on region, asset type, and capacity.
+    """
+    # Define penalty bands for combinations of region and asset type
+    penalty_bands = {
+        ("Rajasthan", "solar"): [
+            (10, 15, 0.1),  # Band (lowest bound of the band range, highest bound of the band range, penalty that particular band carries)
+            (15, None, 1.0), # Band (lowest bound of the band range, no highest bound of the band range, penalty that particular band carries)
+        ],
+        ("Madhya Pradesh", "wind"): [
+            (10, 20, 0.25), 
+            (20, 30, 0.5),
+            (30, None, 0.75),
+        ],
+        ("Gujarat", "solar"): [
+            (7, 15, 0.25), 
+            (15, 23, 0.5),
+            (23, None, 0.75),
+        ],
+        ("Gujarat", "wind"): [
+            (12, 20, 0.25),
+            (20, 28, 0.5),
+            (28, None, 0.75),
+        ],
+        ("Karnataka", "solar"): [
+            (10, 20, 0.25),
+            (20, 30, 0.5),
+            (30, None, 0.75),
+        ],
+    }
 
-    # Deviation percentage relative to AVC (as % of contracted capacity)
+    # Fallback bands if region and asset type combination is missing
+    default_bands = [
+        (10, 20, 0.25),
+        (20, 30, 0.5),
+        (30, None, 0.75),
+    ]
+
+    # Fetch penalty bands based on region and asset type
+    bands = penalty_bands.get((region, asset_type.lower()), default_bands)
+
+    # Calculate deviation and deviation percentage
+    deviation = df["generation_power_kw"] - df["forecast_power_kw"]
     deviation_percentage = (deviation / capacity_kw) * 100
 
-    # Define penalty based on deviation bands
+    # Initialize penalty column
     penalty = pd.Series(0, index=df.index)
 
-    # 7-15% deviation: 0.25 INR/kWh
-    penalty_7_15 = deviation_percentage.between(7, 15)
-    penalty[penalty_7_15] = abs(deviation[penalty_7_15]) * 0.25
+    # Apply penalty calculation for each band
+    for lower, upper, rate in bands:
+        mask = (deviation_percentage >= lower) if lower is not None else True
+        if upper is not None:
+            mask &= (deviation_percentage < upper)
+        penalty[mask] += abs(deviation[mask]) * rate
 
-    # 15-23% deviation: 0.5 INR/kWh
-    penalty_15_23 = deviation_percentage.between(15, 23)
-    penalty[penalty_15_23] = abs(deviation[penalty_15_23]) * 0.5
-
-    # Above 23% deviation: 0.75 INR/kWh
-    penalty_above_23 = deviation_percentage > 23
-    penalty[penalty_above_23] = abs(deviation[penalty_above_23]) * 0.75
-
-    # Sum of all penalties
+    # Calculate total penalty
     total_penalty = penalty.sum()
 
     return penalty, total_penalty
+
 
 
 # Internal Dashboard
@@ -68,6 +103,7 @@ def pvsite_forecast_page():
                 "Select sites by site_uuid",
                 site_uuids,
             )
+
         else:
             client_site_name = st.sidebar.selectbox(
                 "Select sites by client_site_name",
@@ -96,6 +132,12 @@ def pvsite_forecast_page():
         capacity = site.capacity_kw
         site_client_site_name = site.client_site_name
         country = site.country
+
+        # Extract region, asset type, and capacity dynamically
+        region = site.region  # Assume site object has a 'region' attribute
+        asset_type = site.asset_type  # Assume site object has an 'asset_type' attribute
+        capacity_kw = site.capacity_kw  # Extract capacity dynamically
+
 
     if forecast_type == "Latest":
         created = pd.Timestamp.utcnow().ceil("15min")
@@ -346,13 +388,14 @@ def pvsite_forecast_page():
                 "capacity": capacity,
                 "pearson_corr": pearson_corr,
             }
+            
+        if country == "india":
+            df["forecast_power_kw"] = df[forecast_column]
+            st.write(f"Selected Site UUID: {site_selection_uuid}")
+            penalties, total_penalty = calculate_penalty(df, str(region), str(asset_type), capacity_kw)
+            one_metric_data["total_penalty [INR]"] = total_penalty
 
-            if country == "india":
-                df["forecast_power_kw"] = df[forecast_column]
-                penalty, total_penalty = calculate_penalty(df, capacity)
-                one_metric_data["total_penalty [INR]"] = total_penalty
-
-            metrics.append(one_metric_data)
+        metrics.append(one_metric_data)
 
         metrics = pd.DataFrame(metrics)
 
