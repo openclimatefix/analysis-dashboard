@@ -148,6 +148,12 @@ def nwp_page():
             y = d_one_channel_one_step.latitude.values
             xaxis_title = "Longitude"
             yaxis_title = "Latitude"
+        elif "HRES-IFS_uk" in d_one_channel_one_step.variables:
+            values = d_one_channel_one_step["HRES-IFS_uk"]
+            x = d_one_channel_one_step.longitude.values
+            y = d_one_channel_one_step.latitude.values
+            xaxis_title = "Longitude"
+            yaxis_title = "Latitude"
         elif "UKV" in d_one_channel_one_step.variables:
             values = d_one_channel_one_step["UKV"]
             x = d_one_channel_one_step.x.values
