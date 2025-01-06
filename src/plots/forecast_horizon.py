@@ -24,7 +24,7 @@ def make_mae_by_forecast_horizon(
             x=df_mae["datetime_utc"],
             y=df_mae["MAE"],
             mode="lines",
-            name="Daily Total MAE",
+            name="Latest Forecast",
             line=dict(color="#FFD053"),
         )
     )
