@@ -123,56 +123,31 @@ def nwp_page():
         # change nanoseconds to hours
         step = step.astype("timedelta64[h]").astype(int)
 
-        # get values
-        if "ECMWF_NW-INDIA" in d_one_channel_one_step.variables:
-            values = d_one_channel_one_step["ECMWF_NW-INDIA"]
-            x = d_one_channel_one_step.longitude.values
-            y = d_one_channel_one_step.latitude.values
-            xaxis_title = "Longitude"
-            yaxis_title = "Latitude"
-        elif "ECMWF_INDIA" in d_one_channel_one_step.variables:
-            values = d_one_channel_one_step["ECMWF_INDIA"]
-            x = d_one_channel_one_step.longitude.values
-            y = d_one_channel_one_step.latitude.values
-            xaxis_title = "Longitude"
-            yaxis_title = "Latitude"
-        elif "NOAA_GLOBAL" in d_one_channel_one_step.variables:
-            values = d_one_channel_one_step["NOAA_GLOBAL"]
-            x = d_one_channel_one_step.longitude.values
-            y = d_one_channel_one_step.latitude.values
-            xaxis_title = "Longitude"
-            yaxis_title = "Latitude"
-        elif "ECMWF_UK" in d_one_channel_one_step.variables:
-            values = d_one_channel_one_step["ECMWF_UK"]
-            x = d_one_channel_one_step.longitude.values
-            y = d_one_channel_one_step.latitude.values
-            xaxis_title = "Longitude"
-            yaxis_title = "Latitude"
-        elif "HRES-IFS_uk" in d_one_channel_one_step.variables:
-            values = d_one_channel_one_step["HRES-IFS_uk"]
-            x = d_one_channel_one_step.longitude.values
-            y = d_one_channel_one_step.latitude.values
-            xaxis_title = "Longitude"
-            yaxis_title = "Latitude"
-        elif "UKV" in d_one_channel_one_step.variables:
+        lat_lon_datasets = [
+            "ECMWF_NW-INDIA",
+            "ECMWF_INDIA",
+            "NOAA_GLOBAL",
+            "ECMWF_UK",
+            "HRES-IFS_uk",
+            "HRES-IFS_india",
+            "UM-Global",
+        ]
+
+        values = d_one_channel_one_step
+        x = d_one_channel_one_step.longitude.values
+        y = d_one_channel_one_step.latitude.values
+        xaxis_title = "Longitude"
+        yaxis_title = "Latitude"
+        for ds in lat_lon_datasets:
+            if ds in d_one_channel_one_step.variables:
+                values = d_one_channel_one_step[ds]
+
+        if "UKV" in d_one_channel_one_step.variables:
             values = d_one_channel_one_step["UKV"]
             x = d_one_channel_one_step.x.values
             y = d_one_channel_one_step.y.values
             xaxis_title = "x_osgb"
             yaxis_title = "y_osgb"
-        elif "UM-Global" in d_one_channel_one_step.variables:
-            values = d_one_channel_one_step["UM-Global"]
-            x = d_one_channel_one_step.longitude.values
-            y = d_one_channel_one_step.latitude.values
-            xaxis_title = "Longitude"
-            yaxis_title = "Latitude"
-
-        else:
-            values = d_one_channel_one_step
-            x = d_one_channel_one_step.longitude.values
-            y = d_one_channel_one_step.latitude.values
-            xaxis_title = "Longitude"
-            yaxis_title = "Latitude"
 
         # reduce dimensions
         if len(values.shape) == 3:
