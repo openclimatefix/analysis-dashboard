@@ -20,7 +20,7 @@ def color_survived(val):
 
 
 def mlmodel_page():
-    """Main page for pvsite forecast"""
+    """Main page for PV Site Forecast"""
 
     st.markdown(
         f'<h1 style="color:#63BCAF;font-size:48px;">{"Site: ML Models"}</h1>',
@@ -84,7 +84,7 @@ def mlmodel_page():
                 "longitude": getattr(site, "longitude", None),
                 "region": site.region,
                 "capacity_kw": site.capacity_kw,
-                "asset_type": site.asset_type,
+                "asset_type": str(site.asset_type),  
             }
             if site_dict["latitude"] and site_dict["longitude"]:  # Ensure latitude and longitude exist
                 site_details.append(site_dict)
@@ -103,7 +103,9 @@ def mlmodel_page():
                 map_data = map_data[map_data["region"] == selected_region]
 
             # Assign marker color based on asset type
-            map_data["color"] = map_data["asset_type"].apply(lambda x: "orange" if x == "solar" else "blue")
+            map_data["color"] = map_data["asset_type"].apply(
+                lambda x: "orange" if x == "SiteAssetType.pv" else "blue"
+            )
 
             # Display map using Plotly Express
             fig = px.scatter_mapbox(
@@ -119,7 +121,7 @@ def mlmodel_page():
                     "latitude": False,
                     "longitude": False,
                 },
-                color_discrete_map={"solar": "orange", "wind": "blue"},
+                color_discrete_map={"SiteAssetType.pv": "orange", "SiteAssetType.wind": "blue"},
                 zoom=4,
                 height=600,
             )
