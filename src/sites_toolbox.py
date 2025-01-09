@@ -51,7 +51,7 @@ def sites_toolbox_page():
         unsafe_allow_html=True,
     )
 
-    url = "postgresql://postgres:mayanksharma@localhost:5432/sitedatabase"
+    url = os.environ["SITES_DB_URL"]
 
     connection = DatabaseConnection(
         url=url,
