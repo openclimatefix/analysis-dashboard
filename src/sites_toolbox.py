@@ -1,22 +1,15 @@
 """This module contains the sites toolbox for the OCF dashboard"""
 import os
-import json
 import streamlit as st
-import re
-from datetime import datetime, timezone
 from sqlalchemy import func
 from pvsite_datamodel.connection import DatabaseConnection
-from pvsite_datamodel.sqlmodels import SiteSQL
 # from pvsite_datamodel.write.user_and_site import create_site_group
 from pvsite_datamodel.read import (
     get_all_sites,
-    get_user_by_email,
-    get_site_by_uuid,
-    get_site_group_by_name
 )
 from pvsite_datamodel.read.model import get_models
 
-from get_data import get_all_users, get_all_site_groups, get_site_by_client_site_id
+from get_data import get_all_users, get_all_site_groups
 from pvsite_datamodel.write.user_and_site import (
     assign_model_name_to_site,
     create_site,
@@ -24,8 +17,6 @@ from pvsite_datamodel.write.user_and_site import (
     delete_site,
     delete_user,
     delete_site_group,
-    add_site_to_site_group,
-    update_user_site_group,
     create_site_group
 )
 
@@ -42,6 +33,9 @@ from Site_toolbox.site_group_management import (
     add_all_sites_to_ocf_group,
     validate_email,
 )
+
+# colors 7bcdf3 
+# yellow ffd053
 
 # sites toolbox page
 def sites_toolbox_page():
