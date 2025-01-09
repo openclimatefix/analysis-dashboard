@@ -1,13 +1,10 @@
-""" A page to display the current ML models"""
 import os
-
 import pandas as pd
 import streamlit as st
 from pvsite_datamodel.connection import DatabaseConnection
 from pvsite_datamodel.read.model import get_models
 from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.sqlmodels import GenerationSQL, SiteSQL
-
 
 def color_survived(val):
     now = pd.Timestamp.utcnow()
@@ -87,3 +84,44 @@ def mlmodel_page():
 
         st.write("ML Models")
         st.write(all_models)
+
+        # 3. Show site locations on the map
+        st.subheader("Site Locations on Map")
+
+        # Create map data for sites with latitude and longitude
+        site_details = []
+        for site in sites:
+            site_dict = {
+                "client_site_name": site.client_site_name,
+                "latitude": getattr(site, "latitude", None),
+                "longitude": getattr(site, "longitude", None),
+                "region": site.region,
+                "capacity_kw": site.capacity_kw,
+            }
+            if site_dict["latitude"] and site_dict["longitude"]:  # Ensure latitude and longitude exist
+                site_details.append(site_dict)
+
+        # Create DataFrame for map plotting
+        map_data = pd.DataFrame(site_details)
+
+        # Display map if there are valid sites
+        if not map_data.empty:
+            # Filter out sites without valid coordinates
+            valid_sites = map_data.dropna(subset=["latitude", "longitude"])
+
+            # Add sidebar filters for region
+            regions = ["All"] + sorted(valid_sites["region"].unique().tolist())
+            selected_region = st.sidebar.selectbox("Select Region", regions)
+
+            # Filter based on region selection
+            if selected_region != "All":
+                valid_sites = valid_sites[valid_sites["region"] == selected_region]
+
+            # Display the map with site markers
+            st.map(valid_sites[["latitude", "longitude"]])
+
+            # Display site details in a table below the map
+            st.subheader("Site Details")
+            st.dataframe(valid_sites[["client_site_name", "region", "latitude", "longitude", "capacity_kw"]])
+        else:
+            st.write("No valid site data available to display on the map.")
