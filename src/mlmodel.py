@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import streamlit as st
+import plotly.express as px
 from pvsite_datamodel.connection import DatabaseConnection
 from pvsite_datamodel.read.model import get_models
 from pvsite_datamodel.read.site import get_all_sites
@@ -31,11 +32,11 @@ def mlmodel_page():
 
     with connection.get_session() as session:
 
-        # 1. Display the sites, and which models they are using
-        # add tick box to show all details
+        # 1. Display the sites and which models they are using
+        # Add tick box to show all details
         show_all_sites = st.checkbox("Display all site parameters")
 
-        # load all sites
+        # Load all sites
         sites = get_all_sites(session)
 
         all_sites = []
@@ -44,14 +45,13 @@ def mlmodel_page():
 
             if show_all_sites:
                 site_dict = {k: getattr(site, k) for k in keys if not k.startswith("_")}
-
             else:
                 site_dict = {"client_site_name": site.client_site_name}
 
             if site.ml_model is not None:
                 site_dict["ml_model_name"] = site.ml_model.name
 
-            # get last generation timestamp
+            # Get last generation timestamp
             last_gen = (
                 session.query(GenerationSQL)
                 .filter(GenerationSQL.site_uuid == site.site_uuid)
@@ -67,28 +67,15 @@ def mlmodel_page():
 
         all_sites = pd.DataFrame(all_sites)
 
-        # order by name
+        # Order by name
         all_sites = all_sites.sort_values(by="client_site_name")
 
         st.table(all_sites.style.applymap(color_survived, subset=["last_generation_datetime"]))
 
-        # 2. display all models
-        models = get_models(session)
-
-        all_models = pd.DataFrame(
-            [{"name": m.name, "version": m.version, "description": "todo"} for m in models]
-        )
-
-        # order by name
-        all_models = all_models.sort_values(by="name")
-
-        st.write("ML Models")
-        st.write(all_models)
-
-        # 3. Show site locations on the map
+        # 2. Show site locations on the map
         st.subheader("Site Locations on Map")
 
-        # Create map data for sites with latitude and longitude
+        # Prepare site details for the map
         site_details = []
         for site in sites:
             site_dict = {
@@ -97,31 +84,58 @@ def mlmodel_page():
                 "longitude": getattr(site, "longitude", None),
                 "region": site.region,
                 "capacity_kw": site.capacity_kw,
+                "asset_type": site.asset_type,
             }
             if site_dict["latitude"] and site_dict["longitude"]:  # Ensure latitude and longitude exist
                 site_details.append(site_dict)
 
-        # Create DataFrame for map plotting
+        # Convert to DataFrame
         map_data = pd.DataFrame(site_details)
 
-        # Display map if there are valid sites
+        # Check if there is valid map data
         if not map_data.empty:
-            # Filter out sites without valid coordinates
-            valid_sites = map_data.dropna(subset=["latitude", "longitude"])
-
-            # Add sidebar filters for region
-            regions = ["All"] + sorted(valid_sites["region"].unique().tolist())
+            # Sidebar filter for regions
+            regions = ["All"] + sorted(map_data["region"].dropna().unique().tolist())
             selected_region = st.sidebar.selectbox("Select Region", regions)
 
-            # Filter based on region selection
+            # Filter map data by selected region
             if selected_region != "All":
-                valid_sites = valid_sites[valid_sites["region"] == selected_region]
+                map_data = map_data[map_data["region"] == selected_region]
 
-            # Display the map with site markers
-            st.map(valid_sites[["latitude", "longitude"]])
+            # Assign marker color based on asset type
+            map_data["color"] = map_data["asset_type"].apply(lambda x: "orange" if x == "solar" else "blue")
 
-            # Display site details in a table below the map
-            st.subheader("Site Details")
-            st.dataframe(valid_sites[["client_site_name", "region", "latitude", "longitude", "capacity_kw"]])
+            # Display map using Plotly Express
+            fig = px.scatter_mapbox(
+                map_data,
+                lat="latitude",
+                lon="longitude",
+                color="asset_type",
+                size="capacity_kw",
+                hover_name="client_site_name",
+                hover_data={
+                    "capacity_kw": True,
+                    "region": True,
+                    "latitude": False,
+                    "longitude": False,
+                },
+                color_discrete_map={"solar": "orange", "wind": "blue"},
+                zoom=4,
+                height=600,
+            )
+
+            fig.update_layout(
+                mapbox_style="carto-positron",
+                legend_title_text="Asset Type",
+                margin={"r": 0, "t": 0, "l": 0, "b": 0},
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+            # Display site details in a table
+            st.subheader("Site Geographical Details")
+            st.dataframe(
+                map_data[["client_site_name", "region", "capacity_kw", "asset_type", "latitude", "longitude"]],
+                use_container_width=True,
+            )
         else:
             st.write("No valid site data available to display on the map.")
