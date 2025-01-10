@@ -1,4 +1,6 @@
+""" A page to display the current ML models"""
 import os
+
 import pandas as pd
 import streamlit as st
 import plotly.express as px
