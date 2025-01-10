@@ -131,6 +131,7 @@ def nwp_page():
             "HRES-IFS_uk",
             "HRES-IFS_india",
             "UM-Global",
+            'NCEP-GFS',
         ]
 
         values = d_one_channel_one_step
