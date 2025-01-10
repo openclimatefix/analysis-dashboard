@@ -72,7 +72,20 @@ def mlmodel_page():
 
         st.table(all_sites.style.applymap(color_survived, subset=["last_generation_datetime"]))
 
-        # 2. Show site locations on the map
+        # 2. display all models
+        models = get_models(session)
+
+        all_models = pd.DataFrame(
+            [{"name": m.name, "version": m.version, "description": "todo"} for m in models]
+        )
+
+        # order by name
+        all_models = all_models.sort_values(by="name")
+
+        st.write("ML Models")
+        st.write(all_models)
+
+        # 3. Show site locations on the map
         st.subheader("Site Locations on Map")
 
         # Prepare site details for the map
