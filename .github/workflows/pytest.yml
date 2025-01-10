@@ -2,15 +2,16 @@ name: Python package tests
 
 on:
   push:
+  pull_request:
+    types: [opened, synchronize, reopened]  
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]  
   schedule:
     - cron: "0 12 * * 1"
 jobs:
   call-run-python-tests:
     uses: openclimatefix/.github/.github/workflows/python-test.yml@v1.8.4
     with:
-      # default python versions to use
       python-version: "['3.11']"
-      # pytest-cov looks at this folder
       pytest_cov_dir: "src"
-      #      brew_install: "proj geos librttopo"
       os_list: '["ubuntu-latest"]'
