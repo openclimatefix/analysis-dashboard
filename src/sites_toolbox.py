@@ -20,13 +20,13 @@ from pvsite_datamodel.write.user_and_site import (
     create_site_group
 )
 
-from sites_toolbox.get_details import (
+from site_toolbox.get_details import (
     get_user_details,
     get_site_details,
     get_site_group_details,
 )
 
-from sites_toolbox.site_group_management import (
+from site_toolbox.site_group_management import (
     select_site_id,
     update_site_group,
     change_user_site_group,
