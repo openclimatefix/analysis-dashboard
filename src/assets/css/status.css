@@ -1,0 +1,112 @@
+.styled-table {
+  border-collapse: collapse;
+  margin: 25px 0;
+  font-size: 18px;
+  font-family: Arial, sans-serif;
+  min-width: 400px;
+  border-radius: 5px 5px 0 0;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  table-layout: fixed; /* Ensures equal column width */
+  width: 100%; /* Table spans the full container width */
+}
+.styled-table thead tr {
+  background-color: #a79d7b;
+  color: #000000;
+  text-align: left;
+  font-weight: bold;
+}
+.styled-table th,
+.styled-table td {
+  padding: 10px 13px;
+  word-wrap: break-word; /* Prevents text overflow */
+  text-align: center; /* Center-aligns text in cells */
+  font-size: 16px;
+}
+.styled-table tbody tr {
+  border-bottom: 1px solid #dddddd;
+}
+.styled-table tbody tr:nth-of-type(even) {
+  background-color: #f3f3f3;
+}
+.styled-table tbody tr:last-of-type {
+  border-bottom: 2px solid #63bcaf;
+}
+.styled-table tbody tr:hover {
+  background-color: #414e4a; /* Highlight row on hover */
+  cursor: pointer; /* Change cursor to pointer */
+}
+
+.status-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.heading {
+  background-color: #464e5f;
+  padding: 10px;
+  border-radius: 10px;
+  color: #ffd053;
+  font-size: 30px;
+  font-weight: bold;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  font-family: "Times New Roman", Times, serif;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 50px;
+}
+
+.sub-heading {
+  background-color: #222428;
+  padding: 10px;
+  border-radius: 10px;
+  color: #ffd053;
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  font-family: "Times New Roman", Times, serif;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  width: 80%;
+}
+
+.line {
+  border: 0;
+  clear: both;
+  display: block;
+  width: 100%;
+  background-color: #63bcaf;
+  height: 2px;
+}
+
+.label {
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffffff;
+  font-family: "Times New Roman", Times, serif;
+  margin-top: 20px;
+}
+
+div.stButton > button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+  margin: 20px auto;
+  width: 100%;
+}
+div.stButton > button:hover {
+  background-color: #45a049;
+}
