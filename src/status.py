@@ -3,9 +3,7 @@ import streamlit as st
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.models import Status
 from nowcasting_datamodel.read.read import get_latest_status
-from utils import load_css, load_lottie_url, parse_timestamp, format_time
-import pytz
-from datetime import datetime
+from utils import load_css, parse_timestamp, format_time
 
 def get_current_status():
     """Get the current status from the database"""
