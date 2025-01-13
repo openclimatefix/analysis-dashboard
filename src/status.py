@@ -105,7 +105,7 @@ def status_page():
         )
         
         st.markdown(
-            f"""<div class="sub-heading" style="align-item:center;margin-top:100px;">Update the Status</div>""",
+            f"""<div class="sub-heading" >Update the Status</div>""",
             unsafe_allow_html=True,
         )
         

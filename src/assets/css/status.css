@@ -2,7 +2,6 @@
   border-collapse: collapse;
   margin: 25px 0;
   font-size: 18px;
-  font-family: Arial, sans-serif;
   min-width: 400px;
   border-radius: 5px 5px 0 0;
   overflow: hidden;
@@ -32,11 +31,6 @@
 .styled-table tbody tr:last-of-type {
   border-bottom: 2px solid #63bcaf;
 }
-.styled-table tbody tr:hover {
-  background-color: #414e4a; /* Highlight row on hover */
-  cursor: pointer; /* Change cursor to pointer */
-}
-
 .status-container {
   display: flex;
   justify-content: center;
@@ -44,35 +38,27 @@
 }
 
 .heading {
-  background-color: #464e5f;
   padding: 10px;
-  border-radius: 10px;
-  color: #ffd053;
   font-size: 30px;
-  font-weight: bold;
   margin-top: 10px;
   margin-bottom: 10px;
-  font-family: "Times New Roman", Times, serif;
   text-align: center;
   margin-left: auto;
   margin-right: auto;
-  margin-bottom: 50px;
+  margin-bottom: 30px;
 }
 
 .sub-heading {
-  background-color: #222428;
   padding: 10px;
-  border-radius: 10px;
-  color: #ffd053;
   font-size: 20px;
-  font-weight: bold;
   margin-top: 10px;
   margin-bottom: 10px;
-  font-family: "Times New Roman", Times, serif;
   text-align: center;
   margin-left: auto;
   margin-right: auto;
   width: 80%;
+  align-items: center;
+  margin-top:50px;
 }
 
 .line {
@@ -85,10 +71,8 @@
 }
 
 .label {
-  font-size: 20px;
-  font-weight: bold;
+  font-size: 16px;
   color: #ffffff;
-  font-family: "Times New Roman", Times, serif;
   margin-top: 20px;
 }
 
@@ -96,7 +80,6 @@ div.stButton > button {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #4caf50;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -105,8 +88,5 @@ div.stButton > button {
   cursor: pointer;
   transition: 0.3s;
   margin: 20px auto;
-  width: 100%;
-}
-div.stButton > button:hover {
-  background-color: #45a049;
+  width: 50%;
 }
