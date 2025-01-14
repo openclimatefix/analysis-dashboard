@@ -8,7 +8,7 @@ from pvsite_datamodel.read import (
     get_site_by_uuid,
     get_site_group_by_name
 )
-
+from pvsite_datamodel.sqlmodels import SiteAssetType
 
 # get details for one user
 def get_user_details(session, email: str):
@@ -27,6 +27,14 @@ def get_user_details(session, email: str):
 def get_site_details(session, site_uuid: str):
     """Get the site details for one site"""
     site = get_site_by_uuid(session=session, site_uuid=site_uuid)
+    
+    if isinstance(site.asset_type, SiteAssetType):
+        # Use the name attribute to get a human-readable string (like 'pv')
+        asset_type_value = site.asset_type.name.lower()  # 'pv' or 'wind'
+    else:
+        # If asset_type is not an Enum, just use its string representation
+        asset_type_value = str(site.asset_type)
+        
     site_details = {
         "site_uuid": str(site.site_uuid),
         "client_site_id": str(site.client_site_id),
@@ -37,7 +45,7 @@ def get_site_details(session, site_uuid: str):
         "latitude": str(site.latitude),
         "longitude": str(site.longitude),
         "country": str(site.country),
-        "asset_type": site.asset_type.name if hasattr(site.asset_type, 'name') else str(site.asset_type),
+        "asset_type": asset_type_value,
         "region": str(site.region),
         "DNO": str(site.dno),
         "GSP": str(site.gsp),
