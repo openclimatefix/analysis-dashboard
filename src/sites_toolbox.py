@@ -8,6 +8,7 @@ from pvsite_datamodel.read import (
     get_all_sites,
 )
 from pvsite_datamodel.read.model import get_models
+from pvsite_datamodel.sqlmodels import SiteAssetType
 
 from get_data import get_all_users, get_all_site_groups
 from pvsite_datamodel.write.user_and_site import (
@@ -221,6 +222,13 @@ def sites_toolbox_page():
             latitude = st.text_input("latitude *")
             longitude = st.text_input("longitude *")
             region = st.text_input("region")
+            country = st.text_input("Country", value="UK", placeholder="Default is 'UK'")
+            asset_type = st.selectbox(
+                "Asset Type",
+                options=[e.name for e in SiteAssetType],
+                format_func=lambda x: x.replace("_", " ").title(),
+                index=list(SiteAssetType).index(SiteAssetType.pv),  # Default to 'pv'
+            )
 
             st.markdown(
                 f'<h1 style="color:#FFD053;font-size:22px;">{"PV Information"}</h1>',
@@ -239,6 +247,8 @@ def sites_toolbox_page():
                     latitude,
                     longitude,
                     capacity_kw,
+                    country,
+                    asset_type,
                 ]:
                     error = (
                         f"Please check that you've entered data for each field. "
@@ -259,6 +269,8 @@ def sites_toolbox_page():
                         inverter_capacity_kw=inverter_capacity_kw,
                         module_capacity_kw=module_capacity_kw,
                         capacity_kw=capacity_kw,
+                        country=country,
+                        asset_type=asset_type,
                     )
                     site_details = {
                         "site_uuid": str(site.site_uuid),
@@ -271,6 +283,8 @@ def sites_toolbox_page():
                         ],
                         "latitude": str(site.latitude),
                         "longitude": str(site.longitude),
+                        "country": str(site.country),
+                        "asset_type": str(site.asset_type),
                         "DNO": str(site.dno),
                         "GSP": str(site.gsp),
                         "tilt": str(site.tilt),
