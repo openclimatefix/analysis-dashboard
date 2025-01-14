@@ -1,21 +1,27 @@
-# code from a streamlit app Peter made. the commands should be relevant to what I'm doing but stuff inside
+# Use Python 3.12 slim image
+FROM python:3.12-slim
 
-FROM python:3.11-slim
+# Install necessary system packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    unzip \
+    libpq-dev \
+    gcc \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# install unzip
-RUN apt-get update && apt-get install -y unzip libpq-dev gcc
-
+# Set the working directory
 WORKDIR /app
-# copy everything in to the app folder (which we're already in)
 
-COPY requirements.txt requirements.txt
-# start building the environment that the app will run in
-RUN pip3 install -r requirements.txt
+# Copy requirements.txt and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy the application source code
 COPY src .
-# this the port that will be used in the container like here locally
+
+# Expose the necessary ports
 EXPOSE 8501
 
 EXPOSE 5433
-#runs the command I'd run to start the app -- these are called "flags" and they're like arguments but they're not
-CMD ["streamlit", "run", "main.py", "--server.port=8501", "--browser.serverAddress=0.0.0.0", "--server.address=0.0.0.0", "–server.enableCORS False"]
+
+# Run the Streamlit app
+CMD ["streamlit", "run", "main.py", "--server.port=8501", "--server.address=0.0.0.0", "--browser.serverAddress=0.0.0.0", "--server.enableCORS=False"]
