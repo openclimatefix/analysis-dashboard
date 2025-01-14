@@ -73,8 +73,6 @@ pyproj==3.7.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 python-jose==3.3.0
-pytz
-pywin32
 referencing==0.35.1
 requests==2.32.3
 requests-mock==1.12.1
@@ -102,3 +100,5 @@ wrapt==1.17.0
 xarray==2025.1.0
 yarl==1.18.3
 zarr==2.18.4
+pytz
+pywin32
