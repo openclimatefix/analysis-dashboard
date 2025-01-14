@@ -13,6 +13,6 @@ jobs:
   call-run-python-tests:
     uses: openclimatefix/.github/.github/workflows/python-test.yml@v1.8.4
     with:
-      python-version: "['3.12.1']"
+      python-version: "['3.11']"
       pytest_cov_dir: "src"
       os_list: '["ubuntu-latest"]'
