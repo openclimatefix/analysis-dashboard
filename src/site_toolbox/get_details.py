@@ -37,6 +37,7 @@ def get_site_details(session, site_uuid: str):
         "latitude": str(site.latitude),
         "longitude": str(site.longitude),
         "country": str(site.country),
+        "asset_type": site.asset_type.name if hasattr(site.asset_type, 'name') else str(site.asset_type),
         "region": str(site.region),
         "DNO": str(site.dno),
         "GSP": str(site.gsp),
