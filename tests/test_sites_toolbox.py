@@ -8,6 +8,7 @@ from sites_toolbox import (
     update_site_group,
     add_all_sites_to_ocf_group,
 )
+from pvsite_datamodel.sqlmodels import SiteAssetType
 
 from pvsite_datamodel.write.user_and_site import make_fake_site, create_site_group, create_user
 
