@@ -29,10 +29,8 @@ def get_site_details(session, site_uuid: str):
     site = get_site_by_uuid(session=session, site_uuid=site_uuid)
     
     if isinstance(site.asset_type, SiteAssetType):
-        # Use the name attribute to get a human-readable string (like 'pv')
         asset_type_value = site.asset_type.name.lower()  # 'pv' or 'wind'
     else:
-        # If asset_type is not an Enum, just use its string representation
         asset_type_value = str(site.asset_type)
         
     site_details = {
