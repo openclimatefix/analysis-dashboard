@@ -2,7 +2,7 @@ import streamlit as st
 import json 
 import requests
 from datetime import datetime
-import pytz
+from zoneinfo import ZoneInfo  # Replacing pytz with zoneinfo
 
 def load_css(css_file):
     """Load CSS from a file."""
@@ -11,7 +11,6 @@ def load_css(css_file):
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
         st.error(f"CSS file not found: {css_file}")
-
 
 
 
@@ -25,17 +24,16 @@ def parse_timestamp(status):
         raise ValueError(f"Invalid timestamp format: {e}")
     
     if parsed_time.tzinfo is not None:
-        utc_time = parsed_time.astimezone(pytz.utc)
+        utc_time = parsed_time.astimezone(ZoneInfo("UTC"))
     else:
         # If no timezone is specified, assume it's UTC
-        utc_time = parsed_time.replace(tzinfo=pytz.utc)
+        utc_time = parsed_time.replace(tzinfo=ZoneInfo("UTC"))
 
     # Convert to specific timezone (Asia/Kolkata)
-    local_timezone = pytz.timezone("Asia/Kolkata")
+    local_timezone = ZoneInfo("Asia/Kolkata")
     local_time = parsed_time.astimezone(local_timezone)
     
     return local_time
-
 
 
 def format_time(local_time):

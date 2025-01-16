@@ -22,7 +22,7 @@ services:
         "--server.port=8501",
         "--browser.serverAddress=0.0.0.0",
         "--server.address=0.0.0.0",
-        "--server.enableCORS=False",
+        "--server.enableCORS=False"
       ]
     networks:
       - analysis-net

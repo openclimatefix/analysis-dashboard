@@ -3,15 +3,16 @@ name: Python package tests
 on:
   push:
   pull_request:
-    types: [opened, synchronize, reopened]  
+    types: [opened, synchronize, reopened]
   pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review]  
+    types: [opened, synchronize, reopened, ready_for_review]
   schedule:
     - cron: "0 12 * * 1"
+
 jobs:
   call-run-python-tests:
     uses: openclimatefix/.github/.github/workflows/python-test.yml@v1.8.4
     with:
-      python-version: "['3.11']"
+      python-version: "['3.12']"
       pytest_cov_dir: "src"
       os_list: '["ubuntu-latest"]'
