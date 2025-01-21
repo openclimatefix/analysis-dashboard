@@ -20,3 +20,5 @@ ocf_blosc2==0.0.11
 zarr==2.18.4
 elexonpy==1.0.15
 fiona==1.10.1
+psycopg2-binary
+herbie-data
