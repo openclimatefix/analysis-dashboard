@@ -41,16 +41,25 @@ def weather_graph_page():
         latitude = site.latitude
         longitude = site.longitude
 
-    # Select parameter to display
-    parameter = st.sidebar.selectbox("Select Parameter", ["Temperature (°C)", "Wind Speed (m/s)"])
+    # Select parameters to display
+    parameters = st.sidebar.multiselect(
+        "Select Parameters", 
+        ["Temperature (°C)", "Wind Speed (10m) (m/s)", "Wind Speed (100m) (m/s)", "Cloud Cover (Total)","Direct Normal Irradiance (DNI)"],
+        default=["Temperature (°C)"]
+    )
+
     parameter_map = {
         "Temperature (°C)": "temperature_2m",
-        "Wind Speed (m/s)": "wind_speed_10m"
+        "Wind Speed (10m) (m/s)": "wind_speed_10m",
+        "Wind Speed (100m) (m/s)": "wind_speed_100m",
+        "Direct Normal Irradiance (DNI)": "direct_normal_irradiance",
+        "Cloud Cover (Total)": "cloudcover"
     }
-    selected_parameter = parameter_map[parameter]
+
+    selected_parameters = [parameter_map[param] for param in parameters]
 
     # Toggle for Historical or Forecast data
-    data_type = st.sidebar.radio("Choose Data Type", ("Historical", "Forecast"))
+    data_type = st.sidebar.radio("Choose Data Type", ("Forecast", "Historical"))
 
     # Date range input
     start_date = st.sidebar.date_input(
@@ -64,12 +73,12 @@ def weather_graph_page():
     )
 
     # Function to fetch weather data
-    def fetch_weather_data(latitude, longitude, start_date, end_date, api_url, parameter):
+    def fetch_weather_data(latitude, longitude, start_date, end_date, api_url, parameters):
         # API parameters
         params = {
             "latitude": latitude,
             "longitude": longitude,
-            "hourly": parameter,
+            "hourly": ",".join(parameters),
             "start_date": start_date.strftime('%Y-%m-%d'),
             "end_date": end_date.strftime('%Y-%m-%d')
         }
@@ -82,12 +91,12 @@ def weather_graph_page():
 
             # Extract hourly data
             times = data["hourly"]["time"]
-            values = data["hourly"][parameter]
+            variables = {param: data["hourly"].get(param, []) for param in parameters}
 
             # Convert times to a readable format
             times = [datetime.strptime(time, '%Y-%m-%dT%H:%M') for time in times]
 
-            return times, values
+            return times, variables
 
         except requests.exceptions.RequestException as e:
             st.error(f"Error fetching weather data: {e}")
@@ -100,18 +109,19 @@ def weather_graph_page():
         else:
             api_url = "https://api.open-meteo.com/v1/forecast"
 
-        times, values = fetch_weather_data(latitude, longitude, start_date, end_date, api_url, selected_parameter)
+        times, variables = fetch_weather_data(latitude, longitude, start_date, end_date, api_url, selected_parameters)
 
-        if times and values:
+        if times and variables:
             # Create the plot using Plotly
             fig = go.Figure()
-            fig.add_trace(go.Scatter(x=times, y=values, mode='lines+markers', name=parameter))
+            for param, values in variables.items():
+                fig.add_trace(go.Scatter(x=times, y=values, mode='lines+markers', name=param))
 
             # Update layout
             fig.update_layout(
-                title=f"{parameter} Data ({start_date} to {end_date})",
+                title=f"Weather Data ({start_date} to {end_date})",
                 xaxis_title="Time",
-                yaxis_title=parameter,
+                yaxis_title="Values",
                 template="plotly_white",
                 xaxis=dict(showgrid=True, gridcolor='lightgray', tickangle=45),
                 yaxis=dict(showgrid=True, gridcolor='lightgray'),
