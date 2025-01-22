@@ -1,22 +1,16 @@
 """This module contains the sites toolbox for the OCF dashboard"""
 import os
-import json
 import streamlit as st
-import re
-from datetime import datetime, timezone
 from sqlalchemy import func
 from pvsite_datamodel.connection import DatabaseConnection
-from pvsite_datamodel.sqlmodels import SiteSQL
 # from pvsite_datamodel.write.user_and_site import create_site_group
 from pvsite_datamodel.read import (
     get_all_sites,
-    get_user_by_email,
-    get_site_by_uuid,
-    get_site_group_by_name
 )
 from pvsite_datamodel.read.model import get_models
+from pvsite_datamodel.sqlmodels import SiteAssetType
 
-from get_data import get_all_users, get_all_site_groups, get_site_by_client_site_id
+from get_data import get_all_users, get_all_site_groups
 from pvsite_datamodel.write.user_and_site import (
     assign_model_name_to_site,
     create_site,
@@ -24,160 +18,25 @@ from pvsite_datamodel.write.user_and_site import (
     delete_site,
     delete_user,
     delete_site_group,
-    add_site_to_site_group,
-    update_user_site_group,
     create_site_group
+)
+
+from site_toolbox.get_details import (
+    get_user_details,
+    get_site_details,
+    get_site_group_details,
+)
+
+from site_toolbox.site_group_management import (
+    select_site_id,
+    update_site_group,
+    change_user_site_group,
+    add_all_sites_to_ocf_group,
+    validate_email,
 )
 
 # colors 7bcdf3 
 # yellow ffd053
-
-# get details for one user
-def get_user_details(session, email: str):
-    """Get the user details from the database"""
-    user_details = get_user_by_email(session=session, email=email)
-    user_site_group = user_details.site_group.site_group_name
-    user_site_count = len(user_details.site_group.sites)
-    user_sites = [
-        {"site_uuid": str(site.site_uuid), "client_site_id": str(site.client_site_id)}
-        for site in user_details.site_group.sites
-    ]
-    return user_sites, user_site_group, user_site_count
-
-
-# get details for one site
-def get_site_details(session, site_uuid: str):
-    """Get the site details for one site"""
-    site = get_site_by_uuid(session=session, site_uuid=site_uuid)
-    site_details = {
-        "site_uuid": str(site.site_uuid),
-        "client_site_id": str(site.client_site_id),
-        "client_site_name": str(site.client_site_name),
-        "site_group_names": [
-            site_group.site_group_name for site_group in site.site_groups
-        ],
-        "latitude": str(site.latitude),
-        "longitude": str(site.longitude),
-        "country": str(site.country),
-        "region": str(site.region),
-        "DNO": str(site.dno),
-        "GSP": str(site.gsp),
-        "tilt": str(site.tilt),
-        "orientation": str(site.orientation),
-        "inverter_capacity_kw": (f"{site.inverter_capacity_kw} kw"),
-        "module_capacity_kw": (f"{site.module_capacity_kw} kw"),
-        "capacity": (f"{site.capacity_kw} kw"),
-        "ml_model_uuid": str(site.ml_model_uuid),
-        "date_added": (site.created_utc.strftime("%Y-%m-%d")),
-    }
-
-    if site.ml_model_uuid is not None:
-        site_details["ml_model_name"] = site.ml_model.name
-
-    return site_details
-
-
-# select site by site_uuid or client_site_id
-def select_site_id(dbsession, query_method: str):
-    """Select site by site_uuid or client_site_id"""
-    if query_method == "site_uuid":
-        site_uuids = [str(site.site_uuid) for site in get_all_sites(session=dbsession)]
-        selected_uuid = st.selectbox("Sites by site_uuid", site_uuids)
-    elif query_method == "client_site_id":
-        client_site_ids = [
-            str(site.client_site_id) for site in get_all_sites(session=dbsession)
-        ]
-        client_site_id = st.selectbox("Sites by client_site_id", client_site_ids)
-        site = get_site_by_client_site_id(
-            session=dbsession, client_site_id=client_site_id
-        )
-        selected_uuid = str(site.site_uuid)
-    elif query_method not in ["site_uuid", "client_site_id"]:
-        raise ValueError("Please select a valid query_method.")
-    return selected_uuid
-
-
-# get details for one site group
-def get_site_group_details(session, site_group_name: str):
-    """Get the site group details from the database"""
-    site_group_uuid = get_site_group_by_name(
-        session=session, site_group_name=site_group_name
-    )
-    site_group_sites = [
-        {"site_uuid": str(site.site_uuid), "client_site_id": str(site.client_site_id)}
-        for site in site_group_uuid.sites
-    ]
-    site_group_users = [user.email for user in site_group_uuid.users]
-    return site_group_sites, site_group_users
-
-
-# update a site's site groups
-def update_site_group(session, site_uuid: str, site_group_name: str):
-    """Add a site to a site group"""
-    site_group = get_site_group_by_name(
-        session=session, site_group_name=site_group_name
-    )
-    site_group_sites = add_site_to_site_group(
-        session=session, site_uuid=site_uuid, site_group_name=site_group_name
-    )
-    site_group_sites = [
-        {"site_uuid": str(site.site_uuid), "client_site_id": str(site.client_site_id)}
-        for site in site_group.sites
-    ]
-    site = get_site_by_uuid(session=session, site_uuid=site_uuid)
-    site_site_groups = [site_group.site_group_name for site_group in site.site_groups]
-    return site_group, site_group_sites, site_site_groups
-
-
-# change site group for user
-def change_user_site_group(session, email: str, site_group_name: str):
-    """
-    Change user to a specific site group name
-    :param session: the database session
-    :param email: the email of the user"""
-    update_user_site_group(
-        session=session, email=email, site_group_name=site_group_name
-    )
-    user = get_user_by_email(session=session, email=email)
-    user_site_group = user.site_group.site_group_name
-    user = user.email
-    return user, user_site_group
-
-
-# add all sites to the ocf site group
-def add_all_sites_to_ocf_group(session, site_group_name="ocf"):
-    """Add all sites to the ocf site group
-    :param session: the database session
-    :param site_group_name: the name of the site group"""
-    all_sites = get_all_sites(session=session)
-
-    ocf_site_group = get_site_group_by_name(
-        session=session, site_group_name=site_group_name
-    )
-
-    site_uuids = [site.site_uuid for site in ocf_site_group.sites]
-
-    sites_added = []
-
-    for site in all_sites:
-        if site.site_uuid not in site_uuids:
-            ocf_site_group.sites.append(site)
-            sites_added.append(str(site.site_uuid))
-            session.commit()
-            message = f"Added {len(sites_added)} sites to group {site_group_name}."
-
-    if len(sites_added) == 0:
-        message = f"There are no new sites to be added to {site_group_name}."
-
-    return message, sites_added
-
-
-# validate email address
-def validate_email(email):
-    if re.match(r"[^@]+@[^@]+\.[^@]+", email):
-        return True
-    return False
-
 
 # sites toolbox page
 def sites_toolbox_page():
@@ -363,6 +222,13 @@ def sites_toolbox_page():
             latitude = st.text_input("latitude *")
             longitude = st.text_input("longitude *")
             region = st.text_input("region")
+            country = st.text_input("Country", value="UK", placeholder="Default is 'UK'")
+            asset_type = st.selectbox(
+                "Asset Type",
+                options=[e.name for e in SiteAssetType],
+                format_func=lambda x: x.replace("_", " ").title(),
+                index=list(SiteAssetType).index(SiteAssetType.pv),  # Default to 'pv'
+            )
 
             st.markdown(
                 f'<h1 style="color:#FFD053;font-size:22px;">{"PV Information"}</h1>',
@@ -381,6 +247,8 @@ def sites_toolbox_page():
                     latitude,
                     longitude,
                     capacity_kw,
+                    country,
+                    asset_type,
                 ]:
                     error = (
                         f"Please check that you've entered data for each field. "
@@ -401,6 +269,8 @@ def sites_toolbox_page():
                         inverter_capacity_kw=inverter_capacity_kw,
                         module_capacity_kw=module_capacity_kw,
                         capacity_kw=capacity_kw,
+                        country=country,
+                        asset_type=asset_type,
                     )
                     site_details = {
                         "site_uuid": str(site.site_uuid),
@@ -413,6 +283,8 @@ def sites_toolbox_page():
                         ],
                         "latitude": str(site.latitude),
                         "longitude": str(site.longitude),
+                        "country": str(site.country),
+                        "asset_type": str(site.asset_type),
                         "DNO": str(site.dno),
                         "GSP": str(site.gsp),
                         "tilt": str(site.tilt),

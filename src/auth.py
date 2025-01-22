@@ -3,6 +3,7 @@ import streamlit as st
 import ssl
 from auth0_component import login_button
 import logging
+import time
 
 clientId = os.getenv("AUTH0_CLIENT_ID")
 domain = os.getenv("AUTH0_DOMAIN")
@@ -74,11 +75,26 @@ def check_password():
                 st.text_input(
                     "Password", type="password", on_change=password_entered, key="password", autocomplete="current-password"
                 )
-                st.error("😕 Password incorrect")
+                 # Create a dialog box container
+                dialog_box = st.empty()
+
+                # Show success message in dialog box
+                dialog_box.error("🔒 Password incorrect")
+
+                # Wait for 3 seconds (adjust time as needed) before removing it
+                time.sleep(3)
+
+                # Clear the dialog box after delay
+                dialog_box.empty()
 
             else:
-                # Password correct, show success message.
-                st.success("🔒 Password correct")
+                 # Create a dialog box container
+                dialog_box = st.empty()
+
+                dialog_box.success("🔒 Password correct")
+
+                # Clear the dialog box after delay
+                dialog_box.empty()
                 password_logged = True
 
         if auth0_logged or password_logged:

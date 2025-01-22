@@ -8,6 +8,7 @@ from sites_toolbox import (
     update_site_group,
     add_all_sites_to_ocf_group,
 )
+from pvsite_datamodel.sqlmodels import SiteAssetType
 
 from pvsite_datamodel.write.user_and_site import make_fake_site, create_site_group, create_user
 
@@ -42,6 +43,12 @@ def test_get_site_details(db_session):
     site = make_fake_site(db_session=db_session, ml_id=1)
 
     site_details = get_site_details(session=db_session, site_uuid=str(site.site_uuid))
+    
+    if isinstance(site.asset_type, SiteAssetType):
+        asset_type_value = str(site.asset_type.name.lower())  # 'pv' or 'wind'
+    else:
+        asset_type_value = str(site.asset_type)
+        
 
     assert site_details == {
         "site_uuid": str(site.site_uuid),
@@ -51,6 +58,7 @@ def test_get_site_details(db_session):
             site_group.site_group_name for site_group in site.site_groups
         ],
         'country': 'uk',
+        'asset_type': asset_type_value,
         "latitude": str(site.latitude),
         "longitude": str(site.longitude),
         "DNO": str(site.dno),

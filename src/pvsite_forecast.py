@@ -15,6 +15,7 @@ from pvsite_datamodel.read import (
 
 import plotly.graph_objects as go
 import pytz
+from zoneinfo import ZoneInfo
 
 # Penalty Calculator
 def calculate_penalty(df, region, asset_type, capacity_kw):
@@ -114,7 +115,7 @@ def pvsite_forecast_page():
             ][0]
 
     timezone_selected = st.sidebar.selectbox("Select timezone", ["UTC", "Asia/Calcutta"])
-    timezone_selected = pytz.timezone(timezone_selected)
+    timezone_selected = ZoneInfo(timezone_selected)
 
     day_after_tomorrow = datetime.today() + timedelta(days=3)
     starttime = st.sidebar.date_input(
@@ -205,16 +206,16 @@ def pvsite_forecast_page():
     endtime = datetime.combine(endtime, time.min)
 
     # change to the correct timezone
-    starttime = timezone_selected.localize(starttime)
-    endtime = timezone_selected.localize(endtime)
+    starttime = starttime.replace(tzinfo=timezone_selected)
+    endtime = endtime.replace(tzinfo=timezone_selected)
 
     # change to utc
-    starttime = starttime.astimezone(pytz.utc)
-    endtime = endtime.astimezone(pytz.utc)
+    starttime = starttime.astimezone(ZoneInfo("UTC"))
+    endtime = endtime.astimezone(ZoneInfo("UTC"))
 
     if created is not None:
-        created = timezone_selected.localize(created)
-        created = created.astimezone(pytz.utc)
+        created = created.replace(tzinfo=timezone_selected)  # Add timezone information to created
+        created = created.astimezone(ZoneInfo("UTC")) 
 
     # great ml model names for this site
 
@@ -256,7 +257,7 @@ def pvsite_forecast_page():
                 y = [i.forecast_power_kw for i in forecast]
 
                 # convert to timezone
-                x = [i.replace(tzinfo=pytz.utc) for i in x]
+                x = [i.replace(tzinfo=ZoneInfo("UTC")) for i in x]
                 x = [i.astimezone(timezone_selected) for i in x]
 
             ys[model.name] = y
@@ -277,7 +278,7 @@ def pvsite_forecast_page():
         xx = [generation.start_utc for generation in generations if generation is not None]
 
         # convert to timezone
-        xx = [i.replace(tzinfo=pytz.utc) for i in xx]
+        xx = [i.replace(tzinfo=ZoneInfo("UTC")) for i in xx]
         xx = [i.astimezone(timezone_selected) for i in xx]
 
     df_forecast = []
