@@ -15,7 +15,6 @@ from pvsite_datamodel.read import (
 
 import plotly.graph_objects as go
 import pytz
-from zoneinfo import ZoneInfo
 
 # Penalty Calculator
 def calculate_penalty(df, region, asset_type, capacity_kw):
@@ -25,16 +24,24 @@ def calculate_penalty(df, region, asset_type, capacity_kw):
     # Define penalty bands for combinations of region and asset type
     penalty_bands = {
         ("Rajasthan", "solar"): [
-            (10, 15, 0.1),  # Band (lowest bound of the band range, highest bound of the band range, penalty that particular band carries)
-            (15, None, 1.0), # Band (lowest bound of the band range, no highest bound of the band range, penalty that particular band carries)
+            (
+                10,
+                15,
+                0.1,
+            ),  # Band (lowest bound of the band range, highest bound of the band range, penalty that particular band carries)
+            (
+                15,
+                None,
+                1.0,
+            ),  # Band (lowest bound of the band range, no highest bound of the band range, penalty that particular band carries)
         ],
         ("Madhya Pradesh", "wind"): [
-            (10, 20, 0.25), 
+            (10, 20, 0.25),
             (20, 30, 0.5),
             (30, None, 0.75),
         ],
         ("Gujarat", "solar"): [
-            (7, 15, 0.25), 
+            (7, 15, 0.25),
             (15, 23, 0.5),
             (23, None, 0.75),
         ],
@@ -71,14 +78,13 @@ def calculate_penalty(df, region, asset_type, capacity_kw):
     for lower, upper, rate in bands:
         mask = (deviation_percentage >= lower) if lower is not None else True
         if upper is not None:
-            mask &= (deviation_percentage < upper)
+            mask &= deviation_percentage < upper
         penalty[mask] += abs(deviation[mask]) * rate
 
     # Calculate total penalty
     total_penalty = penalty.sum()
 
     return penalty, total_penalty
-
 
 
 # Internal Dashboard
@@ -97,7 +103,9 @@ def pvsite_forecast_page():
         site_uuids = [sites.site_uuid for sites in sites if sites.site_uuid is not None]
 
         # streamlit toggle between site_uuid and client_site_name
-        query_method = st.sidebar.radio("Select site by", ("site_uuid", "client_site_name"))
+        query_method = st.sidebar.radio(
+            "Select site by", ("site_uuid", "client_site_name")
+        )
 
         if query_method == "site_uuid":
             site_selection_uuid = st.sidebar.selectbox(
@@ -111,15 +119,21 @@ def pvsite_forecast_page():
                 sorted([sites.client_site_name for sites in sites]),
             )
             site_selection_uuid = [
-                sites.site_uuid for sites in sites if sites.client_site_name == client_site_name
+                sites.site_uuid
+                for sites in sites
+                if sites.client_site_name == client_site_name
             ][0]
 
-    timezone_selected = st.sidebar.selectbox("Select timezone", ["UTC", "Asia/Calcutta"])
-    timezone_selected = ZoneInfo(timezone_selected)
+    timezone_selected = st.sidebar.selectbox(
+        "Select timezone", ["UTC", "Asia/Calcutta"]
+    )
+    timezone_selected = pytz.timezone(timezone_selected)
 
     day_after_tomorrow = datetime.today() + timedelta(days=3)
     starttime = st.sidebar.date_input(
-        "Start Date", min_value=datetime.today() - timedelta(days=365), max_value=datetime.today()
+        "Start Date",
+        min_value=datetime.today() - timedelta(days=365),
+        max_value=datetime.today(),
     )
     endtime = st.sidebar.date_input("End Date", day_after_tomorrow)
 
@@ -139,7 +153,6 @@ def pvsite_forecast_page():
         asset_type = site.asset_type  # Assume site object has an 'asset_type' attribute
         capacity_kw = site.capacity_kw  # Extract capacity dynamically
 
-
     if forecast_type == "Latest":
         created = pd.Timestamp.utcnow().ceil("15min")
         created = created.astimezone(timezone.utc)
@@ -158,7 +171,9 @@ def pvsite_forecast_page():
         created = None
 
     if forecast_type == "Forecast_horizon":
-        forecast_horizon = st.sidebar.selectbox("Select Forecast Horizon", range(0, 2880, 15), 6)
+        forecast_horizon = st.sidebar.selectbox(
+            "Select Forecast Horizon", range(0, 2880, 15), 6
+        )
     else:
         forecast_horizon = None
 
@@ -206,16 +221,18 @@ def pvsite_forecast_page():
     endtime = datetime.combine(endtime, time.min)
 
     # change to the correct timezone
-    starttime = starttime.replace(tzinfo=timezone_selected)
-    endtime = endtime.replace(tzinfo=timezone_selected)
+    # starttime = starttime.replace(tzinfo=timezone_selected)
+    # endtime = endtime.replace(tzinfo=timezone_selected)
+    starttime = timezone_selected.localize(starttime)
+    endtime = timezone_selected.localize(endtime)
 
     # change to utc
-    starttime = starttime.astimezone(ZoneInfo("UTC"))
-    endtime = endtime.astimezone(ZoneInfo("UTC"))
+    starttime = starttime.astimezone(pytz.utc)
+    endtime = endtime.astimezone(pytz.utc)
 
     if created is not None:
-        created = created.replace(tzinfo=timezone_selected)  # Add timezone information to created
-        created = created.astimezone(ZoneInfo("UTC")) 
+        created = timezone_selected.localize(created)
+        created = created.astimezone(pytz.utc)
 
     # great ml model names for this site
 
@@ -231,8 +248,10 @@ def pvsite_forecast_page():
         )
 
         if len(ml_models) == 0:
+
             class Models:
                 name = None
+
             ml_models = [Models()]
 
         ys = {}
@@ -257,7 +276,7 @@ def pvsite_forecast_page():
                 y = [i.forecast_power_kw for i in forecast]
 
                 # convert to timezone
-                x = [i.replace(tzinfo=ZoneInfo("UTC")) for i in x]
+                x = [i.replace(tzinfo=pytz.utc) for i in x]
                 x = [i.astimezone(timezone_selected) for i in x]
 
             ys[model.name] = y
@@ -273,12 +292,16 @@ def pvsite_forecast_page():
         )
 
         yy = [
-            generation.generation_power_kw for generation in generations if generation is not None
+            generation.generation_power_kw
+            for generation in generations
+            if generation is not None
         ]
-        xx = [generation.start_utc for generation in generations if generation is not None]
+        xx = [
+            generation.start_utc for generation in generations if generation is not None
+        ]
 
         # convert to timezone
-        xx = [i.replace(tzinfo=ZoneInfo("UTC")) for i in xx]
+        xx = [i.replace(tzinfo=pytz.utc) for i in xx]
         xx = [i.astimezone(timezone_selected) for i in xx]
 
     df_forecast = []
@@ -304,7 +327,9 @@ def pvsite_forecast_page():
         df_generation = df_generation.resample(resample).mean()
 
         # merge together
-        df_all = df_forecast.merge(df_generation, left_index=True, right_index=True, how="outer")
+        df_all = df_forecast.merge(
+            df_generation, left_index=True, right_index=True, how="outer"
+        )
 
         # select variables
         xx = df_all.index
@@ -313,7 +338,9 @@ def pvsite_forecast_page():
     fig = go.Figure(
         layout=go.Layout(
             title=go.layout.Title(text="Latest Forecast for Selected Site"),
-            xaxis=go.layout.XAxis(title=go.layout.xaxis.Title(text=f"Time [{timezone_selected}]")),
+            xaxis=go.layout.XAxis(
+                title=go.layout.xaxis.Title(text=f"Time [{timezone_selected}]")
+            ),
             yaxis=go.layout.YAxis(title=go.layout.yaxis.Title(text="KW")),
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
         )
@@ -366,7 +393,9 @@ def pvsite_forecast_page():
 
             # MAE and NMAE Calculator
             mae_kw = (df["generation_power_kw"] - df[forecast_column]).abs().mean()
-            mae_mw = (df["generation_power_kw"] - df[forecast_column]).abs().mean() / 1000
+            mae_mw = (
+                df["generation_power_kw"] - df[forecast_column]
+            ).abs().mean() / 1000
             me_kw = (df["generation_power_kw"] - df[forecast_column]).mean()
             mean_generation = df["generation_power_kw"].mean()
             nmae = mae_kw / mean_generation * 100
@@ -389,10 +418,12 @@ def pvsite_forecast_page():
                 "capacity": capacity,
                 "pearson_corr": pearson_corr,
             }
-            
+
             if country == "india":
                 df["forecast_power_kw"] = df[forecast_column]
-                penalties, total_penalty = calculate_penalty(df, str(region), str(asset_type), capacity_kw)
+                penalties, total_penalty = calculate_penalty(
+                    df, str(region), str(asset_type), capacity_kw
+                )
                 one_metric_data["total_penalty [INR]"] = total_penalty
 
             metrics.append(one_metric_data)
