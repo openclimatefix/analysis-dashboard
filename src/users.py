@@ -14,6 +14,7 @@ from pvsite_datamodel.read.user import (
 )
 
 from plots.users import make_api_requests_plot, make_api_frequency_requests_plot
+from nowcasting_datamodel.connection import DatabaseConnection
 
 region = os.getenv("REGION", "uk")
 
@@ -27,9 +28,7 @@ else:
         "Sites": get_all_last_api_request_sites,
     }
 
-
 def user_page():
-
     st.markdown(
         f'<h1 style="color:#63BCAF;font-size:48px;">{"API Users Page"}</h1>',
         unsafe_allow_html=True,
@@ -49,6 +48,10 @@ def user_page():
         max_value=datetime.today() + timedelta(days=1),
         value=datetime.today() + timedelta(days=1),
     )
+
+    # New filter for API/UI users
+    user_type_options = ["Both", "API", "UI"]
+    user_type = st.sidebar.radio("Filter Users", user_type_options, index=0)
 
     # get last call from the database
     db_url = os.getenv("DB_URL", None)
@@ -74,6 +77,13 @@ def user_page():
 
     last_request = get_last_request_by_user(_connection=connection, national_or_sites=national_or_sites)
 
+    # Filter requests based on user type
+    if user_type != "Both":
+        last_request = [
+            (email, timestamp) for email, timestamp in last_request 
+            if is_user_type_match(email, user_type)
+        ]
+
     last_request = pd.DataFrame(last_request, columns=["email", "last API request"])
     last_request = last_request.sort_values(by="last API request", ascending=False)
     last_request.set_index("email", inplace=True)
@@ -89,10 +99,18 @@ def user_page():
             session=session, email=email_selected, start_datetime=start_time, end_datetime=end_time
         )
 
+        # Filter API requests based on user type
         api_requests = [
             (api_request_sql.created_utc, api_request_sql.url)
             for api_request_sql in api_requests_sql
+            if is_user_type_match(email_selected, user_type, 
+                                  url=api_request_sql.url)
         ]
+    
+    if not api_requests:
+        st.warning(f"No {user_type} requests found for the selected user.")
+        return
+
     api_requests = pd.DataFrame(api_requests, columns=["created_utc", "url"])
 
     fig = make_api_requests_plot(api_requests, email_selected, end_time, start_time)
@@ -104,11 +122,34 @@ def user_page():
     api_requests_days = api_requests[["date", "url"]].groupby("date").count()
     api_requests_days.reset_index(inplace=True)
 
-    print(api_requests_days)
-
     fig = make_api_frequency_requests_plot(api_requests_days, email_selected, end_time, start_time)
     st.plotly_chart(fig, theme="streamlit")
 
+def is_user_type_match(email, user_type, url=None):
+    """
+    Determine if a user or request matches the selected user type.
+    
+    Args:
+    - email: User's email
+    - user_type: 'API', 'UI', or 'Both'
+    - url: Optional URL to check for UI/API distinction
+    
+    Returns:
+    - Boolean indicating if the user/request matches the filter
+    """
+    # If both is selected, always return True
+    if user_type == "Both":
+        return True
+    
+    # If URL is provided, use it to determine type
+    if url is not None:
+        is_ui = 'ui' in url.lower()
+        return (user_type == "UI" and is_ui) or (user_type == "API" and not is_ui)
+    
+    # If no URL, make a basic guess based on email (this is a fallback)
+    # You might want to replace this with a more robust method
+    is_ui = email.lower().endswith('@example.com')  # Replace with actual UI user identifier
+    return (user_type == "UI" and is_ui) or (user_type == "API" and not is_ui)
 
 @st.cache_data(ttl=60)
 def get_last_request_by_user(_connection, national_or_sites:str):
