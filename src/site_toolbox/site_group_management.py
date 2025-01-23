@@ -9,8 +9,7 @@ from pvsite_datamodel.read import (
     get_site_group_by_name
 )
 
-# from get_data import get_site_by_client_site_id
-from pvsite_datamodel.read.site import get_site_by_client_site_id
+from get_data import get_site_by_client_site_id
 
 from pvsite_datamodel.write.user_and_site import (
     add_site_to_site_group,
@@ -30,7 +29,7 @@ def select_site_id(dbsession, query_method: str):
         ]
         client_site_id = st.selectbox("Sites by client_site_id", client_site_ids)
         site = get_site_by_client_site_id(
-            session=dbsession, client_site_id=client_site_id
+            session=dbsession, client_site_id=client_site_id,
         )
         selected_uuid = str(site.site_uuid)
     elif query_method not in ["site_uuid", "client_site_id"]:

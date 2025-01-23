@@ -107,3 +107,18 @@ def get_metric_value(
 
     return metric_values
 
+
+
+
+def get_site_by_client_site_id(session: Session, client_site_id: str) -> List[SiteSQL]:
+    """Get site by client site id.
+    :param session: database session
+    :param client_site_id: client site id
+    """
+    query = session.query(SiteSQL)
+
+    query = query.filter(SiteSQL.client_site_id == client_site_id)
+
+    site = query.first()
+
+    return site
