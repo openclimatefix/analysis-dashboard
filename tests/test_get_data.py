@@ -1,8 +1,10 @@
 """tests for get_data.py"""
-from get_data import (
-    get_all_users,
-    get_all_site_groups,
-)
+# from get_data import (
+#     get_all_users,
+#     get_all_site_groups,
+# )     # Function has been already transferred to pvsite_datamodel.read.user
+
+from pvsite_datamodel.read.user import get_all_users, get_all_site_groups
 from pvsite_datamodel.read import get_all_sites
 
 
