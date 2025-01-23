@@ -142,6 +142,8 @@ def nwp_page():
         for ds in lat_lon_datasets:
             if ds in d_one_channel_one_step.variables:
                 values = d_one_channel_one_step[ds]
+            elif ds.lower() in d_one_channel_one_step.variables:
+                values = d_one_channel_one_step[ds.lower()]
 
         if "UKV" in d_one_channel_one_step.variables:
             values = d_one_channel_one_step["UKV"]
