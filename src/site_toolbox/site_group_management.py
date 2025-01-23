@@ -9,7 +9,9 @@ from pvsite_datamodel.read import (
     get_site_group_by_name
 )
 
-from get_data import get_site_by_client_site_id
+# from get_data import get_site_by_client_site_id
+from pvsite_datamodel.read.site import get_site_by_client_site_id
+
 from pvsite_datamodel.write.user_and_site import (
     add_site_to_site_group,
     update_user_site_group,
