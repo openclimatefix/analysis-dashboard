@@ -67,6 +67,9 @@ def calculate_penalty(df, region, asset_type, capacity_kw):
     # Fetch penalty bands based on region and asset type
     bands = penalty_bands.get((region, asset_type.lower()), default_bands)
 
+    #remove negative values
+    df = df[df["generation_power_kw"] >= 0]
+
     # Calculate deviation and deviation percentage
     deviation = df["generation_power_kw"] - df["forecast_power_kw"]
     deviation_percentage = (deviation / capacity_kw) * 100

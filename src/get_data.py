@@ -75,6 +75,9 @@ def get_metric_value(
     if end_datetime_utc is not None:
         query = query.filter(DatetimeIntervalSQL.end_datetime_utc <= end_datetime_utc)
 
+    #ignore negative values
+    query = query.filter(MetricValueSQL.value >= 0)
+
     # filter on gsp_id
     if gsp_id is not None:
         query = query.join(LocationSQL)
