@@ -131,6 +131,7 @@ def nwp_page():
             "HRES-IFS_uk",
             "HRES-IFS_india",
             "UM-Global",
+            "UM-Global_india",
             'NCEP-GFS',
         ]
 
