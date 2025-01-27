@@ -3,14 +3,12 @@ import os
 import streamlit as st
 from sqlalchemy import func
 from pvsite_datamodel.connection import DatabaseConnection
-# from pvsite_datamodel.write.user_and_site import create_site_group
 from pvsite_datamodel.read import (
     get_all_sites,
 )
 from pvsite_datamodel.read.model import get_models
 from pvsite_datamodel.sqlmodels import SiteAssetType
 
-from get_data import get_all_users, get_all_site_groups
 from pvsite_datamodel.write.user_and_site import (
     assign_model_name_to_site,
     create_site,
@@ -20,6 +18,8 @@ from pvsite_datamodel.write.user_and_site import (
     delete_site_group,
     create_site_group
 )
+
+from pvsite_datamodel.read.user import get_all_users, get_all_site_groups
 
 from site_toolbox.get_details import (
     get_user_details,
