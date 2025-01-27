@@ -108,59 +108,8 @@ def get_metric_value(
     return metric_values
 
 
-# get all users
-def get_all_users(session: Session) -> List[UserSQL]:
-    """Get all users from the database.
-    :param session: database session
-    """
-    query = session.query(UserSQL)
-
-    query = query.order_by(UserSQL.email.asc())
-
-    users = query.all()
-
-    return users
 
 
-# get all site groups
-def get_all_site_groups(session: Session) -> List[SiteGroupSQL]:
-    """Get all users from the database.
-    :param session: database session
-    """
-    query = session.query(SiteGroupSQL)
-
-    query = query.order_by(SiteGroupSQL.site_group_name.asc())
-
-    site_groups = query.all()
-
-    return site_groups
-
-
-# update user site group; users only belong to one site group
-def update_user_site_group(
-    session: Session, email: str, site_group_name: str
-) -> UserSQL:
-    """Change site group for user.
-    :param session: database session
-    :param email: email of user
-    :param site_group_name: name of site group
-    """
-    site_group = (
-        session.query(SiteGroupSQL)
-        .filter(SiteGroupSQL.site_group_name == site_group_name)
-        .first()
-    )
-
-    user = session.query(UserSQL).filter(UserSQL.email == email)
-
-    user = user.update({"site_group_uuid": site_group.site_group_uuid})
-
-    session.commit()
-
-    return user
-
-
-# get site group by name
 def get_site_by_client_site_id(session: Session, client_site_id: str) -> List[SiteSQL]:
     """Get site by client site id.
     :param session: database session
