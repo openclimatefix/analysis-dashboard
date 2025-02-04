@@ -12,8 +12,12 @@ from pvsite_datamodel.read.user import get_all_last_api_request as get_all_last_
 from pvsite_datamodel.read.user import (
     get_api_requests_for_one_user as get_api_requests_for_one_user_sites,
 )
+from pvsite_datamodel.read.user import get_user_by_email
+from pvsite_datamodel.read.site import get_sites_from_user
 
 from plots.users import make_api_requests_plot, make_api_frequency_requests_plot
+from plots.users import make_sites_over_time_plot 
+import plotly.graph_objects as go  
 
 region = os.getenv("REGION", "uk")
 
@@ -29,7 +33,6 @@ else:
 
 
 def user_page():
-
     st.markdown(
         f'<h1 style="color:#63BCAF;font-size:48px;">{"API Users Page"}</h1>',
         unsafe_allow_html=True,
@@ -72,6 +75,7 @@ def user_page():
         connection = SitesDatabaseConnection(url=db_url_sites, echo=True)
         get_api_requests_for_one_user_func = get_api_requests_for_one_user_sites
 
+    # Get last API requests by user
     last_request = get_last_request_by_user(_connection=connection, national_or_sites=national_or_sites)
 
     last_request = pd.DataFrame(last_request, columns=["email", "last API request"])
@@ -80,34 +84,67 @@ def user_page():
 
     st.write(last_request)
 
-    # add selectbox for users
-    email_selected = st.sidebar.selectbox("Select", last_request.index.tolist(), index=0)
+    # Add selectbox for users
+    email_selected = st.sidebar.selectbox("Select User", last_request.index.tolist(), index=0)
 
-    # get all calls for selected user
+    # Get all API calls for the selected user
     with connection.get_session() as session:
         api_requests_sql = get_api_requests_for_one_user_func(
             session=session, email=email_selected, start_datetime=start_time, end_datetime=end_time
         )
-
         api_requests = [
             (api_request_sql.created_utc, api_request_sql.url)
             for api_request_sql in api_requests_sql
         ]
     api_requests = pd.DataFrame(api_requests, columns=["created_utc", "url"])
 
+    # Plot API requests over time
     fig = make_api_requests_plot(api_requests, email_selected, end_time, start_time)
     st.plotly_chart(fig, theme="streamlit")
 
-    # add plot that shows amount of api calls per day
+    # Plot API call frequency
     api_requests["created_utc"] = pd.to_datetime(api_requests["created_utc"])
     api_requests["date"] = api_requests["created_utc"].dt.date
     api_requests_days = api_requests[["date", "url"]].groupby("date").count()
     api_requests_days.reset_index(inplace=True)
 
-    print(api_requests_days)
-
     fig = make_api_frequency_requests_plot(api_requests_days, email_selected, end_time, start_time)
     st.plotly_chart(fig, theme="streamlit")
+
+    # Plot cumulative sites over time as a line graph
+    with connection.get_session() as session:
+        user = get_user_by_email(session=session, email=email_selected)
+        sites = get_sites_from_user(session=session, user=user)
+        sites_df = pd.DataFrame([site.__dict__ for site in sites], columns=["created_utc"])
+        sites_df['created_utc'] = pd.to_datetime(sites_df['created_utc'])
+
+        # Debugging: Print the data
+        print("Sites DataFrame:")
+        print(sites_df)
+
+        if not sites_df.empty:
+            # Group by month and calculate cumulative site counts
+            monthly_cumulative = sites_df.groupby(pd.Grouper(key='created_utc', freq='ME')).size().cumsum()
+
+            # Debugging: Print the monthly cumulative data
+            print("Monthly Cumulative Data:")
+            print(monthly_cumulative)
+
+            # Create the line graph
+            fig = go.Figure(
+                data=go.Scatter(x=monthly_cumulative.index, y=monthly_cumulative, mode='lines+markers', name="Sites"),
+                layout=dict(
+                    title=f'Increase in Number of Sites Over Time for {email_selected}',
+                    xaxis_title="Date",
+                    yaxis_title="Cumulative Number of Sites",
+                    showlegend=True
+                )
+            )
+
+            # Display the graph in Streamlit
+            st.plotly_chart(fig, theme="streamlit")
+        else:
+            st.warning("No site data available for the selected user.")
 
 
 @st.cache_data(ttl=60)
