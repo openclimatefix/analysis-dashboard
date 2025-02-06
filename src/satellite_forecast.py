@@ -83,7 +83,6 @@ def get_dataset(zarr_file: str) -> xr.Dataset:
 
     # Download the file if needed
     if not os.path.exists(hash_filename):
-        print(f"Downloading Satellite file from {zarr_file} to {hash_filename}")
         fs = fsspec.open(zarr_file).fs
         fs.get(zarr_file, hash_filename, recursive=True)
 
@@ -137,10 +136,6 @@ def satellite_forecast_page():
     # Eagerly load the datasets
     da_sat = da_sat.compute()
     da_sat_forecast = da_sat_forecast.compute()
-    
-    print("sat nans: ", np.isnan(da_sat.values).mean())
-    print("Sat", da_sat.values.min(), da_sat.values.max())
-    print("For", da_sat_forecast.values.min(), da_sat_forecast.values.max())
 
     # Select the first init time of the forecast
     da_sat_forecast = da_sat_forecast.isel(init_time=0)
