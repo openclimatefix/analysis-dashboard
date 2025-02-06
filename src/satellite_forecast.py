@@ -8,25 +8,76 @@ import xarray as xr
 import plotly.graph_objects as go
 import streamlit as st
 
-from datetime import datetime, timedelta
-
-# need this for some zarr files
 import ocf_blosc2
 
 # Set the frame duration when playing the animation in ms
-FRAME_DURATION = 150
+FRAME_DUR = 150
 
-def get_data(zarr_file):
+# Setting for the play button in the figure
+PLAY_BUTTON_CONFIG = {
+    "type": "buttons",
+    "buttons": [
+        {
+            "args": [None, {"frame": {"duration": FRAME_DUR, "redraw": True}, "fromcurrent": True}],
+            "label": "Play", 
+            "method": "animate"
+        },
+        {
+            "args": [[None], {"frame": {"duration": 0, "redraw": True}, "mode": "immediate"}],
+            "label": "Pause", 
+            "method": "animate"
+        },
+    ],
+    "showactive": False,
+    "direction": "left",
+    "pad": {"r": 10, "t": 74},
+    "x": 0.1,
+    "xanchor": "right",
+    "y": 0,
+    "yanchor": "top",
+}
+
+SLIDER_CONFIG = {
+    "active": 0, 
+    "currentvalue": {
+        "font": {"size": 20}, 
+        "prefix": "Frame: ",
+        "visible": True, 
+        "xanchor": "right"
+    },
+    "transition": {"duration": 0, "easing": "linear"},
+    "len": 0.9, 
+    "pad": {"b": 10, "t": 50}, 
+    "x": 0.1, 
+    "xanchor": "left",
+    "y": 0,  # Align horizontally with buttons
+    "yanchor": "top", 
+    "steps": None
+}
+
+
+
+def get_dataset(zarr_file: str) -> xr.Dataset:
+    """Open and return a zarr dataset whilst also using a local cache for efficiency.
+    
+    A local cache is used if the dataset needs to be downloaded from s3
+    
+    Args:
+        zarr_file: Path to the zarr dataset
+        
+    Returns:
+        The opened xarray dataset
+    """
 
     # hash filename
     hash_filename = "./data/" + zarr_file.removeprefix("s3://")
 
     # Check if the file exists and if its too old
     if os.path.exists(hash_filename):
-        downloaded_datetime = datetime.fromtimestamp(os.path.getmtime(hash_filename))
+        downloaded_datetime = pd.Timestamp.fromtimestamp(os.path.getmtime(hash_filename))
         
         # Delete the file if it is too old
-        if downloaded_datetime < datetime.now() - timedelta(minutes=5):
+        if downloaded_datetime < pd.Timestamp.now() - pd.Timedelta("5min"):
             fs = fsspec.open(hash_filename).fs
             fs.rm(hash_filename, recursive=True)
 
@@ -56,8 +107,8 @@ def satellite_forecast_page():
     sat_forecast_zarr_path = "s3://nowcasting-sat-development/cloudcasting_forecast/latest.zarr"
 
     # Open the sat and the sat forecast zarrs
-    da_sat = get_data(sat_zarr_path).data
-    da_sat_forecast = get_data(sat_forecast_zarr_path).sat_pred
+    da_sat = get_dataset(sat_zarr_path).data
+    da_sat_forecast = get_dataset(sat_forecast_zarr_path).sat_pred
     
     # Scale the satellite data
     da_sat = da_sat / 1023
@@ -70,6 +121,12 @@ def satellite_forecast_page():
     da_sat = da_sat.sel(channel=channel)
     da_sat_forecast = da_sat_forecast.sel(channel=channel)
     
+    # The init-time of the satellite forecast
+    t0 = pd.Timestamp(da_sat_forecast.init_time.item())
+    
+    # Only use the true satellite data up to t0
+    da_sat = da_sat.sel(time=slice(None, t0))
+    
     # Match the spatial coords. We assume that the forecast will always have a smaller spatial
     # extent than the ground truths
     da_sat = da_sat.sel(
@@ -80,9 +137,10 @@ def satellite_forecast_page():
     # Eagerly load the datasets
     da_sat = da_sat.compute()
     da_sat_forecast = da_sat_forecast.compute()
-        
-    # The init-time of the satellite forecast
-    t0 = pd.Timestamp(da_sat_forecast.init_time.item())
+    
+    print("sat nans: ", np.isnan(da_sat.values).mean())
+    print("Sat", da_sat.values.min(), da_sat.values.max())
+    print("For", da_sat_forecast.values.min(), da_sat_forecast.values.max())
 
     # Select the first init time of the forecast
     da_sat_forecast = da_sat_forecast.isel(init_time=0)
@@ -90,6 +148,7 @@ def satellite_forecast_page():
     # These are the valid times of the forecast steps
     forecast_valid_times = t0 + pd.to_timedelta(da_sat_forecast.step.values)
     
+    # Compile all the satellite/forecast images and titles
     data = []
     titles = []
     for i, time in enumerate(pd.to_datetime(da_sat.time.values)):
@@ -111,84 +170,56 @@ def satellite_forecast_page():
     st.plotly_chart(fig, theme="streamlit")
 
 
-    
-    
+
 def make_figure(data: list[np.array], titles: list[str], x: np.array, y: np.array) -> go.Figure:
+    """Make the satellite forecast animation
+    
+    Args:
+        data: A list of arrays where each array is a satellite image or forecast
+        titles: Strings describing each array
+        x: The x coords of the images
+        y: The y coords of the images
+        
+    Returns:
+        A plotly figure
+    """
     
     # Find min and max across all frames
-    vmin = np.nanmin(data)
-    vmax = np.nanmax(data)
+    zmin = np.nanmin(data)
+    zmax = np.nanmax(data)
     
-    # Create animation frames - the silder works faster if these are created up front
+    # Construct the frames up front so the slider works faster
     frames = [
         go.Frame(
-            data=[go.Heatmap(z=data[i], colorscale="Viridis")],
-            name=str(i),
-            layout=go.Layout(title_text=titles[i]),
-        )
+            data=[go.Heatmap(z=frame, x=x, y=y, colorscale="Viridis", zmin=zmin, zmax=zmax)], 
+            name=str(i), 
+            layout=go.Layout(title_text=titles[i])
+        ) for i, frame in enumerate(data)
+    ]
+
+    slider_steps = [
+        {"args": [[str(i)], {"frame": {"duration": 0, "redraw": True}, "mode": "immediate"}],
+         "label": str(i), "method": "animate"}
         for i in range(len(data))
     ]
     
-    # Define figure with animation controls
+    # Update the config with the slider steps
+    SLIDER_CONFIG.update({"steps": slider_steps})
+
     fig = go.Figure(
-        data=[go.Heatmap(z=data[0], x=x, y=y, colorscale="Viridis", zmin=vmin, zmax=vmax)],
+        data=[frames[0].data[0]],  # Use only the first frame’s data
         layout=go.Layout(
             title_text=titles[0],
-            updatemenus=[
-                {
-                    "buttons": [
-                        {
-                            "args": [None, {"frame": {"duration": FRAME_DURATION, "redraw": True}, "fromcurrent": True}],
-                            "label": "Play",
-                            "method": "animate",
-                        },
-                        {
-                            "args": [[None], {"frame": {"duration": 0, "redraw": True}, "mode": "immediate"}],
-                            "label": "Pause",
-                            "method": "animate",
-                        },
-                    ],
-                    "direction": "left",
-                    "pad": {"r": 10, "t": 87},
-                    "showactive": False,
-                    "type": "buttons",
-                    "x": 0.1,
-                    "xanchor": "right",
-                    "y": 0,
-                    "yanchor": "top",
-                }
-            ],
-            sliders=[
-                {
-                    "active": 0,
-                    "yanchor": "top",
-                    "xanchor": "left",
-                    "currentvalue": {
-                        "font": {"size": 20},
-                        "prefix": "Frame: ",
-                        "visible": True,
-                        "xanchor": "right",
-                    },
-                    "transition": {"duration": 0, "easing": "linear"},
-                    "pad": {"b": 10, "t": 50},
-                    "len": 0.9,
-                    "x": 0.1,
-                    "y": 0,
-                    "steps": [
-                        {
-                            "args": [[str(i)], {"frame": {"duration": 0, "redraw": True}, "mode": "immediate"}],
-                            "label": str(i),
-                            "method": "animate",
-                        }
-                        for i in range(len(data))
-                    ],
-                }
-            ],
+            # Add buttons to control the animation
+            updatemenus=[PLAY_BUTTON_CONFIG],
+            # Add slider so we can scroll through the truth and predictions
+            sliders=[SLIDER_CONFIG],
+            # Set the size of the figure
+            autosize=False, width=700, height=700
         ),
         frames=frames,
     )
 
-    fig.update_layout(autosize=False, width=700, height=700)
     
     return fig
 
