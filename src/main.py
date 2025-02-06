@@ -33,6 +33,7 @@ from tables.summary import make_recent_summary_stats, make_forecast_horizon_tabl
 from users import user_page
 from nwp_page import nwp_page
 from satellite_page import satellite_page
+from satellite_forecast import satellite_forecast_page
 from adjuster import adjuster_page
 
 st.get_option("theme.primaryColor")
@@ -256,6 +257,7 @@ if check_password():
         "API Users": user_page,
         "NWP": nwp_page,
         "Satellite": satellite_page,
+        "Cloudcasting": satellite_forecast_page,
         "Adjuster": adjuster_page,
     }
 

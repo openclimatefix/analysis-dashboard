@@ -1,131 +1,116 @@
+import os
+import fsspec
+
+import numpy as np
+import pandas as pd
+import xarray as xr
+
 import plotly.graph_objects as go
 import streamlit as st
-import xarray as xr
-import os, fsspec
+
 from datetime import datetime, timedelta
 
 # need this for some zarr files
 import ocf_blosc2
 
 
-def get_data(zarr_file, unzip=True):
+def get_data(zarr_file):
 
     # hash filename
-    hash_filename = f'./data/{zarr_file.replace("/","")}'
-    hash_filename_unzip = hash_filename.replace(".zip", "")
+    hash_filename = "./data/" + zarr_file.removeprefix("s3://")
 
-    # file exits open this
-    download = True
-
+    # Check if the file exists and if its too old
     if os.path.exists(hash_filename):
-        print("Satellite file exists")
-
-        downloaded_datetime = os.path.getmtime(hash_filename)
-        downloaded_datetime = datetime.fromtimestamp(downloaded_datetime)
-        print(downloaded_datetime)
-
+        downloaded_datetime = datetime.fromtimestamp(os.path.getmtime(hash_filename))
+        
+        # Delete the file if it is too old
         if downloaded_datetime < datetime.now() - timedelta(minutes=5):
-            print("Satellite file is more than 1 hour old")
-            download = True
-
-            # remove file
             fs = fsspec.open(hash_filename).fs
             fs.rm(hash_filename, recursive=True)
-            fs.rm(hash_filename_unzip, recursive=True)
-        else:
-            download = False
-    else:
-        print("Satellite file does not exist")
 
-    if download:
-
-        # download file from zarr_file to hash_filename
+    # Download the file if needed
+    if not os.path.exists(hash_filename):
         print(f"Downloading Satellite file from {zarr_file} to {hash_filename}")
         fs = fsspec.open(zarr_file).fs
         fs.get(zarr_file, hash_filename, recursive=True)
-        print("Downloaded")
 
-    if unzip:
-
-        if not os.path.exists(hash_filename_unzip):
-            print("Unzipping")
-            os.system(f"unzip -qq {hash_filename} -d {hash_filename_unzip}")
-        ds = xr.open_dataset(hash_filename_unzip)
-    else:
-        ds = xr.open_dataset(hash_filename)
-    print("Loading")
+    ds = xr.open_dataset(hash_filename, engine="zarr")
+    
+    # Rename the variable dimension to channel
+    ds = ds.rename({"variable": "channel"})
 
     return ds
 
 
 def satellite_forecast_page():
-    """Satellite pge"""
+    """Satellite page"""
 
     st.markdown(
         f'<h1 style="color:#63BCAF;font-size:48px;">{"Satellite Forecast"}</h1>',
         unsafe_allow_html=True,
     )
 
-    zarr_file = "s3://nowcasting-sat-development/data/latest/latest_15.zarr.zip"
-    zarr_forecast_file = "s3://nowcasting-sat-development/cloudcasting_forecast/latest.zarr"
+    sat_zarr_path = "s3://nowcasting-sat-development/data/latest/latest_15.zarr.zip"
+    sat_forecast_zarr_path = "s3://nowcasting-sat-development/cloudcasting_forecast/latest.zarr"
 
-    # open zarr file
-    ds = get_data(zarr_file)
-    ds_forecast = get_data(zarr_forecast_file, unzip=False)
-
-    # choose channel 'WV_073'
-    channel = st.sidebar.selectbox(
-        "Channels", list(ds.variable.values), len(list(ds.variable.values)) - 1
+    # Open the sat and the sat forecast zarrs
+    da_sat = get_data(sat_zarr_path).data
+    da_sat_forecast = get_data(sat_forecast_zarr_path).sat_pred
+    
+    # Scale the satellite data
+    da_sat = da_sat / 1023
+    
+    # Select the channel - defaults to the VIS008 channel
+    channels = list(da_sat.channel.values)
+    channel = st.sidebar.selectbox("Channel", channels, channels.index("VIS008"))
+    
+    # Slice the data to the selected channel
+    da_sat = da_sat.sel(channel=channel)
+    da_sat_forecast = da_sat_forecast.sel(channel=channel)
+    
+    # Match the spatial coords. We assume that the forecast will always have a smaller spatial
+    # extent than the ground truths
+    da_sat = da_sat.sel(
+        y_geostationary=da_sat_forecast.y_geostationary, 
+        x_geostationary=da_sat_forecast.x_geostationary, 
     )
-    ds_one_channel = ds.sel(variable=channel).data
-    ds_forecast_one_channel = ds_forecast.sel(variable=channel).sat_pred
+    
+    # Eagerly load the datasets
+    da_sat = da_sat.compute()
+    da_sat_forecast = da_sat_forecast.compute()
+    
+    # Find min and max across the sat and forecast data
+    vmin = min([np.nanmin(da) for da in [da_sat, da_sat_forecast]])
+    vmax = max([np.nanmax(da) for da in [da_sat, da_sat_forecast]])
+    
+    # The init-time of the satellite forecast
+    t0 = pd.Timestamp(da_sat_forecast.init_time.item())
 
-    # for the forecast, select the first init time
-    ds_forecast_one_channel = ds_forecast_one_channel.sel(
-        init_time=ds_forecast_one_channel.init_time[0]
-    )
+    # Select the first init time of the forecast
+    da_sat_forecast = da_sat_forecast.isel(init_time=0)
 
-    # create "time", init_time + step
-    time = ds_forecast_one_channel.init_time + ds_forecast_one_channel.step
-
-    # reassign "step" coordiante to time values and rename
-    ds_forecast_one_channel = ds_forecast_one_channel.assign_coords(step=time)
-    ds_forecast_one_channel = ds_forecast_one_channel.rename({"step": "time"})
-
-    # select smaller region
-    ds_one_channel = ds_one_channel.isel(
-        y_geostationary=slice(14, 386), x_geostationary=slice(44, 658)
-    )
-
-    # format data
+    # These are the valid times of the forecast steps
+    forecast_valid_times = t0 + pd.to_timedelta(da_sat_forecast.step.values)
+    
     data = []
     titles = []
-    for time in ds_one_channel.time.values:
-        data.append(
-            {
-                "z": ds_one_channel.sel(time=time).values / 1023,
-                "x": ds_one_channel.x_geostationary.values,
-                "y": ds_one_channel.y_geostationary.values,
-            }
-        )
-        titles.append(f"Real: {time}")
+    for i, time in enumerate(pd.to_datetime(da_sat.time.values)):
+        data.append(da_sat.sel(time=time).values)
+        titles.append("Real: " + time.strftime("%Y-%m-%d %H:%M"))
 
-    # format data
-    for time in ds_forecast_one_channel.time.values:
-        data.append(
-            {
-                "z": ds_forecast_one_channel.sel(time=time).values,
-                "x": ds_forecast_one_channel.x_geostationary.values,
-                "y": ds_forecast_one_channel.y_geostationary.values,
-            }
-        )
-        titles.append(f"Forecast: {time}")
+    for i, time in enumerate(forecast_valid_times):
+        data.append(da_sat_forecast.isel(step=i).values)
+        titles.append("Forecast: " + time.strftime("%Y-%m-%d %H:%M"))
 
-    st.write("Making video")
     fig = go.Figure(
         data=[
             go.Heatmap(
-                z=data[0]["z"], x=data[0]["x"], y=data[0]["y"], colorscale="Viridis", zmax=1, zmin=0
+                z=data[0], 
+                x=da_sat_forecast.x_geostationary, 
+                y=da_sat_forecast.y_geostationary, 
+                colorscale="Viridis",
+                zmin=vmin,
+                zmax=vmax,
             )
         ],
         layout=go.Layout(
@@ -135,11 +120,11 @@ def satellite_forecast_page():
         ),
         frames=[
             go.Frame(
-                data=[go.Heatmap(z=k["z"], colorscale="Viridis")],
+                data=[go.Heatmap(z=z, colorscale="Viridis")],
                 layout=go.Layout(title_text=f"{titles[i]}"),
                 name=str(i),
             )
-            for i, k in enumerate(data)
+            for i, z in enumerate(data)
         ],
     )
 
