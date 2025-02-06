@@ -81,14 +81,14 @@ def make_api_frequency_requests_plot(
 
 def make_sites_over_time_plot(session, email):
     """
-    Create a bar chart showing the cumulative number of sites forecasted for a user over time.
+    Create a line chart showing the cumulative number of sites forecasted for a user over time.
     
     Args:
         session: SQLAlchemy session object.
         email (str): Email of the user.
     
     Returns:
-        plotly.graph_objects.Figure: The bar chart figure.
+        plotly.graph_objects.Figure: The line chart figure.
     """
     # Get user and their sites
     user = get_user_by_email(session=session, email=email)
@@ -97,12 +97,10 @@ def make_sites_over_time_plot(session, email):
     # Convert sites to a DataFrame
     sites_df = pd.DataFrame([site.__dict__ for site in sites], columns=["created_utc"])
     sites_df['created_utc'] = pd.to_datetime(sites_df['created_utc'])
-    #printout number of sites to doublecheck
     
     # Group by month and calculate cumulative counts
     monthly_cumulative = sites_df.groupby(pd.Grouper(key='created_utc', freq='ME')).size().cumsum()
 
-    
     # Create the line graph
     fig = go.Figure(
         data=go.Scatter(x=monthly_cumulative.index, y=monthly_cumulative, mode='lines+markers', name="Sites"),
@@ -114,5 +112,4 @@ def make_sites_over_time_plot(session, email):
         )
     )
 
-    # Display the graph in Streamlit
-    st.plotly_chart(fig, theme="streamlit")
+    return fig  

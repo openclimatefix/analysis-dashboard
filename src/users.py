@@ -11,12 +11,11 @@ from pvsite_datamodel.connection import DatabaseConnection as SitesDatabaseConne
 from pvsite_datamodel.read.user import get_all_last_api_request as get_all_last_api_request_sites
 from pvsite_datamodel.read.user import (
     get_api_requests_for_one_user as get_api_requests_for_one_user_sites,
+    get_user_by_email
 )
-from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.read.site import get_sites_from_user
 
-from plots.users import make_api_requests_plot, make_api_frequency_requests_plot
-from plots.users import make_sites_over_time_plot 
+from plots.users import make_api_requests_plot, make_api_frequency_requests_plot, make_sites_over_time_plot 
 import plotly.graph_objects as go  
 
 region = os.getenv("REGION", "uk")
@@ -60,7 +59,7 @@ def user_page():
     # if both databases are available, let the user choose which one to use
     # if none, show error
     if region == 'uk':
-        national_or_sites = st.sidebar.selectbox("Select", ["National", "Sites"], index=0)
+        national_or_sites = st.sidebar.selectbox("Select", ["Sites", "National"], index=0)
     else:
         national_or_sites = "Sites"
 
@@ -77,7 +76,6 @@ def user_page():
 
     # Get last API requests by user
     last_request = get_last_request_by_user(_connection=connection, national_or_sites=national_or_sites)
-
     last_request = pd.DataFrame(last_request, columns=["email", "last API request"])
     last_request = last_request.sort_values(by="last API request", ascending=False)
     last_request.set_index("email", inplace=True)
@@ -113,38 +111,8 @@ def user_page():
 
     # Plot cumulative sites over time as a line graph
     with connection.get_session() as session:
-        user = get_user_by_email(session=session, email=email_selected)
-        sites = get_sites_from_user(session=session, user=user)
-        sites_df = pd.DataFrame([site.__dict__ for site in sites], columns=["created_utc"])
-        sites_df['created_utc'] = pd.to_datetime(sites_df['created_utc'])
-
-        # Debugging: Print the data
-        print("Sites DataFrame:")
-        print(sites_df)
-
-        if not sites_df.empty:
-            # Group by month and calculate cumulative site counts
-            monthly_cumulative = sites_df.groupby(pd.Grouper(key='created_utc', freq='ME')).size().cumsum()
-
-            # Debugging: Print the monthly cumulative data
-            print("Monthly Cumulative Data:")
-            print(monthly_cumulative)
-
-            # Create the line graph
-            fig = go.Figure(
-                data=go.Scatter(x=monthly_cumulative.index, y=monthly_cumulative, mode='lines+markers', name="Sites"),
-                layout=dict(
-                    title=f'Increase in Number of Sites Over Time for {email_selected}',
-                    xaxis_title="Date",
-                    yaxis_title="Cumulative Number of Sites",
-                    showlegend=True
-                )
-            )
-
-            # Display the graph in Streamlit
-            st.plotly_chart(fig, theme="streamlit")
-        else:
-            st.warning("No site data available for the selected user.")
+        fig = make_sites_over_time_plot(session=session, email=email_selected)
+        st.plotly_chart(fig, theme="streamlit")
 
 
 @st.cache_data(ttl=60)
