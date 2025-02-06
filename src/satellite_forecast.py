@@ -13,6 +13,8 @@ from datetime import datetime, timedelta
 # need this for some zarr files
 import ocf_blosc2
 
+# Set the frame duration when playing the animation in ms
+FRAME_DURATION = 150
 
 def get_data(zarr_file):
 
@@ -78,11 +80,7 @@ def satellite_forecast_page():
     # Eagerly load the datasets
     da_sat = da_sat.compute()
     da_sat_forecast = da_sat_forecast.compute()
-    
-    # Find min and max across the sat and forecast data
-    vmin = min([np.nanmin(da) for da in [da_sat, da_sat_forecast]])
-    vmax = max([np.nanmax(da) for da in [da_sat, da_sat_forecast]])
-    
+        
     # The init-time of the satellite forecast
     t0 = pd.Timestamp(da_sat_forecast.init_time.item())
 
@@ -101,33 +99,97 @@ def satellite_forecast_page():
     for i, time in enumerate(forecast_valid_times):
         data.append(da_sat_forecast.isel(step=i).values)
         titles.append("Forecast: " + time.strftime("%Y-%m-%d %H:%M"))
+        
+    # Make the plotly figure
+    fig = make_figure(
+        data=data, 
+        titles=titles, 
+        x=da_sat_forecast.x_geostationary, 
+        y=da_sat_forecast.y_geostationary
+    )
+    
+    st.plotly_chart(fig, theme="streamlit")
 
+
+    
+    
+def make_figure(data: list[np.array], titles: list[str], x: np.array, y: np.array) -> go.Figure:
+    
+    # Find min and max across all frames
+    vmin = np.nanmin(data)
+    vmax = np.nanmax(data)
+    
+    # Create animation frames - the silder works faster if these are created up front
+    frames = [
+        go.Frame(
+            data=[go.Heatmap(z=data[i], colorscale="Viridis")],
+            name=str(i),
+            layout=go.Layout(title_text=titles[i]),
+        )
+        for i in range(len(data))
+    ]
+    
+    # Define figure with animation controls
     fig = go.Figure(
-        data=[
-            go.Heatmap(
-                z=data[0], 
-                x=da_sat_forecast.x_geostationary, 
-                y=da_sat_forecast.y_geostationary, 
-                colorscale="Viridis",
-                zmin=vmin,
-                zmax=vmax,
-            )
-        ],
+        data=[go.Heatmap(z=data[0], x=x, y=y, colorscale="Viridis", zmin=vmin, zmax=vmax)],
         layout=go.Layout(
+            title_text=titles[0],
             updatemenus=[
-                dict(type="buttons", buttons=[dict(label="Play", method="animate", args=[None])])
-            ]
+                {
+                    "buttons": [
+                        {
+                            "args": [None, {"frame": {"duration": FRAME_DURATION, "redraw": True}, "fromcurrent": True}],
+                            "label": "Play",
+                            "method": "animate",
+                        },
+                        {
+                            "args": [[None], {"frame": {"duration": 0, "redraw": True}, "mode": "immediate"}],
+                            "label": "Pause",
+                            "method": "animate",
+                        },
+                    ],
+                    "direction": "left",
+                    "pad": {"r": 10, "t": 87},
+                    "showactive": False,
+                    "type": "buttons",
+                    "x": 0.1,
+                    "xanchor": "right",
+                    "y": 0,
+                    "yanchor": "top",
+                }
+            ],
+            sliders=[
+                {
+                    "active": 0,
+                    "yanchor": "top",
+                    "xanchor": "left",
+                    "currentvalue": {
+                        "font": {"size": 20},
+                        "prefix": "Frame: ",
+                        "visible": True,
+                        "xanchor": "right",
+                    },
+                    "transition": {"duration": 0, "easing": "linear"},
+                    "pad": {"b": 10, "t": 50},
+                    "len": 0.9,
+                    "x": 0.1,
+                    "y": 0,
+                    "steps": [
+                        {
+                            "args": [[str(i)], {"frame": {"duration": 0, "redraw": True}, "mode": "immediate"}],
+                            "label": str(i),
+                            "method": "animate",
+                        }
+                        for i in range(len(data))
+                    ],
+                }
+            ],
         ),
-        frames=[
-            go.Frame(
-                data=[go.Heatmap(z=z, colorscale="Viridis")],
-                layout=go.Layout(title_text=f"{titles[i]}"),
-                name=str(i),
-            )
-            for i, z in enumerate(data)
-        ],
+        frames=frames,
     )
 
-    fig.update_layout(autosize=False, width=1000, height=1000)
+    fig.update_layout(autosize=False, width=700, height=700)
+    
+    return fig
 
-    st.plotly_chart(fig, theme="streamlit")
+    
