@@ -1,5 +1,8 @@
 import pandas as pd
-from plotly import graph_objects as go
+import plotly.graph_objects as go
+from pvsite_datamodel.read.user import get_user_by_email
+from pvsite_datamodel.read.site import get_sites_from_user
+import streamlit as st
 
 from datetime import datetime
 
@@ -75,3 +78,38 @@ def make_api_frequency_requests_plot(
     )
     fig.update_yaxes(visible=False)
     return fig
+
+def make_sites_over_time_plot(session, email):
+    """
+    Create a line chart showing the cumulative number of sites forecasted for a user over time.
+    
+    Args:
+        session: SQLAlchemy session object.
+        email (str): Email of the user.
+    
+    Returns:
+        plotly.graph_objects.Figure: The line chart figure.
+    """
+    # Get user and their sites
+    user = get_user_by_email(session=session, email=email)
+    sites = get_sites_from_user(session=session, user=user)
+    
+    # Convert sites to a DataFrame
+    sites_df = pd.DataFrame([site.__dict__ for site in sites], columns=["created_utc"])
+    sites_df['created_utc'] = pd.to_datetime(sites_df['created_utc'])
+    
+    # Group by month and calculate cumulative counts
+    monthly_cumulative = sites_df.groupby(pd.Grouper(key='created_utc', freq='ME')).size().cumsum()
+
+    # Create the line graph
+    fig = go.Figure(
+        data=go.Scatter(x=monthly_cumulative.index, y=monthly_cumulative, mode='lines+markers', name="Sites"),
+        layout=dict(
+            title=f'Increase in Number of Sites Over Time for {email}',
+            xaxis_title="Date",
+            yaxis_title="Cumulative Number of Sites",
+            showlegend=True
+        )
+    )
+
+    return fig  
