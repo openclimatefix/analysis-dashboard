@@ -102,12 +102,22 @@ def satellite_forecast_page():
         unsafe_allow_html=True,
     )
 
-    sat_zarr_path = "s3://nowcasting-sat-development/data/latest/latest_15.zarr.zip"
+    sat_5_zarr_path = "s3://nowcasting-sat-development/data/latest/latest.zarr.zip"
+    sat_15_zarr_path = "s3://nowcasting-sat-development/data/latest/latest_15.zarr.zip"
     sat_forecast_zarr_path = "s3://nowcasting-sat-development/cloudcasting_forecast/latest.zarr"
 
     # Open the sat and the sat forecast zarrs
-    da_sat = get_dataset(sat_zarr_path).data
+    da_sat_5 = get_dataset(sat_5_zarr_path).data
+    da_sat_15 = get_dataset(sat_15_zarr_path).data
     da_sat_forecast = get_dataset(sat_forecast_zarr_path).sat_pred
+
+    # Select the most recent satellite data
+    da_sat = da_sat_5 if (da_sat_5.time.max() > da_sat_15.time.max()) else da_sat_15
+    # Filter to 15 minutely timestamps regardless of the source
+    da_sat = da_sat.sel(time=(da_sat.time.dt.minute%15 == 0))
+    # Filter to last hour before the forecast
+    t0 = pd.Timestamp(da_sat_forecast.init_time.item())
+    da_sat = da_sat.sel(time=slice(t0 - pd.Timedelta("1h"), t0))
     
     # Scale the satellite data
     da_sat = da_sat / 1023
