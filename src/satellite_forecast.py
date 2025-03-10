@@ -81,17 +81,17 @@ def get_dataset(zarr_file: str) -> xr.Dataset:
             fs = fsspec.open(hash_filename).fs
             fs.rm(hash_filename, recursive=True)
 
-    # Download the file if needed
+    # Download the file if needed and if available
     if not os.path.exists(hash_filename):
         fs = fsspec.open(zarr_file).fs
-        fs.get(zarr_file, hash_filename, recursive=True)
+        if fs.exists(zarr_file):
+            fs.get(zarr_file, hash_filename, recursive=True)
 
-    ds = xr.open_dataset(hash_filename, engine="zarr")
-    
-    # Rename the variable dimension to channel
-    ds = ds.rename({"variable": "channel"})
-
-    return ds
+    if os.path.exists(hash_filename):
+        ds = xr.open_dataset(hash_filename, engine="zarr")
+        return ds.rename({"variable": "channel"})
+    else:
+        return None
 
 
 def satellite_forecast_page():
@@ -107,12 +107,24 @@ def satellite_forecast_page():
     sat_forecast_zarr_path = "s3://nowcasting-sat-development/cloudcasting_forecast/latest.zarr"
 
     # Open the sat and the sat forecast zarrs
-    da_sat_5 = get_dataset(sat_5_zarr_path).data
-    da_sat_15 = get_dataset(sat_15_zarr_path).data
-    da_sat_forecast = get_dataset(sat_forecast_zarr_path).sat_pred
+    da_sat_5 = get_dataset(sat_5_zarr_path)
+    da_sat_15 = get_dataset(sat_15_zarr_path)
+    da_sat_forecast = get_dataset(sat_forecast_zarr_path)
 
-    # Select the most recent satellite data
-    da_sat = da_sat_5 if (da_sat_5.time.max() > da_sat_15.time.max()) else da_sat_15
+    if da_sat_forecast is None:
+        raise ValueError("Could not load the satellite forecast")
+    
+    if da_sat_5 is None and da_sat_15 is None:
+        raise ValueError("Could not load either 5- or 15-minutely satellite data")
+    
+    # Select the most recent available satellite data
+    if da_sat_5 is not None:
+        da_sat = da_sat_5
+    elif da_sat_15 is not None:
+        da_sat = da_sat_15
+    else:
+        da_sat = da_sat_5 if (da_sat_5.time.max() > da_sat_15.time.max()) else da_sat_15
+    
     # Filter to 15 minutely timestamps regardless of the source
     da_sat = da_sat.sel(time=(da_sat.time.dt.minute%15 == 0))
     # Filter to last hour before the forecast
@@ -157,11 +169,11 @@ def satellite_forecast_page():
     data = []
     titles = []
     for i, time in enumerate(pd.to_datetime(da_sat.time.values)):
-        data.append(da_sat.sel(time=time).values)
+        data.append(da_sat.data.sel(time=time).values)
         titles.append("Real: " + time.strftime("%Y-%m-%d %H:%M"))
 
     for i, time in enumerate(forecast_valid_times):
-        data.append(da_sat_forecast.isel(step=i).values)
+        data.append(da_sat_forecast.sat_pred.isel(step=i).values)
         titles.append("Forecast: " + time.strftime("%Y-%m-%d %H:%M"))
         
     # Make the plotly figure
