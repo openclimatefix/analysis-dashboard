@@ -1,7 +1,7 @@
 altair==5.5.0
 requests==2.32.3
 nowcasting_datamodel==1.5.56
-pvsite-datamodel>=1.0.52
+pvsite-datamodel==1.0.53
 numpy==2.0.0
 pandas==2.2.3
 plotly==5.24.1
