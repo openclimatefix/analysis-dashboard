@@ -153,6 +153,13 @@ def nwp_page():
             xaxis_title = "x_osgb"
             yaxis_title = "y_osgb"
 
+        if "um-ukv" in d_one_channel_one_step.variables:
+            values = d_one_channel_one_step["um-ukv"]
+            x = d_one_channel_one_step.x_laea.values
+            y = d_one_channel_one_step.y_laea.values
+            xaxis_title = "x_laea"
+            yaxis_title = "y_laea"
+
         # reduce dimensions
         if len(values.shape) == 3:
             values = values[0, :, :].values
