@@ -136,15 +136,6 @@ def nwp_page():
         ]
 
         values = d_one_channel_one_step
-        x = d_one_channel_one_step.longitude.values
-        y = d_one_channel_one_step.latitude.values
-        xaxis_title = "Longitude"
-        yaxis_title = "Latitude"
-        for ds in lat_lon_datasets:
-            if ds in d_one_channel_one_step.variables:
-                values = d_one_channel_one_step[ds]
-            elif ds.lower() in d_one_channel_one_step.variables:
-                values = d_one_channel_one_step[ds.lower()]
 
         if "UKV" in d_one_channel_one_step.variables:
             values = d_one_channel_one_step["UKV"]
@@ -153,12 +144,23 @@ def nwp_page():
             xaxis_title = "x_osgb"
             yaxis_title = "y_osgb"
 
-        if "um-ukv" in d_one_channel_one_step.variables:
+        elif "um-ukv" in d_one_channel_one_step.variables:
             values = d_one_channel_one_step["um-ukv"]
             x = d_one_channel_one_step.x_laea.values
             y = d_one_channel_one_step.y_laea.values
             xaxis_title = "x_laea"
             yaxis_title = "y_laea"
+
+        else:
+            x = d_one_channel_one_step.longitude.values
+            y = d_one_channel_one_step.latitude.values
+            xaxis_title = "Longitude"
+            yaxis_title = "Latitude"
+            for ds in lat_lon_datasets:
+                if ds in d_one_channel_one_step.variables:
+                    values = d_one_channel_one_step[ds]
+                elif ds.lower() in d_one_channel_one_step.variables:
+                    values = d_one_channel_one_step[ds.lower()]
 
         # reduce dimensions
         if len(values.shape) == 3:
