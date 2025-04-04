@@ -424,7 +424,7 @@ def pvsite_forecast_page():
                 penalties, total_penalty = calculate_penalty(
                     df, str(region), str(asset_type), capacity_kw
                 )
-                one_metric_data["total_penalty [INR]"] = total_penalty
+                one_metric_data["total_penalty [INR]"] = int(total_penalty)
 
             metrics.append(one_metric_data)
 
