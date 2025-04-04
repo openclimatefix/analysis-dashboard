@@ -68,7 +68,7 @@ def calculate_penalty(df, region, asset_type, capacity_kw):
     bands = penalty_bands.get((region, asset_type.lower()), default_bands)
 
     # Calculate deviation and deviation percentage
-    deviation = df["generation_power_kw"] - df["forecast_power_kw"]
+    deviation = df["forecast_power_kw"] - df["generation_power_kw"]
     deviation_percentage = (deviation / capacity_kw) * 100
 
     # Initialize penalty column
@@ -76,10 +76,10 @@ def calculate_penalty(df, region, asset_type, capacity_kw):
 
     # Apply penalty calculation for each band
     for lower, upper, rate in bands:
-        mask = (deviation_percentage >= lower) if lower is not None else True
-        if upper is not None:
-            mask &= deviation_percentage < upper
-        penalty[mask] += abs(deviation[mask]) * rate
+
+        mask = (abs(deviation_percentage) >= lower)
+        penalty_band = (abs(deviation_percentage[mask]).clip(upper=upper) - lower)/100 * rate * capacity_kw
+        penalty[mask] += penalty_band
 
     # Calculate total penalty
     total_penalty = penalty.sum()
@@ -424,7 +424,7 @@ def pvsite_forecast_page():
                 penalties, total_penalty = calculate_penalty(
                     df, str(region), str(asset_type), capacity_kw
                 )
-                one_metric_data["total_penalty [INR]"] = total_penalty
+                one_metric_data["total_penalty [INR]"] = int(total_penalty)
 
             metrics.append(one_metric_data)
 
