@@ -115,7 +115,7 @@ def user_page():
         st.plotly_chart(fig, theme="streamlit")
 
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=60*5) # 5 mins
 def get_last_request_by_user(_connection, national_or_sites:str):
     """Get the last request by user
 
