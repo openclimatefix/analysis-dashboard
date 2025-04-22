@@ -471,13 +471,13 @@ def pvsite_forecast_page():
             # Absolute error = |error|
             error_df["abs_error_kw"] = error_df["error_kw"].abs()
             
-            # NMAE (% of mean generation)
+            # NAE (% of mean generation)
             error_df["nmae_mean"] = error_df["abs_error_kw"] / mean_generation * 100 if mean_generation > 0 else np.nan
             
-            # NMAE (% of capacity)
+            # NAE (% of capacity)
             error_df["nmae_capacity"] = error_df["abs_error_kw"] / capacity * 100 if capacity > 0 else np.nan
             
-            # NMAE (% of live generation)
+            # NAE (% of live generation)
             gen = df["generation_power_kw"].clip(0.1)  # Avoid division by zero
             error_df["nmae_live_gen"] = error_df["abs_error_kw"] / gen * 100
             
@@ -510,13 +510,13 @@ def pvsite_forecast_page():
                 )
             
             fig_mae.update_layout(
-                title="MAE Over Time (Rolling Average)",
+                title="Absolute error over time (rolling average)",
                 xaxis_title=f"Time [{timezone_selected}]",
                 yaxis_title="MAE (kW)"
             )
             st.plotly_chart(fig_mae, theme="streamlit")
             
-            # 3. NMAE Mean Plot (corresponds to nmae_mean [%] in metrics table)
+            # 3. NAE Mean Plot (corresponds to nae_mean [%] in metrics table)
             fig_nmae_mean = go.Figure()
             for model_name, error_df in error_dfs.items():
                 # Use rolling window to smooth the visualization
@@ -533,9 +533,9 @@ def pvsite_forecast_page():
                 )
             
             fig_nmae_mean.update_layout(
-                title="NMAE Mean Over Time (% of Mean Generation)",
+                title="NAE Mean Over Time (% of Mean Generation)",
                 xaxis_title=f"Time [{timezone_selected}]",
-                yaxis_title="NMAE Mean (%)"
+                yaxis_title="NAE Mean (%)"
             )
             st.plotly_chart(fig_nmae_mean, theme="streamlit")
             
@@ -556,9 +556,9 @@ def pvsite_forecast_page():
                 )
             
             fig_nmae_cap.update_layout(
-                title="NMAE Capacity Over Time (% of Capacity)",
+                title="NAE Capacity Over Time (% of Capacity)",
                 xaxis_title=f"Time [{timezone_selected}]",
-                yaxis_title="NMAE Capacity (%)"
+                yaxis_title="NAE Capacity (%)"
             )
             st.plotly_chart(fig_nmae_cap, theme="streamlit")
             
@@ -579,9 +579,9 @@ def pvsite_forecast_page():
                 )
             
             fig_nmae_live.update_layout(
-                title="NMAE Live Gen Over Time (% of Live Generation)",
+                title="NAE Live Gen Over Time (% of Live Generation)",
                 xaxis_title=f"Time [{timezone_selected}]",
-                yaxis_title="NMAE Live Gen (%)"
+                yaxis_title="NAE Live Gen (%)"
             )
             st.plotly_chart(fig_nmae_live, theme="streamlit")
             
