@@ -451,6 +451,165 @@ def pvsite_forecast_page():
         st.caption(f"NMAE_live_gen is calculated by current generation (kw)")
         st.caption(f"NMAE_capacity is calculated by generation capacity (mw)")
 
+        # Add error metrics visualization
+        st.subheader("Error Metrics Visualization")
+        
+        # Create time series of error metrics for each model
+        error_dfs = {}
+        for model in ml_models:
+            name = model.name
+            forecast_column = f"forecast_power_kw_{name}"
+            
+            # Skip if forecast column doesn't exist
+            if forecast_column not in df.columns:
+                continue
+            
+            # Create time series of errors
+            error_df = pd.DataFrame(index=df.index)
+            # Error = generation - forecast
+            error_df["error_kw"] = df["generation_power_kw"] - df[forecast_column]
+            # Absolute error = |error|
+            error_df["abs_error_kw"] = error_df["error_kw"].abs()
+            
+            # NMAE (% of mean generation)
+            error_df["nmae_mean"] = error_df["abs_error_kw"] / mean_generation * 100 if mean_generation > 0 else np.nan
+            
+            # NMAE (% of capacity)
+            error_df["nmae_capacity"] = error_df["abs_error_kw"] / capacity * 100 if capacity > 0 else np.nan
+            
+            # NMAE (% of live generation)
+            gen = df["generation_power_kw"].clip(0.1)  # Avoid division by zero
+            error_df["nmae_live_gen"] = error_df["abs_error_kw"] / gen * 100
+            
+            # If in India, add penalties
+            if country == "india":
+                # Calculate penalty for this specific model
+                df_copy = df.copy()
+                df_copy["forecast_power_kw"] = df_copy[forecast_column]
+                penalties, _ = calculate_penalty(df_copy, str(region), str(asset_type), capacity_kw)
+                error_df["penalty"] = penalties
+            
+            error_dfs[name] = error_df
+        
+        # Create visualizations
+        if error_dfs:
+            # 1. MAE Plot (corresponds to mae_kw in metrics table)
+            fig_mae = go.Figure()
+            for model_name, error_df in error_dfs.items():
+                # Use rolling window to smooth the visualization
+                window_size = 4  # Adjust based on data density
+                rolling_mae = error_df["abs_error_kw"].rolling(window=window_size).mean()
+                
+                fig_mae.add_trace(
+                    go.Scatter(
+                        x=error_df.index,
+                        y=rolling_mae,
+                        mode="lines",
+                        name=f"{model_name}"
+                    )
+                )
+            
+            fig_mae.update_layout(
+                title="MAE Over Time (Rolling Average)",
+                xaxis_title=f"Time [{timezone_selected}]",
+                yaxis_title="MAE (kW)"
+            )
+            st.plotly_chart(fig_mae, theme="streamlit")
+            
+            # 3. NMAE Mean Plot (corresponds to nmae_mean [%] in metrics table)
+            fig_nmae_mean = go.Figure()
+            for model_name, error_df in error_dfs.items():
+                # Use rolling window to smooth the visualization
+                window_size = 4  # Adjust based on data density
+                rolling_nmae = error_df["nmae_mean"].rolling(window=window_size).mean()
+                
+                fig_nmae_mean.add_trace(
+                    go.Scatter(
+                        x=error_df.index,
+                        y=rolling_nmae,
+                        mode="lines",
+                        name=f"{model_name}"
+                    )
+                )
+            
+            fig_nmae_mean.update_layout(
+                title="NMAE Mean Over Time (% of Mean Generation)",
+                xaxis_title=f"Time [{timezone_selected}]",
+                yaxis_title="NMAE Mean (%)"
+            )
+            st.plotly_chart(fig_nmae_mean, theme="streamlit")
+            
+            # 4. NMAE Capacity Plot (corresponds to nmae_capacity [%] in metrics table)
+            fig_nmae_cap = go.Figure()
+            for model_name, error_df in error_dfs.items():
+                # Use rolling window to smooth the visualization
+                window_size = 4  # Adjust based on data density
+                rolling_nmae_cap = error_df["nmae_capacity"].rolling(window=window_size).mean()
+                
+                fig_nmae_cap.add_trace(
+                    go.Scatter(
+                        x=error_df.index,
+                        y=rolling_nmae_cap,
+                        mode="lines",
+                        name=f"{model_name}"
+                    )
+                )
+            
+            fig_nmae_cap.update_layout(
+                title="NMAE Capacity Over Time (% of Capacity)",
+                xaxis_title=f"Time [{timezone_selected}]",
+                yaxis_title="NMAE Capacity (%)"
+            )
+            st.plotly_chart(fig_nmae_cap, theme="streamlit")
+            
+            # 5. NMAE Live Gen Plot (corresponds to nmae_live_gen [%] in metrics table)
+            fig_nmae_live = go.Figure()
+            for model_name, error_df in error_dfs.items():
+                # Use rolling window to smooth the visualization
+                window_size = 4  # Adjust based on data density
+                rolling_nmae_live = error_df["nmae_live_gen"].rolling(window=window_size).mean()
+                
+                fig_nmae_live.add_trace(
+                    go.Scatter(
+                        x=error_df.index,
+                        y=rolling_nmae_live,
+                        mode="lines",
+                        name=f"{model_name}"
+                    )
+                )
+            
+            fig_nmae_live.update_layout(
+                title="NMAE Live Gen Over Time (% of Live Generation)",
+                xaxis_title=f"Time [{timezone_selected}]",
+                yaxis_title="NMAE Live Gen (%)"
+            )
+            st.plotly_chart(fig_nmae_live, theme="streamlit")
+            
+            # 6. Penalty Plot (for India only)
+            if country == "india" and any("penalty" in df.columns for df in error_dfs.values()):
+                fig_penalty = go.Figure()
+                for model_name, error_df in error_dfs.items():
+                    if "penalty" in error_df.columns:
+                        # Use rolling window to smooth the visualization
+                        window_size = 4  # Adjust based on data density
+                        rolling_penalty = error_df["penalty"].rolling(window=window_size).mean()
+                        
+                        fig_penalty.add_trace(
+                            go.Scatter(
+                                x=error_df.index,
+                                y=rolling_penalty,
+                                mode="lines",
+                                name=f"{model_name}"
+                            )
+                        )
+                
+                fig_penalty.update_layout(
+                    title="Penalty Over Time",
+                    xaxis_title=f"Time [{timezone_selected}]",
+                    yaxis_title="Penalty (INR)"
+                )
+                st.plotly_chart(fig_penalty, theme="streamlit")
+
     # CSV download button
     st.download_button(
         label="Download data as CSV",
