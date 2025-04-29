@@ -512,7 +512,7 @@ def pvsite_forecast_page():
             fig_mae.update_layout(
                 title="Absolute error over time (rolling average)",
                 xaxis_title=f"Time [{timezone_selected}]",
-                yaxis_title="MAE (kW)"
+                yaxis_title="ME (kW)"
             )
             st.plotly_chart(fig_mae, theme="streamlit")
             
@@ -535,7 +535,7 @@ def pvsite_forecast_page():
             fig_nmae_mean.update_layout(
                 title="Normalised Absolute Error over time (% of Mean Generation)",
                 xaxis_title=f"Time [{timezone_selected}]",
-                yaxis_title="NAE Mean (%)"
+                yaxis_title="Normalised Absolute Error Mean (%)"
             )
             st.plotly_chart(fig_nmae_mean, theme="streamlit")
             
@@ -579,7 +579,7 @@ def pvsite_forecast_page():
                 )
             
             fig_nmae_live.update_layout(
-                title="NAE Live Gen Over Time (% of Live Generation)",
+                title="Normalised Absolute Error Live Gen Over Time (% of Live Generation)",
                 xaxis_title=f"Time [{timezone_selected}]",
                 yaxis_title="Normalised Absolute Error over time Live Gen (%)"
             )
