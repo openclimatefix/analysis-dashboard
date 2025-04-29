@@ -533,7 +533,7 @@ def pvsite_forecast_page():
                 )
             
             fig_nmae_mean.update_layout(
-                title="NAE Mean Over Time (% of Mean Generation)",
+                title="Normalised Absolute Error over time (% of Mean Generation)",
                 xaxis_title=f"Time [{timezone_selected}]",
                 yaxis_title="NAE Mean (%)"
             )
@@ -556,9 +556,9 @@ def pvsite_forecast_page():
                 )
             
             fig_nmae_cap.update_layout(
-                title="NAE Capacity Over Time (% of Capacity)",
+                title="NNormalised Absolute Error over timeAE Capacity Over Time (% of Capacity)",
                 xaxis_title=f"Time [{timezone_selected}]",
-                yaxis_title="NAE Capacity (%)"
+                yaxis_title="Normalised Absolute Error over time Capacity (%)"
             )
             st.plotly_chart(fig_nmae_cap, theme="streamlit")
             
@@ -581,7 +581,7 @@ def pvsite_forecast_page():
             fig_nmae_live.update_layout(
                 title="NAE Live Gen Over Time (% of Live Generation)",
                 xaxis_title=f"Time [{timezone_selected}]",
-                yaxis_title="NAE Live Gen (%)"
+                yaxis_title="Normalised Absolute Error over time Live Gen (%)"
             )
             st.plotly_chart(fig_nmae_live, theme="streamlit")
             
