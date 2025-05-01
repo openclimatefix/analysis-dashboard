@@ -130,6 +130,7 @@ def nwp_page():
             "ECMWF_UK",
             "HRES-IFS_uk",
             "HRES-IFS_india",
+            "HRES-IFS_nl",
             "UM-Global",
             "UM-Global_india",
             'NCEP-GFS',
