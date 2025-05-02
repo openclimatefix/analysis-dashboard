@@ -556,7 +556,7 @@ def pvsite_forecast_page():
                 )
             
             fig_nmae_cap.update_layout(
-                title="NNormalised Absolute Error over timeAE Capacity Over Time (% of Capacity)",
+                title="Normalised Absolute Error over time Capacity Over Time (% of Capacity)",
                 xaxis_title=f"Time [{timezone_selected}]",
                 yaxis_title="Normalised Absolute Error over time Capacity (%)"
             )
