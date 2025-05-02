@@ -21,3 +21,4 @@ zarr==2.18.4
 elexonpy==1.0.15
 fiona==1.10.1
 herbie-data
+numcodecs==0.15.1
