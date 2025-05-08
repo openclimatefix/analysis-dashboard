@@ -373,6 +373,7 @@ def pvsite_forecast_page():
     # download data,
     @st.cache_data
     def convert_df(df: pd.DataFrame):
+        # IMPORTANT: Cache the conversion to prevent computation on every rerun
         return df.to_csv().encode("utf-8")
 
     # join data together
@@ -450,6 +451,14 @@ def pvsite_forecast_page():
         st.caption(f"NMAE_mean is calculated by MAE / (mean generation)")
         st.caption(f"NMAE_live_gen is calculated by current generation (kw)")
         st.caption(f"NMAE_capacity is calculated by generation capacity (mw)")
+
+    # CSV download button
+    st.download_button(
+        label="Download data as CSV",
+        data=csv,
+        file_name=f"site_forecast_{site_selection_uuid}_{now}.csv",
+        mime="text/csv",
+    )
 
     # Add error metrics visualization - daily averages for selected time frame
     st.subheader("Daily Average Error Metrics")
