@@ -97,6 +97,7 @@ def pvsite_forecast_page():
     )
     # get site_uuids from database
     url = os.environ["SITES_DB_URL"]
+
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         sites = get_all_sites(session=session)
@@ -459,8 +460,230 @@ def pvsite_forecast_page():
         mime="text/csv",
     )
 
+    # Add error metrics visualization - daily averages for selected time frame
+    st.subheader("Daily Average Error Metrics")
 
-def get_site_capacity(session: Session, site_uuidss: str) -> float:
-    site = get_site_by_uuid(session, site_uuidss)
-    capacity_kw = site.capacity_kw
-    return capacity_kw
+    # Check if resampling is applied - if not, show a clear message
+    if resample is None:
+        st.warning("Please select a resample option (e.g., '15T') in the sidebar to view error metrics. Without resampling, error metrics cannot be calculated properly.")
+    else:
+        # Create time series of error metrics for each model
+        error_dfs = {}
+        for model in ml_models:
+            name = model.name
+            forecast_column = f"forecast_power_kw_{name}"
+            
+            # Skip if forecast column doesn't exist or name is None
+            if forecast_column not in df.columns or name is None:
+                continue
+            
+            # Calculate model-specific metrics - these are used within this loop iteration
+            model_mean_generation = df["generation_power_kw"].mean()
+            
+            # Create time series of errors
+            error_df = pd.DataFrame(index=df.index)
+            # Create date column for daily aggregation
+            error_df["date"] = error_df.index.date
+            
+            # Error = generation - forecast
+            error_df["error_kw"] = df["generation_power_kw"] - df[forecast_column]
+            # Absolute error = |error|
+            error_df["abs_error_kw"] = error_df["error_kw"].abs()
+            
+            # NMAE (% of mean generation) - use model_mean_generation calculated above
+            if model_mean_generation > 0:
+                error_df["nmae_mean"] = error_df["abs_error_kw"] / model_mean_generation * 100
+            else:
+                error_df["nmae_mean"] = np.nan
+            
+            # NMAE (% of capacity)
+            if capacity > 0:
+                error_df["nmae_capacity"] = error_df["abs_error_kw"] / capacity * 100
+            else:
+                error_df["nmae_capacity"] = np.nan
+            
+            # NMAE (% of live generation)
+            gen = df["generation_power_kw"].clip(0.1)  # Avoid division by zero
+            error_df["nmae_live_gen"] = error_df["abs_error_kw"] / gen * 100
+            
+            # If in India, add penalties
+            if country == "india":
+                # Calculate penalty for this specific model
+                df_copy = df.copy()
+                df_copy["forecast_power_kw"] = df_copy[forecast_column]
+                penalties, _ = calculate_penalty(df_copy, str(region), str(asset_type), capacity_kw)
+                error_df["penalty"] = penalties
+            
+            # Group by date and calculate daily averages
+            daily_error = error_df.groupby("date").mean()
+            
+            # Store the daily errors for this model
+            error_dfs[name] = daily_error
+
+        # Create visualizations - only if we have valid data
+        if error_dfs:
+            # 1. Daily MAE Plot (corresponds to mae_kw in metrics table)
+            fig_mae = go.Figure()
+            for model_name, error_df in error_dfs.items():
+                # Check if the model name and data are valid
+                if model_name is not None and not error_df.empty:
+                    fig_mae.add_trace(
+                        go.Scatter(
+                            x=error_df.index,
+                            y=error_df["abs_error_kw"],
+                            mode="lines+markers",
+                            name=f"{model_name}",
+                            marker=dict(size=8)
+                        )
+                    )
+            
+            # Only show chart if we added traces
+            if len(fig_mae.data) > 0:
+                fig_mae.update_layout(
+                    title="Daily Average MAE",
+                    xaxis_title="Date",
+                    yaxis_title="MAE (kW)"
+                )
+                st.plotly_chart(fig_mae, theme="streamlit")
+            
+            # 2. Daily ME Plot (corresponds to me_kw in metrics table)
+            fig_me = go.Figure()
+            for model_name, error_df in error_dfs.items():
+                if model_name is not None and not error_df.empty:
+                    fig_me.add_trace(
+                        go.Scatter(
+                            x=error_df.index,
+                            y=error_df["error_kw"],
+                            mode="lines+markers",
+                            name=f"{model_name}",
+                            marker=dict(size=8)
+                        )
+                    )
+            
+            if len(fig_me.data) > 0:
+                fig_me.update_layout(
+                    title="Daily Average ME (+ means overforecast, - means underforecast)",
+                    xaxis_title="Date",
+                    yaxis_title="ME (kW)"
+                )
+                st.plotly_chart(fig_me, theme="streamlit")
+            
+            # 3. Daily NMAE Mean Plot (corresponds to nmae_mean [%] in metrics table)
+            fig_nmae_mean = go.Figure()
+            for model_name, error_df in error_dfs.items():
+                if model_name is not None and not error_df.empty and "nmae_mean" in error_df.columns:
+                    fig_nmae_mean.add_trace(
+                        go.Scatter(
+                            x=error_df.index,
+                            y=error_df["nmae_mean"],
+                            mode="lines+markers",
+                            name=f"{model_name}",
+                            marker=dict(size=8)
+                        )
+                    )
+            
+            if len(fig_nmae_mean.data) > 0:
+                fig_nmae_mean.update_layout(
+                    title="Daily Average NMAE (% of Mean Generation)",
+                    xaxis_title="Date",
+                    yaxis_title="NMAE Mean (%)"
+                )
+                st.plotly_chart(fig_nmae_mean, theme="streamlit")
+            
+            # 4. Daily NMAE Capacity Plot (corresponds to nmae_capacity [%] in metrics table)
+            fig_nmae_cap = go.Figure()
+            for model_name, error_df in error_dfs.items():
+                if model_name is not None and not error_df.empty and "nmae_capacity" in error_df.columns:
+                    fig_nmae_cap.add_trace(
+                        go.Scatter(
+                            x=error_df.index,
+                            y=error_df["nmae_capacity"],
+                            mode="lines+markers",
+                            name=f"{model_name}",
+                            marker=dict(size=8)
+                        )
+                    )
+            
+            if len(fig_nmae_cap.data) > 0:
+                fig_nmae_cap.update_layout(
+                    title="Daily Average NMAE (% of Capacity)",
+                    xaxis_title="Date",
+                    yaxis_title="NMAE Capacity (%)"
+                )
+                st.plotly_chart(fig_nmae_cap, theme="streamlit")
+            
+            # 5. Daily NMAE Live Gen Plot (corresponds to nmae_live_gen [%] in metrics table)
+            fig_nmae_live = go.Figure()
+            for model_name, error_df in error_dfs.items():
+                if model_name is not None and not error_df.empty and "nmae_live_gen" in error_df.columns:
+                    fig_nmae_live.add_trace(
+                        go.Scatter(
+                            x=error_df.index,
+                            y=error_df["nmae_live_gen"],
+                            mode="lines+markers",
+                            name=f"{model_name}",
+                            marker=dict(size=8)
+                        )
+                    )
+            
+            if len(fig_nmae_live.data) > 0:
+                fig_nmae_live.update_layout(
+                    title="Daily Average NMAE (% of Live Generation)",
+                    xaxis_title="Date",
+                    yaxis_title="NMAE Live Gen (%)"
+                )
+                st.plotly_chart(fig_nmae_live, theme="streamlit")
+            
+            # 6. Daily Penalty Plot (for India only)
+            if country == "india":
+                fig_penalty = go.Figure()
+                has_penalty_data = False
+                
+                for model_name, error_df in error_dfs.items():
+                    if model_name is not None and not error_df.empty and "penalty" in error_df.columns:
+                        has_penalty_data = True
+                        fig_penalty.add_trace(
+                            go.Scatter(
+                                x=error_df.index,
+                                y=error_df["penalty"],
+                                mode="lines+markers",
+                                name=f"{model_name}",
+                                marker=dict(size=8)
+                            )
+                        )
+                
+                if has_penalty_data:
+                    fig_penalty.update_layout(
+                        title="Daily Average Penalty",
+                        xaxis_title="Date",
+                        yaxis_title="Penalty (INR)"
+                    )
+                    st.plotly_chart(fig_penalty, theme="streamlit")
+            
+            # Option to download daily error metrics
+            daily_metrics_combined = pd.DataFrame()
+            
+            for model_name, error_df in error_dfs.items():
+                if model_name is not None and not error_df.empty:
+                    model_daily = error_df.copy()
+                    # Rename columns to include model name
+                    renamed_cols = {col: f"{col}_{model_name}" for col in model_daily.columns 
+                                if col != 'date'}
+                    model_daily = model_daily.rename(columns=renamed_cols)
+                    
+                    if daily_metrics_combined.empty:
+                        daily_metrics_combined = model_daily
+                    else:
+                        daily_metrics_combined = daily_metrics_combined.join(model_daily, how='outer')
+            
+            if not daily_metrics_combined.empty:
+                daily_csv = convert_df(daily_metrics_combined.reset_index())
+                
+                st.download_button(
+                    label="Download daily error metrics as CSV",
+                    data=daily_csv,
+                    file_name=f"daily_error_metrics_{site_selection_uuid}_{now}.csv",
+                    mime="text/csv",
+                )
+        else:
+            st.info("No valid data available for error metrics visualization. Please check if your selected time range contains both forecast and generation data.")
