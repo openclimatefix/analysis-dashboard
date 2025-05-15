@@ -14,6 +14,7 @@ all_nwps = {
     "uk": {
         "UKV": f"s3://nowcasting-nwp-{environment}/data-metoffice/latest.zarr",
         "ECMWF": f"s3://nowcasting-nwp-{environment}/ecmwf/data/latest.zarr",
+        "ECMWF-NL": f"s3://nowcasting-nwp-{environment}/ecmwf-nl/data/latest.zarr",
     },
     "india": {
         "ECMWF": f"s3://india-nwp-{environment}/ecmwf/data/latest.zarr",
@@ -102,7 +103,7 @@ def nwp_page():
         channels = st.sidebar.selectbox("Channels", list(ds.variable.values), 0)
     else:
         channels = st.sidebar.multiselect(
-            "Channels", list(ds.variable.values), list(ds.variable.values)[0]
+            "Channels", list(ds.variable.values), list(ds.variable.values)[0:2]
         )
 
     d_one_channel = ds.sel(variable=channels)
@@ -195,12 +196,13 @@ def nwp_page():
         st.plotly_chart(fig, theme="streamlit", height=2000)
 
     else:
-        if "UKV" in d_one_channel.variables:
-            xaxis_title = "x"
-            yaxis_title = "y"
+        if "um-ukv" in d_one_channel.variables:
+            xaxis_title = "x_laea"
+            yaxis_title = "y_laea"
         else:
             xaxis_title = "longitude"
             yaxis_title = "latitude"
+        variable_name = list(d_one_channel.data_vars)[0]
 
         # reduce by lat lon
         x = f"{d_one_channel.__getitem__(xaxis_title).min().values},{d_one_channel.__getitem__(xaxis_title).max().values}"
@@ -209,6 +211,8 @@ def nwp_page():
         y = st.text_input(f"{yaxis_title} Limits", y)
         x = x.split(",")
         y = y.split(",")
+
+        diff_flag = st.checkbox("Difference", value=False)
 
         # swap lat limits round if wrong way
         if (
@@ -229,12 +233,14 @@ def nwp_page():
 
         print("Creat time index")
         df["time"] = df["init_time"] + df["step"]
-        print(df)
         df = df[["time", "variable", variable_name]]
 
-        print("pivot on time")
-        df = df.pivot("time", columns="variable")
-        df.columns = [c[1] for c in df.columns]
+        print(f"pivot on time, variable and {variable_name}")
+        df = df.pivot(index="time", columns="variable", values=variable_name)
+
+        if diff_flag:
+            print("Calculating difference")
+            df = df.diff(axis=0)
 
         print("Making plot")
         fig = go.Figure()
