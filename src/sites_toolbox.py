@@ -160,10 +160,10 @@ def sites_toolbox_page():
         f'<h1 style="color:#ffd053;font-size:32px;">{"Remove Site from Site Group"}</h1>',
         unsafe_allow_html=True,
     )
-    site_group_name = st.selectbox("Select site group", site_groups)
+    site_group_name = st.selectbox("Select site group", site_groups, key="Select site group (remove site from siteg roup)")
     site_group = get_site_group_by_name(session=session, site_group_name=site_group_name)
-    sites_group_sites = [str(site.site_uuid) for site in site_group.sites]
-    site_uuid = st.selectbox("Select site", sites_group_sites, key="add")
+    sites_group_sites = sorted([str(site.site_uuid) for site in site_group.sites])
+    site_uuid = st.selectbox("Select site", sites_group_sites, key="remove")
     if st.button("Remove site from site group"):
         site_group_sites = remove_site_from_site_group(
             session=session, site_uuid=site_uuid, site_group_name=site_group_name
@@ -178,7 +178,7 @@ def sites_toolbox_page():
             "sites: ",
             site_group_sites,
         )
-        st.write("The following site groups does not include site", site_uuid, ":", site_site_groups)
+        st.write("The following site groups does not include site", site_uuid, ":", site_group_name)
         if st.button("Close details"):
             st.empty()
 
