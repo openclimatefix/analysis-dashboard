@@ -19,10 +19,9 @@ from pvsite_datamodel.write.user_and_site import (
     delete_user,
     delete_site_group,
     create_site_group,
-    remove_site_from_site_group,
 )
 
-from pvsite_datamodel.read.user import get_all_users, get_all_site_groups
+from pvsite_datamodel.read.user import get_all_users, get_all_site_groups, remove_site_from_site_group
 
 from site_toolbox.get_details import (
     get_user_details,
@@ -160,7 +159,7 @@ def sites_toolbox_page():
         f'<h1 style="color:#ffd053;font-size:32px;">{"Remove Site from Site Group"}</h1>',
         unsafe_allow_html=True,
     )
-    site_group_name = st.selectbox("Select site group", site_groups, key="Select site group (remove site from siteg roup)")
+    site_group_name = st.selectbox("Select site group", site_groups, key="Select site group (remove site from site group)")
     site_group = get_site_group_by_name(session=session, site_group_name=site_group_name)
     sites_group_sites = sorted([str(site.site_uuid) for site in site_group.sites])
     site_uuid = st.selectbox("Select site", sites_group_sites, key="remove")
