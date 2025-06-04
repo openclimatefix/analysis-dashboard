@@ -1,5 +1,6 @@
 """ Make pinball and exceedance plots."""
 from datetime import datetime
+import numpy as np
 import pandas as pd
 from typing import List
 
@@ -53,8 +54,7 @@ def make_pinball_or_exceedance_plot(
                 plevel=plevel,
             )
             metric_values = [MetricValue.from_orm(value) for value in metric_values]
-            average_value = sum(value.value for value in metric_values) / len(metric_values)
-
+            average_value = np.mean(value.value for value in metric_values)
             # format
             x_horizon = [value.datetime_interval.start_datetime_utc for value in metric_values]
             y_horizon = [round(float(value.value), 2) for value in metric_values]
