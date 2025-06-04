@@ -55,6 +55,8 @@ def make_pinball_or_exceedance_plot(
             )
             metric_values = [MetricValue.from_orm(value) for value in metric_values]
             average_value = np.mean([value.value for value in metric_values])
+            std_value = np.std([value.value for value in metric_values])
+            sem = std_value / np.sqrt(len(metric_values)) if len(metric_values) > 0 else 0
             # format
             x_horizon = [value.datetime_interval.start_datetime_utc for value in metric_values]
             y_horizon = [round(float(value.value), 2) for value in metric_values]
@@ -75,14 +77,32 @@ def make_pinball_or_exceedance_plot(
                 {
                     "plevel": f'p{plevel}',
                     "forecast_horizon": forecast_horizon,
-                    "average_value": average_value,
+                    "average": average_value,
+                    "std": std_value,
+                    "sem": sem,
                 }
             )
 
     average_values = pd.DataFrame(avergae_values)
 
     # pivot by plevel, to level the columns forecast_horizon, p10, p90
-    average_values = average_values.pivot(
-        index="forecast_horizon", columns="plevel", values="average_value"
+    mean_values = average_values.pivot(
+        index="forecast_horizon", columns="plevel", values="average"
     )
-    return fig, average_values
+    std_values = average_values.pivot(
+        index="forecast_horizon", columns="plevel", values="std"
+    )
+    sem_values = average_values.pivot(
+        index="forecast_horizon", columns="plevel", values="sem"
+    )
+
+    # add std and sem values
+    mean_values['p10_std'] = std_values['p10']
+    mean_values['p90_std'] = std_values['p90']
+    mean_values['p10_sem'] = sem_values['p10']
+    mean_values['p90_sem'] = sem_values['p90']
+
+    # rename p10 to p10_mean, p90 to p90_mean
+    mean_values.rename(columns={'p10': 'p10_mean', 'p90': 'p90_mean'}, inplace=True)
+
+    return fig, mean_values
