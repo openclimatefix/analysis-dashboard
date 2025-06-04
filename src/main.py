@@ -221,7 +221,7 @@ def metric_page():
     if model_is_probabilistic(model_name):
         with connection.get_session() as session:
             with st.expander("Pinball loss"):
-                fig7 = make_pinball_or_exceedance_plot(
+                fig7, values_df = make_pinball_or_exceedance_plot(
                     session=session,
                     model_name=model_name,
                     starttime=starttime,
@@ -230,8 +230,10 @@ def metric_page():
                     metric_name="Pinball loss",
                 )
                 st.plotly_chart(fig7, theme="streamlit")
+                st.write('Average values')
+                st.write(values_df)
             with st.expander("Exceedance"):
-                fig8 = make_pinball_or_exceedance_plot(
+                fig8, values_df = make_pinball_or_exceedance_plot(
                     session=session,
                     model_name=model_name,
                     starttime=starttime,
@@ -240,6 +242,8 @@ def metric_page():
                     metric_name="Exceedance",
                 )
                 st.plotly_chart(fig8, theme="streamlit")
+                st.write('Average values')
+                st.write(values_df)
 
     make_forecast_horizon_table(all_forecast_horizons_df, y_plive_mae)
 

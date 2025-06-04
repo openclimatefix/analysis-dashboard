@@ -1,5 +1,6 @@
 """ Make pinball and exceedance plots."""
 from datetime import datetime
+import pandas as pd
 from typing import List
 
 from sqlalchemy.orm import Session
@@ -37,6 +38,7 @@ def make_pinball_or_exceedance_plot(
         )
     )
 
+    avergae_values = []
     for plevel in [10, 90]:
         for i, forecast_horizon in enumerate(forecast_horizon_selection):
             # read database metric values
@@ -51,6 +53,7 @@ def make_pinball_or_exceedance_plot(
                 plevel=plevel,
             )
             metric_values = [MetricValue.from_orm(value) for value in metric_values]
+            average_value = sum(value.value for value in metric_values) / len(metric_values)
 
             # format
             x_horizon = [value.datetime_interval.start_datetime_utc for value in metric_values]
@@ -68,5 +71,18 @@ def make_pinball_or_exceedance_plot(
                     )
                 ]
             )
+            avergae_values.append(
+                {
+                    "plevel": f'p{plevel}',
+                    "forecast_horizon": forecast_horizon,
+                    "average_value": average_value,
+                }
+            )
 
-    return fig
+    average_values = pd.DataFrame(avergae_values)
+
+    # pivot by plevel, to level the columns forecast_horizon, p10, p90
+    average_values = average_values.pivot(
+        index="forecast_horizon", columns="plevel", values="average_value"
+    )
+    return fig, average_values
