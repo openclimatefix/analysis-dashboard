@@ -43,7 +43,7 @@ def user_page():
         "Start Date",
         min_value=datetime.today() - timedelta(days=365),
         max_value=datetime.today(),
-        value=datetime.today() - timedelta(days=31),
+        value=datetime.today() - timedelta(days=7),
     )
     end_time = st.sidebar.date_input(
         "End Date",
