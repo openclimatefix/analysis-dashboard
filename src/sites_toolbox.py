@@ -7,6 +7,8 @@ from pvsite_datamodel.read import (
     get_all_sites,
 )
 from pvsite_datamodel.read.model import get_models
+from pvsite_datamodel.read import get_site_group_by_name
+
 from pvsite_datamodel.sqlmodels import SiteAssetType
 
 from pvsite_datamodel.write.user_and_site import (
@@ -16,7 +18,8 @@ from pvsite_datamodel.write.user_and_site import (
     delete_site,
     delete_user,
     delete_site_group,
-    create_site_group
+    create_site_group,
+    remove_site_from_site_group,
 )
 
 from pvsite_datamodel.read.user import get_all_users, get_all_site_groups
@@ -35,7 +38,7 @@ from site_toolbox.site_group_management import (
     validate_email,
 )
 
-# colors 7bcdf3 
+# colors 7bcdf3
 # yellow ffd053
 
 # sites toolbox page
@@ -78,9 +81,7 @@ def sites_toolbox_page():
             user_site_count,
             "sites.",
         )
-        st.write(
-            "Here are the site_uuids and client_site_ids for this group:", user_sites
-        )
+        st.write("Here are the site_uuids and client_site_ids for this group:", user_sites)
         if st.button("Close user details"):
             st.empty()
 
@@ -151,9 +152,33 @@ def sites_toolbox_page():
             "sites: ",
             site_group_sites,
         )
-        st.write(
-            "The following site groups include site", site_uuid, ":", site_site_groups
+        st.write("The following site groups include site", site_uuid, ":", site_site_groups)
+        if st.button("Close details"):
+            st.empty()
+
+    st.markdown(
+        f'<h1 style="color:#ffd053;font-size:32px;">{"Remove Site from Site Group"}</h1>',
+        unsafe_allow_html=True,
+    )
+    site_group_name = st.selectbox("Select site group", site_groups, key="Select site group (remove site from site group)")
+    site_group = get_site_group_by_name(session=session, site_group_name=site_group_name)
+    sites_group_sites = sorted([str(site.site_uuid) for site in site_group.sites])
+    site_uuid = st.selectbox("Select site", sites_group_sites, key="remove")
+    if st.button("Remove site from site group"):
+        site_group_sites = remove_site_from_site_group(
+            session=session, site_uuid=site_uuid, site_group_name=site_group_name
         )
+        st.write(
+            "Site",
+            site_uuid,
+            "has been removed from",
+            site_group.site_group_name,
+            ", which has",
+            len(site_group_sites),
+            "sites: ",
+            site_group_sites,
+        )
+        st.write("The following site groups does not include site", site_uuid, ":", site_group_name)
         if st.button("Close details"):
             st.empty()
 
@@ -196,8 +221,9 @@ def sites_toolbox_page():
         ml_model_name = st.selectbox("Select the ml model", ml_model_names)
 
         if st.button("Assign ML Model to Site"):
-            assign_model_name_to_site(session=session, site_uuid=site_uuid, model_name=ml_model_name)
-
+            assign_model_name_to_site(
+                session=session, site_uuid=site_uuid, model_name=ml_model_name
+            )
 
     # create a new site
     st.markdown(
@@ -278,8 +304,7 @@ def sites_toolbox_page():
                         "client_site_id": str(site.client_site_id),
                         "client_site_name": str(site.client_site_name),
                         "site_group_names": [
-                            site_group.site_group_name
-                            for site_group in site.site_groups
+                            site_group.site_group_name for site_group in site.site_groups
                         ],
                         "latitude": str(site.latitude),
                         "longitude": str(site.longitude),
@@ -315,9 +340,7 @@ def sites_toolbox_page():
                 unsafe_allow_html=True,
             )
             email = st.text_input("User Email")
-            site_group_name = st.selectbox(
-                "Select a group", site_groups, key="site_group"
-            )
+            site_group_name = st.selectbox("Select a group", site_groups, key="site_group")
             email_validation = validate_email(email)
             # check that site group exists
             if st.button(f"Create new user"):
@@ -388,7 +411,7 @@ def sites_toolbox_page():
                 if st.button("Close details"):
                     st.empty()
 
-# delete site
+    # delete site
     st.markdown(
         f'<h1 style="color:#E63946;font-size:32px;">{"Delete Site"}</h1>',
         unsafe_allow_html=True,
@@ -404,7 +427,7 @@ def sites_toolbox_page():
             if st.button("Delete Site"):
                 message = delete_site(session=session, site_uuid=site_uuid)
                 st.write(message)
-    
+
     st.markdown(
         f'<h1 style="color:#E63946;font-size:32px;">{"Delete User"}</h1>',
         unsafe_allow_html=True,
@@ -421,7 +444,7 @@ def sites_toolbox_page():
                 message = delete_user(session=session, email=email)
                 st.write(message)
 
-# delete site group
+    # delete site group
     st.markdown(
         f'<h1 style="color:#E63946;font-size:32px;">{"Delete Site Group"}</h1>',
         unsafe_allow_html=True,
