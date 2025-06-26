@@ -264,6 +264,7 @@ def pvsite_forecast_page():
                 site_uuids=[site_selection_uuid],
                 start_utc=starttime,
                 created_by=created,
+                created_after=starttime - timedelta(days=2),
                 forecast_horizon_minutes=forecast_horizon,
                 day_ahead_hours=day_ahead_hours,
                 day_ahead_timezone_delta_hours=day_ahead_timezone_delta_hours,
