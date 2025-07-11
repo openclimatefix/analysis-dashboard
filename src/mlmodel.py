@@ -7,7 +7,7 @@ import plotly.express as px
 from pvsite_datamodel.connection import DatabaseConnection
 from pvsite_datamodel.read.model import get_models
 from pvsite_datamodel.read.site import get_all_sites
-from pvsite_datamodel.sqlmodels import GenerationSQL, SiteSQL, MLModelSQL
+from pvsite_datamodel.sqlmodels import GenerationSQL, LocationSQL, MLModelSQL
 
 def color_survived(val):
     now = pd.Timestamp.utcnow()
@@ -48,14 +48,14 @@ def mlmodel_page():
             if show_all_sites:
                 site_dict = {k: getattr(site, k) for k in keys if not k.startswith("_")}
             else:
-                site_dict = {"client_site_name": site.client_site_name}
+                site_dict = {"client_site_name": site.client_location_name}
 
             if site.ml_model is not None:
                 site_dict["ml_model_name"] = site.ml_model.name
 
             last_gen = (
                 session.query(GenerationSQL)
-                .filter(GenerationSQL.site_uuid == site.site_uuid)
+                .filter(GenerationSQL.location_uuid == site.location_uuid)
                 .order_by(GenerationSQL.created_utc.desc())
                 .limit(1)
                 .one_or_none()
@@ -143,7 +143,7 @@ def mlmodel_page():
         site_details = []
         for site in sites:
             site_dict = {
-                "client_site_name": site.client_site_name,
+                "client_site_name": site.client_location_name,
                 "latitude": getattr(site, "latitude", None),
                 "longitude": getattr(site, "longitude", None),
                 "region": site.region,
