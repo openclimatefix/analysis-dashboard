@@ -60,9 +60,9 @@ def sites_toolbox_page():
         users = get_all_users(session=session)
         user_list = [user.email for user in users]
         site_groups = get_all_site_groups(session=session)
-        site_groups = [site_group.site_group_name for site_group in site_groups]
+        site_groups = [site_group.location_group_name for site_group in site_groups]
         site_uuids = get_all_sites(session=session)
-        site_uuid_list = [site.site_uuid for site in site_uuids]
+        site_uuid_list = [site.location_uuid for site in site_uuids]
 
     st.markdown(
         f'<h1 style="color:#63BCAF;font-size:32px;">{"Get User Details"}</h1>',
@@ -162,7 +162,7 @@ def sites_toolbox_page():
     )
     site_group_name = st.selectbox("Select site group", site_groups, key="Select site group (remove site from site group)")
     site_group = get_site_group_by_name(session=session, site_group_name=site_group_name)
-    sites_group_sites = sorted([str(site.site_uuid) for site in site_group.sites])
+    sites_group_sites = sorted([str(site.location_uuid) for site in site_group.locations])
     site_uuid = st.selectbox("Select site", sites_group_sites, key="remove")
     if st.button("Remove site from site group"):
         site_group_sites = remove_site_from_site_group(
@@ -299,12 +299,12 @@ def sites_toolbox_page():
                         asset_type=asset_type,
                     )
                     site_details = {
-                        "site_uuid": str(site.site_uuid),
+                        "site_uuid": str(site.location_uuid),
                         "ml_id": str(site.ml_id),
-                        "client_site_id": str(site.client_site_id),
-                        "client_site_name": str(site.client_site_name),
+                        "client_site_id": str(site.client_location_id),
+                        "client_site_name": str(site.client_location_name),
                         "site_group_names": [
-                            site_group.site_group_name for site_group in site.site_groups
+                            site_group.location_group_name for site_group in site.location_groups
                         ],
                         "latitude": str(site.latitude),
                         "longitude": str(site.longitude),
@@ -402,8 +402,8 @@ def sites_toolbox_page():
                         site_group_name=new_site_group_name,
                     )
                     new_site_group_details = {
-                        "site_group": str(new_site_group.site_group_name),
-                        "site_group_uuid": str(new_site_group.site_group_uuid),
+                        "site_group": str(new_site_group.location_group_name),
+                        "site_group_uuid": str(new_site_group.location_group_uuid),
                         "date_added": (new_site_group.created_utc.strftime("%Y-%m-%d")),
                     }
                     st.json(new_site_group_details)
@@ -453,7 +453,7 @@ def sites_toolbox_page():
     with st.expander("Input site group information"):
         with connection.get_session() as session:
             site_groups = get_all_site_groups(session=session)
-            site_groups = [site_group.site_group_name for site_group in site_groups]
+            site_groups = [site_group.location_group_name for site_group in site_groups]
             st.markdown(
                 f'<h1 style="color:#FF9736;font-size:22px;">{"Site Group Information"}</h1>',
                 unsafe_allow_html=True,
