@@ -101,7 +101,7 @@ def pvsite_forecast_page():
     connection = DatabaseConnection(url=url, echo=True)
     with connection.get_session() as session:
         sites = get_all_sites(session=session)
-        site_uuids = [sites.site_uuid for sites in sites if sites.site_uuid is not None]
+        site_uuids = [sites.location_uuid for sites in sites if sites.location_uuid is not None]
 
         # streamlit toggle between site_uuid and client_site_name
         query_method = st.sidebar.radio(
@@ -146,7 +146,7 @@ def pvsite_forecast_page():
 
         site = get_site_by_uuid(session, site_selection_uuid)
         capacity = site.capacity_kw
-        site_client_site_name = site.client_site_name
+        site_client_site_name = site.client_location_name
         country = site.country
 
         # Extract region, asset type, and capacity dynamically

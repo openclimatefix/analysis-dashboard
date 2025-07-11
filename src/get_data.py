@@ -16,14 +16,14 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.functions import func
 from sqlalchemy.orm import joinedload
 
-from nowcasting_datamodel.models.gsp import LocationSQL
+from nowcasting_datamodel.models.gsp import LocationSQL as GSPLocationSQL
 from nowcasting_datamodel.models import MLModelSQL
 from nowcasting_datamodel.models.metric import (
     DatetimeIntervalSQL,
     MetricSQL,
     MetricValueSQL,
 )
-from pvsite_datamodel.sqlmodels import UserSQL, SiteGroupSQL, SiteSQL, ForecastValueSQL, ForecastSQL
+from pvsite_datamodel.sqlmodels import UserSQL, LocationGroupSQL, LocationSQL, ForecastValueSQL, ForecastSQL
 
 from data.gsp import get_gsp
 from data.dno import get_dno
@@ -77,8 +77,8 @@ def get_metric_value(
 
     # filter on gsp_id
     if gsp_id is not None:
-        query = query.join(LocationSQL)
-        query = query.filter(LocationSQL.gsp_id == gsp_id)
+        query = query.join(GSPLocationSQL)
+        query = query.filter(GSPLocationSQL.gsp_id == gsp_id)
 
     # filter forecast_horizon_minutes
     if forecast_horizon_minutes is not None:
@@ -110,14 +110,14 @@ def get_metric_value(
 
 
 
-def get_site_by_client_site_id(session: Session, client_site_id: str) -> List[SiteSQL]:
+def get_site_by_client_site_id(session: Session, client_site_id: str) -> LocationSQL:
     """Get site by client site id.
     :param session: database session
     :param client_site_id: client site id
     """
-    query = session.query(SiteSQL)
+    query = session.query(LocationSQL)
 
-    query = query.filter(SiteSQL.client_site_id == client_site_id)
+    query = query.filter(LocationSQL.client_location_id == client_site_id)
 
     site = query.first()
 

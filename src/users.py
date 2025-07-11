@@ -59,7 +59,7 @@ def user_page():
     # if both databases are available, let the user choose which one to use
     # if none, show error
     if region == 'uk':
-        national_or_sites = st.sidebar.selectbox("Select", ["National", "Sites"], index=0)
+        national_or_sites = st.sidebar.selectbox("Select", ["National", "Sites"], index=1)
     else:
         national_or_sites = "Sites"
 
