@@ -21,17 +21,17 @@ from pvsite_datamodel.write.user_and_site import (
 def select_site_id(dbsession, query_method: str):
     """Select site by site_uuid or client_site_id"""
     if query_method == "site_uuid":
-        site_uuids = [str(site.site_uuid) for site in get_all_sites(session=dbsession)]
+        site_uuids = [str(site.location_uuid) for site in get_all_sites(session=dbsession)]
         selected_uuid = st.selectbox("Sites by site_uuid", site_uuids)
     elif query_method == "client_site_id":
         client_site_ids = [
-            str(site.client_site_id) for site in get_all_sites(session=dbsession)
+            str(site.client_location_id) for site in get_all_sites(session=dbsession)
         ]
         client_site_id = st.selectbox("Sites by client_site_id", client_site_ids)
         site = get_site_by_client_site_id(
             session=dbsession, client_site_id=client_site_id,
         )
-        selected_uuid = str(site.site_uuid)
+        selected_uuid = str(site.location_uuid)
     elif query_method not in ["site_uuid", "client_site_id"]:
         raise ValueError("Please select a valid query_method.")
     return selected_uuid
@@ -48,11 +48,11 @@ def update_site_group(session, site_uuid: str, site_group_name: str):
         session=session, site_uuid=site_uuid, site_group_name=site_group_name
     )
     site_group_sites = [
-        {"site_uuid": str(site.site_uuid), "client_site_id": str(site.client_site_id)}
-        for site in site_group.sites
+        {"site_uuid": str(site.location_uuid), "client_site_id": str(site.client_location_id)}
+        for site in site_group.locations
     ]
     site = get_site_by_uuid(session=session, site_uuid=site_uuid)
-    site_site_groups = [site_group.site_group_name for site_group in site.site_groups]
+    site_site_groups = [site_group.location_group_name for site_group in site.location_groups]
     return site_group, site_group_sites, site_site_groups
 
 
@@ -66,7 +66,7 @@ def change_user_site_group(session, email: str, site_group_name: str):
         session=session, email=email, site_group_name=site_group_name
     )
     user = get_user_by_email(session=session, email=email)
-    user_site_group = user.site_group.site_group_name
+    user_site_group = user.location_group.location_group_name
     user = user.email
     return user, user_site_group
 
@@ -82,14 +82,14 @@ def add_all_sites_to_ocf_group(session, site_group_name="ocf"):
         session=session, site_group_name=site_group_name
     )
 
-    site_uuids = [site.site_uuid for site in ocf_site_group.sites]
+    site_uuids = [site.location_uuid for site in ocf_site_group.locations]
 
     sites_added = []
 
     for site in all_sites:
-        if site.site_uuid not in site_uuids:
-            ocf_site_group.sites.append(site)
-            sites_added.append(str(site.site_uuid))
+        if site.location_uuid not in site_uuids:
+            ocf_site_group.locations.append(site)
+            sites_added.append(str(site.location_uuid))
             session.commit()
             message = f"Added {len(sites_added)} sites to group {site_group_name}."
 

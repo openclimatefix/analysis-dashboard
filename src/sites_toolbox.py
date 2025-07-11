@@ -9,7 +9,7 @@ from pvsite_datamodel.read import (
 from pvsite_datamodel.read.model import get_models
 from pvsite_datamodel.read import get_site_group_by_name
 
-from pvsite_datamodel.sqlmodels import SiteAssetType
+from pvsite_datamodel.sqlmodels import LocationAssetType
 
 from pvsite_datamodel.write.user_and_site import (
     assign_model_name_to_site,
@@ -251,9 +251,9 @@ def sites_toolbox_page():
             country = st.text_input("Country", value="UK", placeholder="Default is 'UK'")
             asset_type = st.selectbox(
                 "Asset Type",
-                options=[e.name for e in SiteAssetType],
+                options=[e.name for e in LocationAssetType],
                 format_func=lambda x: x.replace("_", " ").title(),
-                index=list(SiteAssetType).index(SiteAssetType.pv),  # Default to 'pv'
+                index=list(LocationAssetType).index(LocationAssetType.pv),  # Default to 'pv'
             )
 
             st.markdown(
