@@ -117,12 +117,12 @@ def pvsite_forecast_page():
         else:
             client_site_name = st.sidebar.selectbox(
                 "Select sites by client_site_name",
-                sorted([sites.client_site_name for sites in sites]),
+                sorted([sites.client_location_name for sites in sites]),
             )
             site_selection_uuid = [
-                sites.site_uuid
+                sites.location_uuid
                 for sites in sites
-                if sites.client_site_name == client_site_name
+                if sites.client_location_name == client_site_name
             ][0]
 
     timezone_selected = st.sidebar.selectbox(
