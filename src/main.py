@@ -253,11 +253,11 @@ def metric_page():
 if check_password():
 
     page_names_to_funcs = {
-        # "Metrics": metric_page,
-        # "Status": status_page,
-        # "Forecast": forecast_page,
-        # "PV Site Forecast": pvsite_forecast_page,
-        # "Sites Toolbox": sites_toolbox_page,
+        "Metrics": metric_page,
+        "Status": status_page,
+        "Forecast": forecast_page,
+        "PV Site Forecast": pvsite_forecast_page,
+        "Sites Toolbox": sites_toolbox_page,
         "API Users": user_page,
         "NWP": nwp_page,
         "Satellite": satellite_page,
