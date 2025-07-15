@@ -48,7 +48,7 @@ def mlmodel_page():
             if show_all_sites:
                 site_dict = {k: getattr(site, k) for k in keys if not k.startswith("_")}
             else:
-                site_dict = {"client_site_name": site.client_location_name}
+                site_dict = {"client_location_name": site.client_location_name}
 
             if site.ml_model is not None:
                 site_dict["ml_model_name"] = site.ml_model.name
@@ -73,7 +73,7 @@ def mlmodel_page():
         all_sites = pd.DataFrame(all_sites)
 
         # Order by name
-        all_sites = all_sites.sort_values(by="client_site_name")
+        all_sites = all_sites.sort_values(by="client_location_name")
 
         st.table(
             all_sites.style.applymap(
@@ -143,7 +143,7 @@ def mlmodel_page():
         site_details = []
         for site in sites:
             site_dict = {
-                "client_site_name": site.client_location_name,
+                "client_location_name": site.client_location_name,
                 "latitude": getattr(site, "latitude", None),
                 "longitude": getattr(site, "longitude", None),
                 "region": site.region,
@@ -180,7 +180,7 @@ def mlmodel_page():
                 lon="longitude",
                 color="asset_type",
                 size="capacity_kw",
-                hover_name="client_site_name",
+                hover_name="client_location_name",
                 hover_data={
                     "capacity_kw": True,
                     "region": True,
@@ -207,7 +207,7 @@ def mlmodel_page():
             st.dataframe(
                 map_data[
                     [
-                        "client_site_name",
+                        "client_location_name",
                         "region",
                         "capacity_kw",
                         "asset_type",
