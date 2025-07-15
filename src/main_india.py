@@ -20,19 +20,22 @@ from weather_graph import weather_graph_page
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
 
+def main_page():
+    st.text('This is the Analysis Dashboard India. Please select the page you want on the left hand side')
+
+
 if check_password():
+    pg = st.navigation([
+        st.Page(main_page, title="🏠 Home", default=True),
+        st.Page(status_page, title="🚦 Status"),
+        st.Page(pvsite_forecast_page, title="📉 Site Forecast"),
+        st.Page(mlmodel_page, title="🤖 ML Models"),
+        st.Page(sites_toolbox_page, title="🛠️ Sites Toolbox"),
+        st.Page(user_page, title="👥 API Users"),
+        st.Page(nwp_page, title="🌤️ NWP"),
+        st.Page(satellite_page, title="🛰️ Satellite"),
+        st.Page(weather_forecast_page, title="🌦️ Weather Forecast"),
+        st.Page(weather_graph_page, title="🌨️ Weather Data"),
+    ], position="top")
+    pg.run()
 
-    page_names_to_funcs = {
-        "Status": status_page,
-        "Location Forecast": pvsite_forecast_page,
-        "ML Models": mlmodel_page,
-        "Sites Toolbox": sites_toolbox_page,
-        "API Users": user_page,
-        "NWP": nwp_page,
-        "Satellite": satellite_page,
-        "Weather Forecast": weather_forecast_page, 
-        "Weather Data" : weather_graph_page,
-    }
-
-    demo_name = st.sidebar.selectbox("Choose a page", page_names_to_funcs.keys(), 1)
-    page_names_to_funcs[demo_name]()
