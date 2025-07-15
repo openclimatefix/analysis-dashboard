@@ -266,5 +266,5 @@ if check_password():
         st.Page(nwp_page, title="🌤️ NWP"),
         st.Page(satellite_page, title="🛰️ Satellite"),
         st.Page(satellite_forecast_page, title="☁️ Cloudcasting"),
-        st.Page(adjuster_page, title="🔧 Adjuster")])
+        st.Page(adjuster_page, title="🔧 Adjuster")], position="top")
     pg.run()

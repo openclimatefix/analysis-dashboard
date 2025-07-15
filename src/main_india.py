@@ -36,6 +36,6 @@ if check_password():
         st.Page(satellite_page, title="🛰️ Satellite"),
         st.Page(weather_forecast_page, title="🌦️ Weather Forecast"),
         st.Page(weather_graph_page, title="🌨️ Weather Data"),
-    ])
+    ], position="top")
     pg.run()
 
