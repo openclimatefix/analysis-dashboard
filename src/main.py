@@ -251,7 +251,7 @@ def metric_page():
 
 
 def main_page():
-    st.text('This is the Analysis Dashboard UK. Please select the page you want from the menu at the top of the this page')
+    st.text('This is the Analysis Dashboard UK. Please select the page you want from the menu at the top of this page')
 
 
 if check_password():
