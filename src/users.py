@@ -75,7 +75,7 @@ def user_page():
         get_api_requests_for_one_user_func = get_api_requests_for_one_user_sites
 
     # Get last API requests by user
-    last_request = get_last_request_by_user(_connection=connection, national_or_sites=national_or_sites)
+    last_request = get_last_request_by_user(_connection=connection, national_or_sites=national_or_sites, start_datetime=start_time, end_datetime=end_time)
     last_request = pd.DataFrame(last_request, columns=["email", "last API request"])
     last_request = last_request.sort_values(by="last API request", ascending=False)
     last_request.set_index("email", inplace=True)
@@ -116,7 +116,7 @@ def user_page():
 
 
 @st.cache_data(ttl=60*5) # 5 mins
-def get_last_request_by_user(_connection, national_or_sites:str):
+def get_last_request_by_user(_connection, national_or_sites:str, start_datetime, end_datetime):
     """Get the last request by user
 
     Note data is cached for one minute
@@ -124,7 +124,7 @@ def get_last_request_by_user(_connection, national_or_sites:str):
     _get_all_last_api_request_func = get_all_last_api_request_dict[national_or_sites]
 
     with _connection.get_session() as session:
-        last_requests_sql = _get_all_last_api_request_func(session=session)
+        last_requests_sql = _get_all_last_api_request_func(session=session, start_datetime=start_datetime, end_datetime=end_datetime)
 
         last_request = [
             (last_request_sql.user.email, last_request_sql.created_utc)
