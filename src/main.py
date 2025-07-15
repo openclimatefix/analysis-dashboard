@@ -251,36 +251,20 @@ def metric_page():
 
 
 def main_page():
-    st.text('This is the Analysis Dashboard UK. Please slect the page you want on the left hand side')
+    st.text('This is the Analysis Dashboard UK. Please select the page you want on the left hand side')
 
 
 if check_password():
     pg = st.navigation([
-        st.Page(main_page, title="Home", default=True),
-        st.Page(metric_page, title="Metrics"),
-        st.Page(status_page, title="Status"),
-        st.Page(forecast_page, title="Forecast"),
-        st.Page(pvsite_forecast_page, title="Site Forecast"),
-        st.Page(user_page, title="API Users"),
-        st.Page(nwp_page, title="NWP"),
-        st.Page(satellite_page, title="Satellite"),
-        st.Page(satellite_forecast_page, title="Cloudcasting"),
-        st.Page(adjuster_page, title="Adjuster"),
-                        ])
+        st.Page(main_page, title="🏠 Home", default=True),
+        st.Page(metric_page, title="🔢 Metrics"),
+        st.Page(status_page, title="🚦 Status"),
+        st.Page(forecast_page, title="📈 Forecast"),
+        st.Page(pvsite_forecast_page, title="📉 Site Forecast"),
+        st.Page(sites_toolbox_page, title="🛠️ Sites Toolbox"),
+        st.Page(user_page, title="👥 API Users"),
+        st.Page(nwp_page, title="🌤️ NWP"),
+        st.Page(satellite_page, title="🛰️ Satellite"),
+        st.Page(satellite_forecast_page, title="☁️ Cloudcasting"),
+        st.Page(adjuster_page, title="🔧 Adjuster")])
     pg.run()
-
-    # page_names_to_funcs = {
-    #     "Metrics": metric_page,
-    #     "Status": status_page,
-    #     "Forecast": forecast_page,
-    #     "PV Site Forecast": pvsite_forecast_page,
-    #     "Sites Toolbox": sites_toolbox_page,
-    #     "API Users": user_page,
-    #     "NWP": nwp_page,
-    #     "Satellite": satellite_page,
-    #     "Cloudcasting": satellite_forecast_page,
-    #     "Adjuster": adjuster_page,
-    # }
-    #
-    # demo_name = st.sidebar.selectbox("Choose a page", page_names_to_funcs.keys())
-    # page_names_to_funcs[demo_name]()
