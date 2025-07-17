@@ -1,6 +1,7 @@
 """This module contains the sites toolbox for the OCF dashboard"""
 import os
 import streamlit as st
+from datetime import datetime, timezone
 from sqlalchemy import func
 from pvsite_datamodel.connection import DatabaseConnection
 from pvsite_datamodel.read import (
@@ -216,7 +217,7 @@ def sites_toolbox_page():
     )
     site_uuid = st.selectbox("Select the site", site_uuid_list)
     with connection.get_session() as session:
-        ml_models = get_models(session=session, site_uuid=site_uuid)
+        ml_models = get_models(session=session, site_uuid=site_uuid, start_datetime=datetime.now(timezone=utc))
         ml_model_names = [model.name for model in ml_models]
         ml_model_name = st.selectbox("Select the ml model", ml_model_names)
 
