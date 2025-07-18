@@ -42,12 +42,12 @@ st.set_page_config(layout="wide", page_title="OCF Dashboard")
 
 def metric_page():
     # Set up sidebar
-    
+
     # Select start and end date
     st.sidebar.subheader("Select date range for charts")
     starttime = st.sidebar.date_input("Start Date", datetime.today() - timedelta(days=30))
     endtime = st.sidebar.date_input("End Date", datetime.today())
-    
+
     # Adjuster option
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
@@ -56,10 +56,10 @@ def metric_page():
 
     # Get the models run in the last week
     connection = DatabaseConnection(url=os.environ["DB_URL"], echo=True)
-    
+
     with connection.get_session() as session:
         models = get_recent_available_model_names(session)
-    
+
     # Default model is pvnet_v2
     model_name = st.sidebar.selectbox("Select model", models, index=models.index("pvnet_v2"))
 
@@ -204,9 +204,7 @@ def metric_page():
 
     with st.expander("Quartz Solar and PVlive MAE with RMSE"):
         st.plotly_chart(fig5, theme="streamlit")
-        st.write(
-            "PVLive is the difference between the intraday and day after PVLive values."
-        )
+        st.write("PVLive is the difference between the intraday and day after PVLive values.")
 
     fig6 = make_all_gsps_plots(x_mae_all_gsp, y_mae_all_gsp)
 
@@ -214,7 +212,9 @@ def metric_page():
         with st.expander("MAE All GSPs"):
             st.plotly_chart(fig6, theme="streamlit")
 
-    fig7 = make_ramp_rate_plot(session=session, model_name=model_name, starttime=starttime, endtime=endtime)
+    fig7 = make_ramp_rate_plot(
+        session=session, model_name=model_name, starttime=starttime, endtime=endtime
+    )
     with st.expander("Ramp Rate"):
         st.plotly_chart(fig7, theme="streamlit")
 
@@ -230,7 +230,7 @@ def metric_page():
                     metric_name="Pinball loss",
                 )
                 st.plotly_chart(fig7, theme="streamlit")
-                st.write('Average values')
+                st.write("Average values")
                 st.write(values_df)
             with st.expander("Exceedance"):
                 fig8, values_df = make_pinball_or_exceedance_plot(
@@ -242,7 +242,7 @@ def metric_page():
                     metric_name="Exceedance",
                 )
                 st.plotly_chart(fig8, theme="streamlit")
-                st.write('Average values')
+                st.write("Average values")
                 st.write(values_df)
 
     make_forecast_horizon_table(all_forecast_horizons_df, y_plive_mae)
@@ -251,21 +251,34 @@ def metric_page():
 
 
 def main_page():
-    st.text('This is the Analysis Dashboard UK. Please select the page you want from the menu at the top of this page')
+    st.text(
+        "This is the Analysis Dashboard UK. Please select the page you want from the menu at the top of this page"
+    )
 
 
 if check_password():
-    pg = st.navigation({'🏠 Home':[
-        st.Page(main_page, title="🏠 Home", default=True),
-        st.Page(status_page, title="🚦 Status"),
-        st.Page(user_page, title="👥 API Users"),
-        ],'🇬🇧 National/GSP':[st.Page(forecast_page, title="📈 Forecast"),
-                          st.Page(metric_page, title="🔢 Metrics"),
-                             st.Page(adjuster_page, title="🔧 Adjuster")
-        ],'📍 Site':[st.Page(pvsite_forecast_page, title="📉 Site Forecast"),
-        st.Page(sites_toolbox_page, title="🛠️ Sites Toolbox"),
-        ],'💽 Data':[st.Page(nwp_page, title="🌤️ NWP"),
-        st.Page(satellite_page, title="🛰️ Satellite"),
-        st.Page(satellite_forecast_page, title="☁️ Cloudcasting"),
-        ]}, position="top")
+    pg = st.navigation(
+        {
+            "🏠 Home": [
+                st.Page(main_page, title="🏠 Home", default=True),
+                st.Page(status_page, title="🚦 Status"),
+                st.Page(user_page, title="👥 API Users"),
+            ],
+            "🇬🇧 National/GSP": [
+                st.Page(forecast_page, title="📈 Forecast"),
+                st.Page(metric_page, title="🔢 Metrics"),
+                st.Page(adjuster_page, title="🔧 Adjuster"),
+            ],
+            "📍 Site": [
+                st.Page(pvsite_forecast_page, title="📉 Site Forecast"),
+                st.Page(sites_toolbox_page, title="🛠️ Sites Toolbox"),
+            ],
+            "💽 Data": [
+                st.Page(nwp_page, title="🌤️ NWP"),
+                st.Page(satellite_page, title="🛰️ Satellite"),
+                st.Page(satellite_forecast_page, title="☁️ Cloudcasting"),
+            ],
+        },
+        position="top",
+    )
     pg.run()
