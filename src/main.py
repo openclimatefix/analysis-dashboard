@@ -255,16 +255,17 @@ def main_page():
 
 
 if check_password():
-    pg = st.navigation([
+    pg = st.navigation({'🏠 Home':[
         st.Page(main_page, title="🏠 Home", default=True),
-        st.Page(metric_page, title="🔢 Metrics"),
         st.Page(status_page, title="🚦 Status"),
-        st.Page(forecast_page, title="📈 Forecast"),
-        st.Page(pvsite_forecast_page, title="📉 Site Forecast"),
-        st.Page(sites_toolbox_page, title="🛠️ Sites Toolbox"),
         st.Page(user_page, title="👥 API Users"),
-        st.Page(nwp_page, title="🌤️ NWP"),
+        ],'🇬🇧 National/GSP':[st.Page(forecast_page, title="📈 Forecast"),
+                          st.Page(metric_page, title="🔢 Metrics"),
+                             st.Page(adjuster_page, title="🔧 Adjuster")
+        ],'📍 Site':[st.Page(pvsite_forecast_page, title="📉 Site Forecast"),
+        st.Page(sites_toolbox_page, title="🛠️ Sites Toolbox"),
+        ],'💽 Data':[st.Page(nwp_page, title="🌤️ NWP"),
         st.Page(satellite_page, title="🛰️ Satellite"),
         st.Page(satellite_forecast_page, title="☁️ Cloudcasting"),
-        st.Page(adjuster_page, title="🔧 Adjuster")], position="top")
+        ]}, position="top")
     pg.run()
