@@ -160,6 +160,6 @@ def status_page():
 
     st.write(
         f"We experienced some issues with the Forecast on {datetime.now().date()}. "
-        "We apologies for these issues, "
+        "We apologise for these issues, "
         "this was due to missing 3rd party Satellite data."
     )
