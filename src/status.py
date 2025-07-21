@@ -137,7 +137,7 @@ def status_page():
     )
     # example messages
     st.write(
-        "We are doing some upgrades, and dont expect any downtime. "
+        "We are doing some upgrades, and don't expect any downtime. "
         "We will keep you informed if anything changes"
     )
 
