@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 import streamlit as st
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.models import Status
@@ -129,3 +130,32 @@ def status_page():
                     session, status, status_level, value, national_or_sites=national_or_sites
                 )
                 st.rerun()
+
+    st.markdown(
+        f'<h2 style="color:#ffd053;font-size:32px;">{"Example messages"}</h2>',
+        unsafe_allow_html=True,
+    )
+    # example messages
+    st.write(
+        "We are doing some upgrades, and dont expect any downtime. "
+        "We will keep you informed if anything changes"
+    )
+
+    st.write("We are experiencing some issues, " "and we are current investigating the issue.")
+
+    st.write(
+        "We are experiencing some issues with the Forecast, "
+        "we hope to resolve them as soon as possible"
+    )
+
+    st.write(
+        "We are experiencing some issues with the Forecast, "
+        "we hope to resolve them as soon as possible. "
+        "This is due to a 3rd party NWP data provider."
+    )
+
+    st.write(
+        f"We experienced some issues with the Forecast on {datetime.now().date()}. "
+        "We apologies for these issues, "
+        "this was due to missing 3rd party Satellite data."
+    )
