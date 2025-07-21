@@ -154,6 +154,10 @@ def status_page():
         "This is due to a 3rd party NWP data provider."
     )
 
+    st.write("There is a major issue with the Quartz Solar API,"
+             "we are looking into this and "
+             "hope to solve this as soon as possible")
+
     st.write(
         f"We experienced some issues with the Forecast on {datetime.now().date()}. "
         "We apologies for these issues, "
