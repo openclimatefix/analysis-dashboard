@@ -141,7 +141,7 @@ def status_page():
         "We will keep you informed if anything changes"
     )
 
-    st.write("We are experiencing some issues, " "and we are current investigating the issue.")
+    st.write("We are experiencing some issues, " "and we are currently investigating the issue.")
 
     st.write(
         "We are experiencing some issues with the Forecast, "
