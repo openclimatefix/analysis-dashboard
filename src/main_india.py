@@ -20,22 +20,33 @@ from weather_graph import weather_graph_page
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
 
+
 def main_page():
-    st.text('This is the Analysis Dashboard India. Please select the page you want on the left hand side')
+    st.text(
+        "This is the Analysis Dashboard India. Please select the page you want on the left hand side"
+    )
 
 
 if check_password():
-    pg = st.navigation([
-        st.Page(main_page, title="🏠 Home", default=True),
-        st.Page(status_page, title="🚦 Status"),
-        st.Page(pvsite_forecast_page, title="📉 Site Forecast"),
-        st.Page(mlmodel_page, title="🤖 ML Models"),
-        st.Page(sites_toolbox_page, title="🛠️ Sites Toolbox"),
-        st.Page(user_page, title="👥 API Users"),
-        st.Page(nwp_page, title="🌤️ NWP"),
-        st.Page(satellite_page, title="🛰️ Satellite"),
-        st.Page(weather_forecast_page, title="🌦️ Weather Forecast"),
-        st.Page(weather_graph_page, title="🌨️ Weather Data"),
-    ], position="top")
+    pg = st.navigation(
+        {
+            "🏠 Home": [
+                st.Page(main_page, title="🏠 Home", default=True),
+                st.Page(status_page, title="🚦 Status"),
+                st.Page(user_page, title="👥 API Users"),
+            ],
+            "📍 Site": [
+                st.Page(pvsite_forecast_page, title="📉 Site Forecast"),
+                st.Page(mlmodel_page, title="🤖 ML Models"),
+                st.Page(sites_toolbox_page, title="🛠️ Sites Toolbox"),
+            ],
+            "💽 Data": [
+                st.Page(nwp_page, title="🌤️ NWP"),
+                st.Page(satellite_page, title="🛰️ Satellite"),
+                st.Page(weather_forecast_page, title="🌦️ Weather Forecast"),
+                st.Page(weather_graph_page, title="🌨️ Weather Data"),
+            ],
+        },
+        position="top",
+    )
     pg.run()
-
