@@ -80,7 +80,7 @@ def user_page():
     # if both databases are available, let the user choose which one to use
     # if none, show error
     if region == "uk":
-        national_or_sites = st.sidebar.selectbox("Select", ["National", "Sites"], index=1)
+        national_or_sites = st.sidebar.selectbox("Select", ["National", "Sites"], index=0)
     else:
         national_or_sites = "Sites"
 
@@ -101,6 +101,8 @@ def user_page():
         national_or_sites=national_or_sites,
         start_datetime=start_time,
         end_datetime=end_time,
+        include_in_url=include_in_url,
+        exclude_in_url=exclude_in_url,
     )
     last_request = pd.DataFrame(last_request, columns=["email", "last API request"])
     last_request = last_request.sort_values(by="last API request", ascending=False)
