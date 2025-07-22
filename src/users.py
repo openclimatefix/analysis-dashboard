@@ -143,9 +143,10 @@ def user_page():
     st.plotly_chart(fig, theme="streamlit")
 
     # Plot cumulative sites over time as a line graph
-    with connection.get_session() as session:
-        fig = make_sites_over_time_plot(session=session, email=email_selected)
-        st.plotly_chart(fig, theme="streamlit")
+    if national_or_sites == "Sites":
+        with connection.get_session() as session:
+            fig = make_sites_over_time_plot(session=session, email=email_selected)
+            st.plotly_chart(fig, theme="streamlit")
 
 
 @st.cache_data(ttl=60 * 5)  # 5 mins
