@@ -11,12 +11,16 @@ from pvsite_datamodel.connection import DatabaseConnection as SitesDatabaseConne
 from pvsite_datamodel.read.user import get_all_last_api_request as get_all_last_api_request_sites
 from pvsite_datamodel.read.user import (
     get_api_requests_for_one_user as get_api_requests_for_one_user_sites,
-    get_user_by_email
+    get_user_by_email,
 )
 from pvsite_datamodel.read.site import get_sites_from_user
 
-from plots.users import make_api_requests_plot, make_api_frequency_requests_plot, make_sites_over_time_plot 
-import plotly.graph_objects as go  
+from plots.users import (
+    make_api_requests_plot,
+    make_api_frequency_requests_plot,
+    make_sites_over_time_plot,
+)
+import plotly.graph_objects as go
 
 region = os.getenv("REGION", "uk")
 
@@ -52,14 +56,31 @@ def user_page():
         value=datetime.today() + timedelta(days=1),
     )
 
+    st.write("Filter options")
+    show_ui_calls = st.sidebar.checkbox("UI", value=True)
+    show_api_calls = st.sidebar.checkbox("API", value=True)
+    # The api urls have UI in them, if they come from the UI.
+    # The following logic is used to determine which calls to include or exclude
+    if show_ui_calls and show_api_calls:
+        include_in_url = None
+        exclude_in_url = None
+    if show_ui_calls and not show_api_calls:
+        include_in_url = "UI"
+        exclude_in_url = None
+    if not show_ui_calls and show_api_calls:
+        include_in_url = None
+        exclude_in_url = "UI"
+    if not show_ui_calls and not show_api_calls:
+        raise Exception("UI or API, needs to be turned on")
+
     # get last call from the database
     db_url = os.getenv("DB_URL", None)
     db_url_sites = os.getenv("SITES_DB_URL", None)
 
     # if both databases are available, let the user choose which one to use
     # if none, show error
-    if region == 'uk':
-        national_or_sites = st.sidebar.selectbox("Select", ["National", "Sites"], index=1)
+    if region == "uk":
+        national_or_sites = st.sidebar.selectbox("Select", ["National", "Sites"], index=0)
     else:
         national_or_sites = "Sites"
 
@@ -75,7 +96,14 @@ def user_page():
         get_api_requests_for_one_user_func = get_api_requests_for_one_user_sites
 
     # Get last API requests by user
-    last_request = get_last_request_by_user(_connection=connection, national_or_sites=national_or_sites, start_datetime=start_time, end_datetime=end_time)
+    last_request = get_last_request_by_user(
+        _connection=connection,
+        national_or_sites=national_or_sites,
+        start_datetime=start_time,
+        end_datetime=end_time,
+        include_in_url=include_in_url,
+        exclude_in_url=exclude_in_url,
+    )
     last_request = pd.DataFrame(last_request, columns=["email", "last API request"])
     last_request = last_request.sort_values(by="last API request", ascending=False)
     last_request.set_index("email", inplace=True)
@@ -88,7 +116,12 @@ def user_page():
     # Get all API calls for the selected user
     with connection.get_session() as session:
         api_requests_sql = get_api_requests_for_one_user_func(
-            session=session, email=email_selected, start_datetime=start_time, end_datetime=end_time
+            session=session,
+            email=email_selected,
+            start_datetime=start_time,
+            end_datetime=end_time,
+            include_in_url=include_in_url,
+            exclude_in_url=exclude_in_url,
         )
         api_requests = [
             (api_request_sql.created_utc, api_request_sql.url)
@@ -115,8 +148,15 @@ def user_page():
         st.plotly_chart(fig, theme="streamlit")
 
 
-@st.cache_data(ttl=60*5) # 5 mins
-def get_last_request_by_user(_connection, national_or_sites:str, start_datetime, end_datetime):
+@st.cache_data(ttl=60 * 5)  # 5 mins
+def get_last_request_by_user(
+    _connection,
+    national_or_sites: str,
+    start_datetime,
+    end_datetime,
+    include_in_url=None,
+    exclude_in_url=None,
+):
     """Get the last request by user
 
     Note data is cached for one minute
@@ -124,7 +164,13 @@ def get_last_request_by_user(_connection, national_or_sites:str, start_datetime,
     _get_all_last_api_request_func = get_all_last_api_request_dict[national_or_sites]
 
     with _connection.get_session() as session:
-        last_requests_sql = _get_all_last_api_request_func(session=session, start_datetime=start_datetime, end_datetime=end_datetime)
+        last_requests_sql = _get_all_last_api_request_func(
+            session=session,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+            include_in_url=include_in_url,
+            exclude_in_url=exclude_in_url,
+        )
 
         last_request = [
             (last_request_sql.user.email, last_request_sql.created_utc)
