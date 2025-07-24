@@ -242,6 +242,7 @@ def pvsite_forecast_page():
             start_datetime=starttime,
             end_datetime=endtime,
             site_uuid=site_selection_uuid,
+            forecast_horizon=0,
         )
 
         if len(ml_models) == 0:
