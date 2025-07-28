@@ -37,7 +37,7 @@ if check_password():
         st.Page(satellite_page, title="🛰️ Satellite"),
         st.Page(weather_forecast_page, title="🌦️ Weather Forecast"),
         st.Page(weather_graph_page, title="🌨️ Weather Data"),
-        st.Page(batch_page, title=" Batch Page"),
+        st.Page(batch_page, title="👀 Batch Visualisation Page"),
     ], position="top")
     pg.run()
 
