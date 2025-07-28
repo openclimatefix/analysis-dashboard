@@ -16,6 +16,7 @@ from users import user_page
 from weather_forecast import weather_forecast_page
 from mlmodel import mlmodel_page
 from weather_graph import weather_graph_page
+from batch_page import batch_page
 
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
@@ -36,6 +37,7 @@ if check_password():
         st.Page(satellite_page, title="🛰️ Satellite"),
         st.Page(weather_forecast_page, title="🌦️ Weather Forecast"),
         st.Page(weather_graph_page, title="🌨️ Weather Data"),
+        st.Page(batch_page, title=" Batch Page"),
     ], position="top")
     pg.run()
 
