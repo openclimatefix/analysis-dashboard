@@ -6,44 +6,48 @@ import pandas as pd
 import fsspec
 
 
+# Plot helper functions
+
+def plot_image_grid(channels, labels, cols=4, cmap="viridis", size=3):
+    num_channels = len(labels)
+    rows = math.ceil(num_channels / cols)
+    fig, axes = plt.subplots(rows, cols, figsize=(cols * size, rows * size))
+    axes_list = axes.flatten()
+    for i, label in enumerate(labels):
+        image = channels[i].cpu().numpy()
+        heatmap = axes_list[i].imshow(image, cmap=cmap)
+        axes_list[i].set_title(label, fontsize=9)
+        axes_list[i].axis('off')
+        fig.colorbar(heatmap, ax=axes_list[i], fraction=0.046, pad=0.04)
+    for extra_axis in axes_list[num_channels:]:
+        extra_axis.axis('off')
+    plt.tight_layout()
+    return fig
+
+def plot_line_chart(x_values, y_series, labels, x_label, y_label, size=(6, 3), legend_columns=1):
+    fig, axis = plt.subplots(figsize=size)
+    if y_series.ndim == 1:
+        y_series = y_series.reshape(-1, 1)
+
+    for series, label in zip(y_series.T, labels):
+        axis.plot(x_values, series, marker='o', label=label)
+
+    axis.set(xlabel=x_label, ylabel=y_label)
+    axis.tick_params(labelsize=6)
+
+    # Move legend to right of plot
+    axis.legend(loc='center left', bbox_to_anchor=(1.01, 0.5), fontsize=6, ncol=legend_columns)
+    plt.tight_layout()
+    return fig
+
+
 def batch_page():
-    st.title("Inference Batch Data Viewer")
+    st.markdown(
+        f'<h1 style="color:#63BCAF;font-size:48px;">{"Inference Batch Data Viewer"}</h1>',
+        unsafe_allow_html=True,
+    )
 
-    # Plot helper functions
-
-    def plot_image_grid(channels, labels, cols=4, cmap="viridis", size=3):
-        num_channels = len(labels)
-        rows = math.ceil(num_channels / cols)
-        fig, axes = plt.subplots(rows, cols, figsize=(cols * size, rows * size))
-        axes_list = axes.flatten()
-        for i, label in enumerate(labels):
-            image = channels[i].cpu().numpy()
-            heatmap = axes_list[i].imshow(image, cmap=cmap)
-            axes_list[i].set_title(label, fontsize=9)
-            axes_list[i].axis('off')
-            fig.colorbar(heatmap, ax=axes_list[i], fraction=0.046, pad=0.04)
-        for extra_axis in axes_list[num_channels:]:
-            extra_axis.axis('off')
-        plt.tight_layout()
-        return fig
-
-    def plot_line_chart(x_values, y_series, labels, x_label, y_label, size=(6, 3), legend_columns=1):
-        fig, axis = plt.subplots(figsize=size)
-        if y_series.ndim == 1:
-            y_series = y_series.reshape(-1, 1)
-
-        for series, label in zip(y_series.T, labels):
-            axis.plot(x_values, series, marker='o', label=label)
-
-        axis.set(xlabel=x_label, ylabel=y_label)
-        axis.tick_params(labelsize=6)
-
-        # Move legend to right of plot
-        axis.legend(loc='center left', bbox_to_anchor=(1.01, 0.5), fontsize=6, ncol=legend_columns)
-        plt.tight_layout()
-        return fig
-
-    # S3 path input
+    # S3 path input, TODO dropdown box with filled in values for filepaths
     s3_path = st.text_input("Enter S3 path to .pt/.pth batch file (e.g., s3://example-bucket/example-path.pt)")
     if not s3_path:
         st.info("Please enter an S3 path to a `.pt` or `.pth` file.")
