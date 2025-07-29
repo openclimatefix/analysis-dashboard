@@ -9,6 +9,17 @@ import fsspec
 # Plot helper functions
 
 def plot_image_grid(channels, labels, cols=4, cmap="viridis", size=3):
+    """
+    Plots a grid of images with corresponding labels and colorbars.
+    Args:
+        channels (list or array-like): A list or array of image tensors or arrays to display. Each element should be a 2D array (single channel image).
+        labels (list of str): List of labels for each image. Must be the same length as `channels`.
+        cols (int, optional): Number of columns in the grid. Default is 4.
+        cmap (str, optional): Colormap to use for displaying the images. Default is "viridis".
+        size (int or float, optional): Size multiplier for each subplot (in inches). Default is 3.
+    Returns:
+        matplotlib.figure.Figure: The matplotlib Figure object containing the image grid.
+    """
     num_channels = len(labels)
     rows = math.ceil(num_channels / cols)
     fig, axes = plt.subplots(rows, cols, figsize=(cols * size, rows * size))
@@ -25,6 +36,19 @@ def plot_image_grid(channels, labels, cols=4, cmap="viridis", size=3):
     return fig
 
 def plot_line_chart(x_values, y_series, labels, x_label, y_label, size=(6, 3), legend_columns=1):
+    """
+    Plots a line chart for one or more series.
+    Args:
+        x_values (array-like): X-axis values.
+        y_series (array-like): 2D array of shape (n_points, n_series) or 1D array.
+        labels (list of str): Labels for each series.
+        x_label (str): Label for x-axis.
+        y_label (str): Label for y-axis.
+        size (tuple, optional): Figure size in inches. Default is (6, 3).
+        legend_columns (int, optional): Number of columns in legend. Default is 1.
+    Returns:
+        matplotlib.figure.Figure: The matplotlib Figure object.
+    """
     fig, axis = plt.subplots(figsize=size)
     if y_series.ndim == 1:
         y_series = y_series.reshape(-1, 1)
@@ -61,7 +85,11 @@ def batch_page():
         if all(key in tensor_batch for key in ("satellite_actual", "satellite_time_utc")):
             satellite_tensor = tensor_batch["satellite_actual"][0]  # [time, channels, H, W]
             satellite_times = [pd.to_datetime(ts) for ts in tensor_batch["satellite_time_utc"][0]]
-            channel_labels = [f"Channel {i+1}" for i in range(satellite_tensor.shape[1])]
+            # This is the assumed order of channels as we normally list them
+            channel_labels = [
+                "IR_016", "IR_039", "IR_087", "IR_097", "IR_108", "IR_120", "IR_134", "VIS006",
+                "VIS008", "WV_062", "WV_073"
+            ]
 
             # Latest timestep image grid
             st.subheader(f"Satellite Channels at latest UTC time in batch {satellite_times[-1]}")
