@@ -11,6 +11,7 @@ from pvsite_datamodel.read import (
     get_all_sites,
     get_pv_generation_by_sites,
     get_latest_forecast_values_by_site,
+    get_forecast_values_fast,
 )
 
 import plotly.graph_objects as go
@@ -242,8 +243,9 @@ def pvsite_forecast_page():
             start_datetime=starttime,
             end_datetime=endtime,
             site_uuid=site_selection_uuid,
-            forecast_horizon=0,
+            forecast_horizon=15,
         )
+        st.write("Found ML Models for this site:", [model.name for model in ml_models])
 
         if len(ml_models) == 0:
 
@@ -256,23 +258,44 @@ def pvsite_forecast_page():
         xs = {}
         for model in ml_models:
 
-            forecasts = get_latest_forecast_values_by_site(
-                session=session,
-                site_uuids=[site_selection_uuid],
-                start_utc=starttime,
-                created_by=created,
-                created_after=starttime - timedelta(days=2),
-                forecast_horizon_minutes=forecast_horizon,
-                day_ahead_hours=day_ahead_hours,
-                day_ahead_timezone_delta_hours=day_ahead_timezone_delta_hours,
-                end_utc=endtime,
-                model_name=model.name,
-            )
-            forecasts = forecasts.values()
+            if day_ahead_hours is not None:
 
-            for forecast in forecasts:
-                x = [i.start_utc for i in forecast]
-                y = [i.forecast_power_kw for i in forecast]
+                forecasts = get_latest_forecast_values_by_site(
+                    session=session,
+                    site_uuids=[site_selection_uuid],
+                    start_utc=starttime,
+                    created_by=created,
+                    created_after=starttime - timedelta(days=2),
+                    forecast_horizon_minutes=forecast_horizon,
+                    day_ahead_hours=day_ahead_hours,
+                    day_ahead_timezone_delta_hours=day_ahead_timezone_delta_hours,
+                    end_utc=endtime,
+                    model_name=model.name,
+                )
+                forecasts = forecasts.values()
+
+                for forecast in forecasts:
+                    x = [i.start_utc for i in forecast]
+                    y = [i.forecast_power_kw for i in forecast]
+
+                    # convert to timezone
+                    x = [i.replace(tzinfo=pytz.utc) for i in x]
+                    x = [i.astimezone(timezone_selected) for i in x]
+            else:
+
+                forecast_values = get_forecast_values_fast(
+                    session=session,
+                    site_uuid=site_selection_uuid,
+                    start_utc=starttime,
+                    created_by=created,
+                    created_after=starttime - timedelta(days=2),
+                    forecast_horizon_minutes=forecast_horizon,
+                    end_utc=endtime,
+                    model_name=model.name,
+                )
+
+                x = [i.start_utc for i in forecast_values]
+                y = [i.forecast_power_kw for i in forecast_values]
 
                 # convert to timezone
                 x = [i.replace(tzinfo=pytz.utc) for i in x]
