@@ -125,25 +125,24 @@ def pvsite_forecast_page():
                 if sites.client_location_name == client_site_name
             ][0]
 
-    timezone_selected = st.sidebar.selectbox(
-        "Select timezone", ["UTC", "Asia/Calcutta"]
-    )
-    timezone_selected = pytz.timezone(timezone_selected)
+        timezone_selected = st.sidebar.selectbox(
+            "Select timezone", ["UTC", "Asia/Calcutta"]
+        )
+        timezone_selected = pytz.timezone(timezone_selected)
 
-    day_after_tomorrow = datetime.today() + timedelta(days=3)
-    starttime = st.sidebar.date_input(
-        "Start Date",
-        min_value=datetime.today() - timedelta(days=365),
-        max_value=datetime.today(),
-    )
-    endtime = st.sidebar.date_input("End Date", day_after_tomorrow)
+        day_after_tomorrow = datetime.today() + timedelta(days=3)
+        starttime = st.sidebar.date_input(
+            "Start Date",
+            min_value=datetime.today() - timedelta(days=365),
+            max_value=datetime.today(),
+        )
+        endtime = st.sidebar.date_input("End Date", day_after_tomorrow)
 
-    forecast_type = st.sidebar.selectbox(
-        "Select Forecast Type", ["Latest", "Forecast_horizon", "DA"], 0
-    )
+        forecast_type = st.sidebar.selectbox(
+            "Select Forecast Type", ["Latest", "Forecast_horizon", "DA"], 0
+        )
 
-    with connection.get_session() as session:
-
+        # get site from database
         site = get_site_by_uuid(session, site_selection_uuid)
         capacity = site.capacity_kw
         site_client_site_name = site.client_location_name
@@ -154,98 +153,96 @@ def pvsite_forecast_page():
         asset_type = site.asset_type  # Assume site object has an 'asset_type' attribute
         capacity_kw = site.capacity_kw  # Extract capacity dynamically
 
-    if forecast_type == "Latest":
-        created = pd.Timestamp.utcnow().ceil("15min")
-        created = created.astimezone(timezone.utc)
-        created = created.astimezone(timezone_selected)
-        created = created.replace(tzinfo=None)
-        created = st.sidebar.text_input("Created Before", created)
-
-        if created == "":
+        if forecast_type == "Latest":
             created = pd.Timestamp.utcnow().ceil("15min")
             created = created.astimezone(timezone.utc)
             created = created.astimezone(timezone_selected)
             created = created.replace(tzinfo=None)
+            created = st.sidebar.text_input("Created Before", created)
+
+            if created == "":
+                created = pd.Timestamp.utcnow().ceil("15min")
+                created = created.astimezone(timezone.utc)
+                created = created.astimezone(timezone_selected)
+                created = created.replace(tzinfo=None)
+            else:
+                created = datetime.fromisoformat(created)
         else:
-            created = datetime.fromisoformat(created)
-    else:
-        created = None
+            created = None
 
-    if forecast_type == "Forecast_horizon":
-        forecast_horizon = st.sidebar.selectbox(
-            "Select Forecast Horizon", range(0, 2880, 15), 6
-        )
-    else:
-        forecast_horizon = None
+        if forecast_type == "Forecast_horizon":
+            forecast_horizon = st.sidebar.selectbox(
+                "Select Forecast Horizon", range(0, 2880, 15), 6
+            )
+        else:
+            forecast_horizon = None
 
-    if forecast_type == "DA":
-        # TODO make these more flexible
-        day_ahead_hours = 9
+        if forecast_type == "DA":
+            # TODO make these more flexible
+            day_ahead_hours = 9
 
-        # find the difference in hours for the timezone
-        now = datetime.now()
-        d = timezone_selected.localize(now) - now.replace(tzinfo=timezone.utc)
-        day_ahead_timezone_delta_hours = (24 - d.seconds / 3600) % 24
+            # find the difference in hours for the timezone
+            now = datetime.now()
+            d = timezone_selected.localize(now) - now.replace(tzinfo=timezone.utc)
+            day_ahead_timezone_delta_hours = (24 - d.seconds / 3600) % 24
 
-        # get site from database, if india set day_ahead_timezone_delta_hours to 5.5 hours
-        with connection.get_session() as session:
+            # get site from database, if india set day_ahead_timezone_delta_hours to 5.5 hours
             site = get_site_by_uuid(session, site_selection_uuid)
             if site.country == "india":
                 day_ahead_timezone_delta_hours = 5.5
 
+            st.write(
+                f"Forecast for {day_ahead_hours} oclock the day before "
+                f"with {day_ahead_timezone_delta_hours} hour timezone delta"
+            )
+        else:
+            day_ahead_hours = None
+            day_ahead_timezone_delta_hours = None
+
+        # an option to resample to the data
+        resample = st.sidebar.selectbox("Resample data", [None, "15T", "30T"], None)
+
         st.write(
-            f"Forecast for {day_ahead_hours} oclock the day before "
-            f"with {day_ahead_timezone_delta_hours} hour timezone delta"
+            "Forecast for",
+            site_selection_uuid,
+            " - `",
+            site_client_site_name,
+            "`, starting on",
+            starttime,
+            "created by",
+            created,
+            "ended on",
+            endtime,
         )
-    else:
-        day_ahead_hours = None
-        day_ahead_timezone_delta_hours = None
 
-    # an option to resample to the data
-    resample = st.sidebar.selectbox("Resample data", [None, "15T", "30T"], None)
+        # change date to datetime
+        starttime = datetime.combine(starttime, time.min)
+        endtime = datetime.combine(endtime, time.min)
 
-    st.write(
-        "Forecast for",
-        site_selection_uuid,
-        " - `",
-        site_client_site_name,
-        "`, starting on",
-        starttime,
-        "created by",
-        created,
-        "ended on",
-        endtime,
-    )
+        # change to the correct timezone
+        # starttime = starttime.replace(tzinfo=timezone_selected)
+        # endtime = endtime.replace(tzinfo=timezone_selected)
+        starttime = timezone_selected.localize(starttime)
+        endtime = timezone_selected.localize(endtime)
 
-    # change date to datetime
-    starttime = datetime.combine(starttime, time.min)
-    endtime = datetime.combine(endtime, time.min)
+        # change to utc
+        starttime = starttime.astimezone(pytz.utc)
+        endtime = endtime.astimezone(pytz.utc)
 
-    # change to the correct timezone
-    # starttime = starttime.replace(tzinfo=timezone_selected)
-    # endtime = endtime.replace(tzinfo=timezone_selected)
-    starttime = timezone_selected.localize(starttime)
-    endtime = timezone_selected.localize(endtime)
+        if created is not None:
+            created = timezone_selected.localize(created)
+            created = created.astimezone(pytz.utc)
 
-    # change to utc
-    starttime = starttime.astimezone(pytz.utc)
-    endtime = endtime.astimezone(pytz.utc)
+        # great ml model names for this site
 
-    if created is not None:
-        created = timezone_selected.localize(created)
-        created = created.astimezone(pytz.utc)
-
-    # great ml model names for this site
-
-    # get forecast values for selected sites and plot
-    with connection.get_session() as session:
-
+        # get forecast values for selected sites and plot
         # great ml model names for this site
         ml_models = get_models(
             session=session,
             start_datetime=starttime,
             end_datetime=endtime,
             site_uuid=site_selection_uuid,
+            forecast_horizon=0,
         )
 
         if len(ml_models) == 0:
@@ -284,8 +281,7 @@ def pvsite_forecast_page():
             ys[model.name] = y
             xs[model.name] = x
 
-    # get generation values for selected sites and plot
-    with connection.get_session() as session:
+        # get generation values for selected sites and plot
         generations = get_pv_generation_by_sites(
             session=session,
             site_uuids=[site_selection_uuid],
