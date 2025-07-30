@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 import streamlit as st
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.models import Status
@@ -129,3 +130,84 @@ def status_page():
                     session, status, status_level, value, national_or_sites=national_or_sites
                 )
                 st.rerun()
+
+    st.markdown(
+        f'<h2 style="color:#ffd053;font-size:32px;">{"Example messages"}</h2>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        f'<h3 style="color:#FF8F73;font-size:32px;">{"Investigating a major issue"}</h3>',
+        unsafe_allow_html=True,
+    )
+
+    st.write(
+        "We are currently investigating a major issue with the forecast, and will aim to "
+        "resolve them as soon as possible. "
+        "Please exercise caution when using the current forecast."
+    )
+
+    st.markdown(
+        f'<h3 style="color:#FAA056;font-size:32px;">{"Investigating a minor issue"}</h3>',
+        unsafe_allow_html=True,
+    )
+
+    st.write(
+        "We are currently investigating minor issues with the forecast, "
+        "and will aim to resolve them as soon as possible."
+    )
+
+    st.markdown(
+        f'<h3 style="color:#FAA056;font-size:32px;">{"Pre event issue"}</h3>',
+        unsafe_allow_html=True,
+    )
+
+    st.write(
+        "We are upgrading our infrastructure between 2025-04-28 17:00 and 2025-04-28 19:00, "
+        "and there maybe be some minor downtime. We hope to keep disruption to a minimum. "
+    )
+
+    st.markdown(
+        f'<h3 style="color:#FAA056;font-size:32px;">{"Specific errors"}</h3>',
+        unsafe_allow_html=True,
+    )
+
+    st.write(
+        "We are currently experiencing issues with a third-party NWP data provider, "
+        "which may affect the forecast. We hope to resolve this as soon as possible."
+    )
+
+    st.write(
+        "We are currently experiencing issues with a third-party satellite data provider, "
+        "which may affect the forecast. We hope to resolve this as soon as possible."
+    )
+
+    st.write(
+        "A solar eclipse is expected at {datetime}, please exercise caution around the "
+        "forecast during this time. "
+    )
+
+    st.markdown(
+        f'<h3 style="color:#58B0A9;font-size:32px;">{"Post incident issues"}</h3>',
+        unsafe_allow_html=True,
+    )
+    # example messages
+    st.write(
+        "The {minor / major} issue with the forecast from {datetime} to {datetime} "
+        "is now resolved. This was due to {reason}."
+    )
+
+    st.write(
+        "The {minor / major} issue with the forecast from {datetime} to {datetime} "
+        "{reason} has now been resolved."
+    )
+
+    st.write(
+        "The {minor / major} issue with the forecast from {datetime} to {datetime} "
+        "has now been resolved as of {fixed_date}."
+    )
+
+    st.write(
+        "More information can be found in  "
+        "[notion](https://www.notion.so/openclimatefix/Useful-Status-messages-d746d92701c8474293aedb12797b2d32)"  # noqa
+    )
