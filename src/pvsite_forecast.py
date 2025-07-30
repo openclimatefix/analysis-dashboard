@@ -245,7 +245,6 @@ def pvsite_forecast_page():
             site_uuid=site_selection_uuid,
             forecast_horizon=15,
         )
-        st.write("Found ML Models for this site:", [model.name for model in ml_models])
 
         if len(ml_models) == 0:
 
