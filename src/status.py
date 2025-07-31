@@ -174,7 +174,48 @@ def data_providers_status():
                         df = pd.DataFrame(records, columns=headers)
                         df["datetime"] = pd.to_datetime(df["datetime"])
                         df = df.sort_values("datetime", ascending=False)
-                        st.dataframe(df, use_container_width=True)
+
+                        # Add compact chart
+                        from datetime import datetime, timedelta
+                        import altair as alt
+
+                        # Melt for compact horizontal status chart
+                        df_melt = df.melt(
+                            id_vars="datetime",
+                            value_vars=["deliveryStatus", "timelyStatus"],
+                            var_name="category",
+                            value_name="status"
+                        )
+
+                        chart = alt.Chart(df_melt).mark_rect(height=12).encode(
+                            x=alt.X("datetime:T", title="Time", axis=alt.Axis(format="%H:%M")),
+                            y=alt.Y("category:N", title=""),
+                            color=alt.Color("status:N",
+                                            scale=alt.Scale(
+                                                domain=["complete", "incomplete", "late", "onTime"],
+                                                range=["#4caf50", "#f44336", "#ff9800", "#2196f3"]
+                                            ),
+                                            # no title
+                                            legend=alt.Legend(title=None,
+                                                              titlePadding=-15,
+                                                              labelFontSize=10,
+                                                              symbolSize=90,
+                                                              padding=1,
+                                                              offset=10
+                                                              )
+                                        ),
+                        tooltip=[
+                                alt.Tooltip("datetime:T", title="Timestamp", format="%Y-%m-%d %H:%M"),
+                                alt.Tooltip("category:N", title="Type"),
+                                alt.Tooltip("status:N", title="Status")
+                            ]
+                        ).properties(
+                            height=110,
+                            width="container"
+                        )
+
+                        st.altair_chart(chart, use_container_width=True)
+
                     else:
                         st.info("No extended data available.")
             st.markdown(f"""<hr style="padding: 0; margin: 0;" />""", unsafe_allow_html=True)
