@@ -262,7 +262,7 @@ def pvsite_forecast_page():
                 forecast_values = get_forecast_values_day_ahead_fast(
                     session=session,
                     site_uuid=site_selection_uuid,
-                    start_utc=starttime-timedelta(days=1),
+                    start_utc=starttime,
                     day_ahead_hours=day_ahead_hours,
                     day_ahead_timezone_delta_hours=day_ahead_timezone_delta_hours,
                     end_utc=endtime,
