@@ -1,0 +1,118 @@
+[build-system]
+requires = ["setuptools>=67", "wheel", "setuptools-git-versioning>=2.0,<3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "analysis-dashboard"
+dynamic = [ "version" ]
+description = ""
+authors = [{ name = "Open Climate Fix team", email = "info@openclimatefix.org" }]
+readme = "README.md"
+requires-python = ">=3.11.0"
+dependencies = [
+    "altair==5.5.0",
+    "requests==2.32.3",
+    "nowcasting_datamodel==1.7.3",
+    "pvsite-datamodel==1.2.14",
+    "numpy==2.0.0",
+    "pandas==2.2.3",
+    "plotly==5.24.1",
+    "psycopg2-binary==2.9.10 ",
+    "SQLAlchemy==2.0.36",
+    "streamlit==1.46.1",
+    "testcontainers==4.9.0",
+    "uvicorn==0.34.0",
+    "geopandas==1.0.1",
+    "garrett-streamlit-auth0==0.9",
+    "pydantic==2.5.3",
+    "xarray==2025.1.0",
+    "fsspec==2024.12.0",
+    "s3fs==2024.12.0",
+    "ocf_blosc2==0.0.11",
+    "zarr==2.18.4",
+    "elexonpy==1.0.15",
+    "fiona==1.10.1",
+    "herbie-data",
+    "numcodecs==0.15.1",
+    "torch @ https://download.pytorch.org/whl/cpu/torch-2.3.1-cp312-none-macosx_11_0_arm64.whl ; platform_system == 'Darwin' and platform_machine == 'arm64'",
+    "torch @ https://download.pytorch.org/whl/cpu/torch-2.3.1%2Bcpu-cp312-cp312-linux_x86_64.whl ; platform_system == 'Linux' and platform_machine == 'x86_64'",
+    "matplotlib==3.10.3",
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "pytest",
+    "testcontainers",
+    "black",
+    "isort",
+    "pytest-cov",
+    "alembic",
+    "geopandas"
+]
+
+[project.urls]
+repository = "https://github.com/openclimatefix/analysis-dashboard"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["test*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.csv"]
+
+[tool.setuptools-git-versioning]
+enabled = true
+
+[tool.mypy]
+python_version = "3.11"
+plugins = [
+    "sqlalchemy.ext.mypy.plugin",
+]
+exclude = [
+    "^gen/*$", # TOML basic string (double-quotes, backslash and other characters need escaping)
+]
+
+
+# Ruff configuration
+# * See https://beta.ruff.rs/docs/
+[tool.ruff]
+line-length = 100
+indent-width = 4
+exclude = ["__init__.py"]
+
+[tool.ruff.lint]
+select = [
+    "E", # pycodestyle
+    "W", # newline at end of files
+    "F", # pyflakes
+    "N", # pep8 naming
+    "B", # flake8-bugbear
+    # We install isort separately because we want to use the profile="black" option
+    # "I", # isosort
+    "D", # pydocstyle
+    "S", # flake8-bandit
+    "T20", # flake8-print
+    "PT" # flake8-print
+]
+fixable = ["ALL"]
+ignore = ["D203", "D213", "D200" ,"D202", "D210", "D212", "D415", "D105"]
+
+[tool.ruff.lint.per-file-ignores]
+"*test*" = ["D", "ANN", "S101"]
+"scripts/*" = ["T201"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = 100
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
