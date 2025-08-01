@@ -109,11 +109,11 @@ def pvsite_forecast_page():
             "Select site by", ("site_uuid", "client_site_name")
         )
 
-        if query_method == "site_uuid":
-            site_selection_uuid = st.sidebar.selectbox(
-                "Select sites by site_uuid",
-                site_uuids,
-            )
+       if query_method == "site_uuid":
+             site_selection_uuid = st.sidebar.selectbox(
+                 "Select sites by site_uuid",
+                 site_uuids,
+             )
 
         else:
          
