@@ -11,7 +11,8 @@ from pvsite_datamodel.connection import DatabaseConnection as SitesDatabaseConne
 from pvsite_datamodel.read.status import get_latest_status as get_latest_status_site
 from pvsite_datamodel.sqlmodels import StatusSQL
 
-STATUS_API_URL = os.getenv("STATUS_API_URL", "https://status.quartz.energy")
+ENV = os.getenv("ENVIRONMENT", "development")
+STATUS_API_URL = "https://status.quartz.energy" if ENV == "production" else "https://status-dev.quartz.energy"
 
 def get_colour(status) -> str:
     """
