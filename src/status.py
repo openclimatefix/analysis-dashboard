@@ -181,8 +181,8 @@ def display_eumetsat_details(details=None):
             df["datetime"] = pd.to_datetime(df["datetime"])
             df = df.sort_values("datetime", ascending=False)
 
-            # Add compact chart
-            from datetime import datetime, timedelta
+            # Add compact delivery chart
+            # N.B. importing here means we should only need to load Altair if we are displaying the chart
             import altair as alt
 
             # Melt for compact horizontal status chart
