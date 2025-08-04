@@ -111,7 +111,8 @@ def ocf_status():
 
         # show current status
         st.markdown(
-            f'<h2 style="color:#63BCAF;font-size:24px;">{"OCF Status"}</h2>',
+            f'<h2 style="color:#63BCAF;font-size:24px;">OCF {national_or_sites} Status &nbsp;'
+            f'<small style="font-size: 0.875rem; font-weight: 300; color: #ffffff;">[Select region in sidebar]</small></h2>',
             unsafe_allow_html=True,
         )
 
@@ -289,13 +290,14 @@ def status_page():
     """Main page for status"""
     st.set_page_config(layout="wide", page_title="OCF • Status", initial_sidebar_state="collapsed")
 
+    st.markdown(
+        f'<h1 style="color:#63BCAF;font-size:48px;">{"Status Page"}</h1>',
+        unsafe_allow_html=True,
+    )
+
     col1, col2 = st.columns([1, 1])
 
     with col1:
-        st.markdown(
-            f'<h1 style="color:#63BCAF;font-size:48px;">{"Status Page"}</h1>',
-            unsafe_allow_html=True,
-        )
         # Data providers status
         data_providers_status()
 
