@@ -256,13 +256,17 @@ def data_providers_status():
             status = item["status"]
             msg = item["statusMessage"]
             details = item.get("details", {})
+            status_page_link = item.get("statusPageUrl", "")
 
             emoji = "🟢" if status == "ok" else "🔴"
 
             col1, col2, col3 = st.columns([3, 1, 2])
 
             with col1:
-                st.metric(source, f"{emoji} {provider}")
+                st.markdown(f"""<div style="font-size: 0.875rem">{source}</div>""", unsafe_allow_html=True)
+                st.markdown(
+                    f"<div style='font-size: 1.25rem; color:#ccc;'>{emoji} {provider} &nbsp;<a style='text-decoration: none; font-size: 0.875rem;' href='{status_page_link}' target='_blank' rel='noopener noreferrer'>🔗</a></div>",
+                    unsafe_allow_html=True)
 
             with col2:
                 st.metric("Status", status)
