@@ -43,20 +43,28 @@ def get_current_status(session, national_or_sites="National"):
     return status
 
 
-def display_update_status():
+def display_update_status(
+    status, session, national_or_sites="National"
+):
     """Display the update status form"""
-    col1, col2 = st.columns([1, 2])
+    col1, col2, col3 = st.columns([1, 2, 1])
 
     with col1:
-        st.markdown(f"""<div class="label">Select the new status</div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="label">New status</div>""", unsafe_allow_html=True)
         status_level = st.selectbox(
-            "New status?", ("Ok", "Warning", "Error"), label_visibility="collapsed"
+            "New status?", ("ok", "warning", "error"), label_visibility="collapsed"
         )
     with col2:
         st.markdown(f"""<div class="label">Enter a message</div>""", unsafe_allow_html=True)
         value = st.text_input("Message", label_visibility="collapsed")
-
-    return str(status_level).lower(), value
+    with col3:
+        st.markdown(f"""<div class="label">&nbsp;</div>""", unsafe_allow_html=True)
+        if st.button(f"Update", key="general_status_button"):
+            write_new_status(
+                session, status, status_level, value, national_or_sites=national_or_sites
+            )
+            st.success(f"Status updated to {status_level} with message: {value}")
+            st.rerun()
 
 
 def write_new_status(session, status, status_level, value, national_or_sites="National"):
@@ -79,7 +87,51 @@ def write_new_status(session, status, status_level, value, national_or_sites="Na
     session.add(s)
     session.commit()
 
-@st.cache_data(ttl=600)  # cache for 1 minute
+def ocf_status():
+    # Get database URLs
+    db_url = os.getenv("DB_URL", None)
+    db_url_sites = os.getenv("SITES_DB_URL", None)
+
+    # Add database selection in sidebar, similar to user_page.py
+    if region == "uk":
+        national_or_sites = st.sidebar.selectbox("Select", ["National", "Sites"], index=0)
+    else:
+        national_or_sites = "Sites"
+
+    # GENERAL STATUS SECTION
+    # Get the appropriate connection for the selected database
+    if national_or_sites == "National":
+        connection = DatabaseConnection(url=db_url, echo=True)
+    else:  # Sites
+        connection = SitesDatabaseConnection(url=db_url_sites, echo=True)
+
+    with connection.get_session() as session:
+        # Get general status
+        status = get_current_status(national_or_sites=national_or_sites, session=session)
+
+        # show current status
+        st.markdown(
+            f'<h2 style="color:#63BCAF;font-size:24px;">{"OCF Status"}</h2>',
+            unsafe_allow_html=True,
+        )
+
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col1:
+            colour = get_colour(status)
+            st.write("Status")
+            st.markdown(f":{colour}[{status.status}]")
+        with col2:
+            st.write("Message")
+            # show the message or "-" if empty
+            st.write(f"{status.message}" if status.message else "–")
+        with col3:
+            st.write("Last Updated (UTC)")
+            st.markdown(f"<small>{status.created_utc.strftime('%Y-%m-%d %H:%M:%S')}</small>", unsafe_allow_html=True)
+
+
+        display_update_status(status, session, national_or_sites=national_or_sites)
+
+@st.cache_data(ttl=60)  # cache for 1 minute
 def fetch_data_providers_status():
     """Fetch the status of data providers"""
     try:
@@ -91,7 +143,7 @@ def fetch_data_providers_status():
         st.error(f"Failed to fetch data: {e}")
         return None
 
-@st.cache_data(ttl=600)  # cache for 1 minute
+@st.cache_data(ttl=60)  # cache for 1 minute
 def get_eumetsat_details():
     try:
         response = requests.get(f"{STATUS_API_URL}/data/providers/eumetsat?verbose=true", timeout=10)
@@ -100,6 +152,77 @@ def get_eumetsat_details():
     except Exception as e:
         st.error(f"Failed to fetch EUMETSAT details: {e}")
         return {}
+
+def display_eumetsat_details(details=None):
+    if details:
+        col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+
+        with col1:
+            st.metric("Latest (UTC)", details.get("latestTimestamp", "-"))
+
+        with col2:
+            st.metric("Complete", details.get("complete", "-"))
+
+        with col3:
+            st.metric("Incomplete", details.get("incomplete", "-"))
+
+        with col4:
+            undelivered = details.get("undeliveredPlanned", 0) + details.get("undeliveredUnplanned", 0)
+            st.metric("Undelivered", undelivered)
+    with st.expander("Show full delivery timeline"):
+        extra = get_eumetsat_details()
+        result_data = extra.get("details", {}).get("results", [])
+
+        if len(result_data) >= 2:
+            records = result_data[0]
+            headers = result_data[1]
+            df = pd.DataFrame(records, columns=headers)
+            df["datetime"] = pd.to_datetime(df["datetime"])
+            df = df.sort_values("datetime", ascending=False)
+
+            # Add compact chart
+            from datetime import datetime, timedelta
+            import altair as alt
+
+            # Melt for compact horizontal status chart
+            df_melt = df.melt(
+                id_vars="datetime",
+                value_vars=["deliveryStatus", "timelyStatus"],
+                var_name="category",
+                value_name="status"
+            )
+
+            chart = alt.Chart(df_melt).mark_rect(height=12).encode(
+                x=alt.X("datetime:T", title="Time", axis=alt.Axis(format="%H:%M")),
+                y=alt.Y("category:N", title=""),
+                color=alt.Color("status:N",
+                                scale=alt.Scale(
+                                    domain=["complete", "incomplete", "late", "onTime"],
+                                    range=["#4caf50", "#f44336", "#ff9800", "#2196f3"]
+                                ),
+                                # no title
+                                legend=alt.Legend(title=None,
+                                                  titlePadding=-15,
+                                                  labelFontSize=10,
+                                                  symbolSize=90,
+                                                  padding=1,
+                                                  offset=10
+                                                  )
+                                ),
+                tooltip=[
+                    alt.Tooltip("datetime:T", title="Timestamp", format="%Y-%m-%d %H:%M"),
+                    alt.Tooltip("category:N", title="Type"),
+                    alt.Tooltip("status:N", title="Status")
+                ]
+            ).properties(
+                height=110,
+                width="container"
+            )
+
+            st.altair_chart(chart, use_container_width=True)
+
+        else:
+            st.info("No extended data available.")
 
 def data_providers_status():
     """Display the status of data providers"""
@@ -149,75 +272,9 @@ def data_providers_status():
                 st.markdown(f"<div style='font-size: 0.875rem; color:#ccc; margin-top: 0.25rem;'>{msg if msg else '–'}</div>", unsafe_allow_html=True)
 
             if provider == "EUMETSAT":
-                if details:
-                    col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+                # Display extra EUMETSAT details, with detailed delivery timeline on request
+                display_eumetsat_details(details)
 
-                    with col1:
-                        st.metric("Latest (UTC)", details.get("latestTimestamp", "-"))
-
-                    with col2:
-                        st.metric("Complete", details.get("complete", "-"))
-
-                    with col3:
-                        st.metric("Incomplete", details.get("incomplete", "-"))
-
-                    with col4:
-                        undelivered = details.get("undeliveredPlanned", 0) + details.get("undeliveredUnplanned", 0)
-                        st.metric("Undelivered", undelivered)
-                with st.expander("Show full delivery timeline"):
-                    extra = get_eumetsat_details()
-                    result_data = extra.get("details", {}).get("results", [])
-
-                    if len(result_data) >= 2:
-                        records = result_data[0]
-                        headers = result_data[1]
-                        df = pd.DataFrame(records, columns=headers)
-                        df["datetime"] = pd.to_datetime(df["datetime"])
-                        df = df.sort_values("datetime", ascending=False)
-
-                        # Add compact chart
-                        from datetime import datetime, timedelta
-                        import altair as alt
-
-                        # Melt for compact horizontal status chart
-                        df_melt = df.melt(
-                            id_vars="datetime",
-                            value_vars=["deliveryStatus", "timelyStatus"],
-                            var_name="category",
-                            value_name="status"
-                        )
-
-                        chart = alt.Chart(df_melt).mark_rect(height=12).encode(
-                            x=alt.X("datetime:T", title="Time", axis=alt.Axis(format="%H:%M")),
-                            y=alt.Y("category:N", title=""),
-                            color=alt.Color("status:N",
-                                            scale=alt.Scale(
-                                                domain=["complete", "incomplete", "late", "onTime"],
-                                                range=["#4caf50", "#f44336", "#ff9800", "#2196f3"]
-                                            ),
-                                            # no title
-                                            legend=alt.Legend(title=None,
-                                                              titlePadding=-15,
-                                                              labelFontSize=10,
-                                                              symbolSize=90,
-                                                              padding=1,
-                                                              offset=10
-                                                              )
-                                        ),
-                        tooltip=[
-                                alt.Tooltip("datetime:T", title="Timestamp", format="%Y-%m-%d %H:%M"),
-                                alt.Tooltip("category:N", title="Type"),
-                                alt.Tooltip("status:N", title="Status")
-                            ]
-                        ).properties(
-                            height=110,
-                            width="container"
-                        )
-
-                        st.altair_chart(chart, use_container_width=True)
-
-                    else:
-                        st.info("No extended data available.")
             st.markdown(f"""<hr style="padding: 0; margin: 0;" />""", unsafe_allow_html=True)
 
     else:
@@ -240,65 +297,5 @@ def status_page():
 
 
     with col2:
-        # Get database URLs
-        db_url = os.getenv("DB_URL", None)
-        db_url_sites = os.getenv("SITES_DB_URL", None)
-
-        # Add database selection in sidebar, similar to user_page.py
-        if region == "uk":
-            national_or_sites = st.sidebar.selectbox("Select", ["National", "Sites"], index=0)
-        else:
-            national_or_sites = "Sites"
-
-        # GENERAL STATUS SECTION
-        # Get the appropriate connection for the selected database
-        if national_or_sites == "National":
-            connection = DatabaseConnection(url=db_url, echo=True)
-        else:  # Sites
-            connection = SitesDatabaseConnection(url=db_url_sites, echo=True)
-
-        with connection.get_session() as session:
-            # Get general status
-            status = get_current_status(national_or_sites=national_or_sites, session=session)
-
-            # show current status
-            st.markdown(
-                f'<h2 style="color:#63BCAF;font-size:24px;">{"Current Status"}</h2>',
-                unsafe_allow_html=True,
-            )
-
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                colour = get_colour(status)
-                st.write("Status")
-                st.markdown(f":{colour}[{status.status}]")
-            with col2:
-                st.write("Message")
-                # show the message or "-" if empty
-                st.write(f"{status.message}" if status.message else "–")
-            with col3:
-                st.write("Last Updated")
-                st.write(f"{status.created_utc}")
-
-            st.write("")
-            st.write("")
-
-            # status_level, value = display_update_status()
-            col1, col2, col3 = st.columns([1, 2, 1])
-
-            with col1:
-                st.markdown(f"""<div class="label">New status</div>""", unsafe_allow_html=True)
-                status_level = st.selectbox(
-                    "New status?", ("Ok", "Warning", "Error"), label_visibility="collapsed"
-                )
-            with col2:
-                st.markdown(f"""<div class="label">Enter a message</div>""", unsafe_allow_html=True)
-                value = st.text_input("Message", label_visibility="collapsed")
-            with col3:
-                st.markdown(f"""<div class="label">&nbsp;</div>""", unsafe_allow_html=True)
-                if st.button(f"Update", key="general_status_button"):
-                    write_new_status(
-                        session, status, status_level, value, national_or_sites=national_or_sites
-                    )
-                    st.rerun()
+        ocf_status()
 
