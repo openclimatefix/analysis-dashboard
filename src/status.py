@@ -1,9 +1,11 @@
 import logging
 import os
 
+import altair as alt
 import pandas as pd
 import requests
 import streamlit as st
+
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.models import Status
 from nowcasting_datamodel.read.read import get_latest_status
@@ -182,10 +184,7 @@ def display_eumetsat_details(details=None):
             df["datetime"] = pd.to_datetime(df["datetime"])
             df = df.sort_values("datetime", ascending=False)
 
-            # Add compact delivery chart
-            # N.B. importing here means we should only need to load Altair if we are displaying the chart
-            import altair as alt
-
+            # –– Add compact delivery chart ––
             # Melt for compact horizontal status chart
             df_melt = df.melt(
                 id_vars="datetime",
