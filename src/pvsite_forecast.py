@@ -201,7 +201,7 @@ def pvsite_forecast_page():
             day_ahead_timezone_delta_hours = None
 
         # an option to resample to the data
-        resample = st.sidebar.selectbox("Resample data", [None, "15T", "30T"], None)
+        resample = st.sidebar.selectbox("Resample data", [None, "15min", "30min"], None)
 
         st.write(
             "Forecast for",
@@ -393,7 +393,7 @@ def pvsite_forecast_page():
     now = datetime.now().isoformat()
 
     if resample is None:
-        st.caption("Please resample to '15T' to get MAE")
+        st.caption("Please resample to '15min' to get MAE")
     else:
         metrics = []
         for model in ml_models:
@@ -473,7 +473,7 @@ def pvsite_forecast_page():
 
     # Check if resampling is applied - if not, show a clear message
     if resample is None:
-        st.warning("Please select a resample option (e.g., '15T') in the sidebar to view error metrics. Without resampling, error metrics cannot be calculated properly.")
+        st.warning("Please select a resample option (e.g., '15min') in the sidebar to view error metrics. Without resampling, error metrics cannot be calculated properly.")
     else:
         # Create time series of error metrics for each model
         error_dfs = {}
