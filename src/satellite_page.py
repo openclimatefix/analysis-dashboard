@@ -63,7 +63,7 @@ def get_data(zarr_file):
 
     if not os.path.exists(hash_filename_unzip):
         print("Unzipping")
-        os.system(f"unzip -qq {hash_filename} -d {hash_filename_unzip}")
+        os.system(f"unzip -qqo {hash_filename} -d {hash_filename_unzip}")
     ds = xr.open_dataset(hash_filename_unzip)
     print("Loading")
 
