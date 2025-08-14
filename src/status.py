@@ -148,16 +148,19 @@ def fetch_data_providers_status():
         return None
 
 @st.cache_data(ttl=60)  # cache for 1 minute
-def get_eumetsat_details():
+def get_eumetsat_details(satellite_id=None):
     try:
-        response = requests.get(f"{STATUS_API_URL}/data/providers/eumetsat?verbose=true", timeout=10)
+        url = f"{STATUS_API_URL}/data/providers/eumetsat?verbose=true"
+        if satellite_id:
+            url += f"&satelliteId={satellite_id}"
+        response = requests.get(url, timeout=10)
         response.raise_for_status()
         return response.json()
     except Exception as e:
         st.error(f"Failed to fetch EUMETSAT details: {e}")
         return {}
 
-def display_eumetsat_details(details=None):
+def display_eumetsat_details(satellite_id, details=None):
     if details:
         col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
 
@@ -174,7 +177,7 @@ def display_eumetsat_details(details=None):
             undelivered = details.get("undeliveredPlanned", 0) + details.get("undeliveredUnplanned", 0)
             st.metric("Undelivered", undelivered)
     with st.expander("Show full delivery timeline"):
-        extra = get_eumetsat_details()
+        extra = get_eumetsat_details(satellite_id)
         result_data = extra.get("details", {}).get("results", [])
 
         if len(result_data) >= 2:
@@ -277,8 +280,9 @@ def data_providers_status():
                 st.markdown(f"<div style='font-size: 0.875rem; color:#ccc; margin-top: 0.25rem;'>{msg if msg else '–'}</div>", unsafe_allow_html=True)
 
             if provider == "EUMETSAT":
-                # Display extra EUMETSAT details, with detailed delivery timeline on request
-                display_eumetsat_details(details)
+                satellite_id = "MET-11" if "MET 11" in source else "MET-10"
+                # Display extra EUMETSAT details, with detailed delivery timeline, on request
+                display_eumetsat_details(satellite_id, details)
 
             st.markdown(f"""<hr style="padding: 0; margin: 0;" />""", unsafe_allow_html=True)
 
