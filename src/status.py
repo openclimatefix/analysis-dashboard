@@ -198,8 +198,8 @@ def display_eumetsat_details(details=None):
                 y=alt.Y("category:N", title=""),
                 color=alt.Color("status:N",
                                 scale=alt.Scale(
-                                    domain=["complete", "incomplete", "late", "onTime"],
-                                    range=["#4caf50", "#f44336", "#ff9800", "#2196f3"]
+                                    domain=["complete", "incomplete", "late", "onTime", "unavailable-unplanned", "unavailable-planned"],
+                                    range=["#4caf50", "#f44336", "#ff9800", "#2196f3", "#f44336", "#9e9e9e"]
                                 ),
                                 # no title
                                 legend=alt.Legend(title=None,
