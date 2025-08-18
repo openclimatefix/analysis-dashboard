@@ -22,5 +22,6 @@ elexonpy==1.0.15
 fiona==1.10.1
 herbie-data
 numcodecs==0.15.1
-torch==2.7.1
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.7.1+cpu
 matplotlib==3.10.3
