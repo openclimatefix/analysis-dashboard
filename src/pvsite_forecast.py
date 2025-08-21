@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 from datetime import datetime, timedelta, time, timezone
+from zoneinfo import ZoneInfo
 from pvsite_datamodel.read import get_site_by_uuid
 from pvsite_datamodel.read.model import get_models
 from sqlalchemy.orm import Session
@@ -15,7 +16,6 @@ from pvsite_datamodel.read import (
 )
 
 import plotly.graph_objects as go
-import pytz
 
 # Penalty Calculator
 def calculate_penalty(df, region, asset_type, capacity_kw):
@@ -129,7 +129,10 @@ def pvsite_forecast_page():
         timezone_selected = st.sidebar.selectbox(
             "Select timezone", ["UTC", "Asia/Calcutta"]
         )
-        timezone_selected = pytz.timezone(timezone_selected)
+        if timezone_selected == "UTC":
+            timezone_selected = timezone.utc
+        else:
+            timezone_selected = ZoneInfo(timezone_selected)
 
         day_after_tomorrow = datetime.today() + timedelta(days=3)
         starttime = st.sidebar.date_input(
@@ -221,18 +224,16 @@ def pvsite_forecast_page():
         endtime = datetime.combine(endtime, time.min)
 
         # change to the correct timezone
-        # starttime = starttime.replace(tzinfo=timezone_selected)
-        # endtime = endtime.replace(tzinfo=timezone_selected)
-        starttime = timezone_selected.localize(starttime)
-        endtime = timezone_selected.localize(endtime)
+        starttime = starttime.replace(tzinfo=timezone_selected)
+        endtime = endtime.replace(tzinfo=timezone_selected)
 
         # change to utc
-        starttime = starttime.astimezone(pytz.utc)
-        endtime = endtime.astimezone(pytz.utc)
+        starttime = starttime.astimezone(timezone.utc)
+        endtime = endtime.astimezone(timezone.utc)
 
         if created is not None:
-            created = timezone_selected.localize(created)
-            created = created.astimezone(pytz.utc)
+            created = created.replace(tzinfo=timezone_selected)
+            created = created.astimezone(timezone.utc)
 
         # great ml model names for this site
 
@@ -286,7 +287,7 @@ def pvsite_forecast_page():
             y = [i.forecast_power_kw for i in forecast_values]
 
             # convert to timezone
-            x = [i.replace(tzinfo=pytz.utc) for i in x]
+            x = [i.replace(tzinfo=timezone.utc) for i in x]
             x = [i.astimezone(timezone_selected) for i in x]
 
             ys[model.name] = y
@@ -310,7 +311,7 @@ def pvsite_forecast_page():
         ]
 
         # convert to timezone
-        xx = [i.replace(tzinfo=pytz.utc) for i in xx]
+        xx = [i.replace(tzinfo=timezone.utc) for i in xx]
         xx = [i.astimezone(timezone_selected) for i in xx]
 
     df_forecast = []
