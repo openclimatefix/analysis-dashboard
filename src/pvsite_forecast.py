@@ -129,10 +129,8 @@ def pvsite_forecast_page():
         timezone_selected = st.sidebar.selectbox(
             "Select timezone", ["UTC", "Asia/Calcutta"]
         )
-        if timezone_selected == "UTC":
-            timezone_selected = timezone.utc
-        else:
-            timezone_selected = ZoneInfo(timezone_selected)
+        
+        timezone_selected = ZoneInfo(timezone_selected)
 
         day_after_tomorrow = datetime.today() + timedelta(days=3)
         starttime = st.sidebar.date_input(
