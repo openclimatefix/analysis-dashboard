@@ -35,6 +35,7 @@ from nwp_page import nwp_page
 from satellite_page import satellite_page
 from satellite_forecast import satellite_forecast_page
 from adjuster import adjuster_page
+from batch_page import batch_page
 
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
@@ -266,5 +267,6 @@ if check_password():
         st.Page(nwp_page, title="🌤️ NWP"),
         st.Page(satellite_page, title="🛰️ Satellite"),
         st.Page(satellite_forecast_page, title="☁️ Cloudcasting"),
-        st.Page(adjuster_page, title="🔧 Adjuster")], position="top")
+        st.Page(adjuster_page, title="🔧 Adjuster"),
+        st.Page(batch_page, title="👀 Batch Visualisation Page")], position="top")
     pg.run()

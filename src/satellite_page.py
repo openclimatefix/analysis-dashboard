@@ -13,12 +13,17 @@ environment = os.getenv("ENVIRONMENT", "development")
 
 all_satellite = {
     "uk": {
-        "0deg": f"s3://nowcasting-sat-{environment}/data/latest/latest.zarr.zip",
-        "0deg_HRV": f"s3://nowcasting-sat-{environment}/data/latest/hrv_latest.zarr.zip",
-        "9deg": f"s3://nowcasting-sat-{environment}/data/latest/latest_15.zarr.zip",
-        "9deg_HRV": f"s3://nowcasting-sat-{environment}/data/latest/15_hrv_latest.zarr.zip",
+        "9 deg (new)": f"s3://nowcasting-sat-{environment}/rss/data/latest.zarr.zip",
+        "0 deg (new)": f"s3://nowcasting-sat-{environment}/odegree/data/latest.zarr.zip",
+        "9deg (old)": f"s3://nowcasting-sat-{environment}/data/latest/latest.zarr.zip",
+        "9deg_HRV (old)": f"s3://nowcasting-sat-{environment}/data/latest/hrv_latest.zarr.zip",
+        "0deg (old)": f"s3://nowcasting-sat-{environment}/data/latest/latest_15.zarr.zip",
+        "0deg_HRV (old)": f"s3://nowcasting-sat-{environment}/data/latest/15_hrv_latest.zarr.zip",
     },
-    "india": {"45.5deg": f"s3://india-satellite-{environment}/data/latest/iodc_latest.zarr.zip"},
+    "india": {"45.5deg": f"s3://india-satellite-{environment}/iodc/data/latest.zarr.zip",
+              "45.5deg (old)": f"s3://india-satellite-{environment}/data/latest/iodc_latest.zarr.zip"
+              },
+
 }
 
 satellite_key_list = list(all_satellite[region].keys()) + ["Other"]
@@ -63,7 +68,7 @@ def get_data(zarr_file):
 
     if not os.path.exists(hash_filename_unzip):
         print("Unzipping")
-        os.system(f"unzip -qq {hash_filename} -d {hash_filename_unzip}")
+        os.system(f"unzip -qqo {hash_filename} -d {hash_filename_unzip}")
     ds = xr.open_dataset(hash_filename_unzip)
     print("Loading")
 
