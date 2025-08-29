@@ -13,8 +13,8 @@ dependencies = [
     "requests==2.32.3",
     "nowcasting_datamodel==1.7.3",
     "pvsite-datamodel==1.2.14",
-    "numpy>=1.24,<2.0",
-    "pandas>=2.1,<2.2",
+    "numpy>=2.0",
+    "pandas>=2.2",
     "plotly==5.24.1",
     "psycopg2-binary==2.9.10",
     "SQLAlchemy==2.0.36",
@@ -24,9 +24,9 @@ dependencies = [
     "geopandas==1.0.1",
     "garrett-streamlit-auth0==0.9",
     "pydantic==2.5.3",
-    "xarray>=2024.6,<2025",
-    "fsspec>=2024.6,<2025",
-    "s3fs>=2024.6,<2025",
+    "xarray>=2024.6",
+    "fsspec>=2024.6",
+    "s3fs>=2024.6",
     "ocf_blosc2==0.0.11",
     "zarr>=3.0,<4.0",
     "elexonpy==1.0.15",
@@ -45,6 +45,13 @@ dev = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/",
+    "pyproject.toml",
+    "README.md",
+]
 
 [tool.uv]
 dev-dependencies = [

@@ -61,10 +61,10 @@ cd src && uv run streamlit run main.py
 
 You can also install using pip, though uv is recommended for better performance:
 
-In the main project folder, install requirements:
+In the main project folder, install from pyproject.toml:
 
 ```shell
-pip install -r requirements.txt
+pip install -e .
 ```
 
 Create a login secret:
