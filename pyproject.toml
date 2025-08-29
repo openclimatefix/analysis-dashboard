@@ -7,7 +7,7 @@ name = "analysis-dashboard"
 version = "0.1.0"
 description = "Analysis dashboard for OCF forecasting systems"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
     "altair==5.5.0",
     "requests==2.32.3",
@@ -60,6 +60,8 @@ dev-dependencies = [
     "pytest",
     "pytest-cov",
 ]
+index-url = "https://download.pytorch.org/whl/cpu"
+extra-index-url = ["https://pypi.org/simple"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
