@@ -24,3 +24,4 @@ herbie-data
 numcodecs>=0.12,<1.0
 torch>=2.0,<3.0
 matplotlib>=3.8,<4.0
+
