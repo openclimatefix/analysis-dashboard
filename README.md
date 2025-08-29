@@ -67,12 +67,16 @@ In the main project folder, install requirements:
 pip install -r requirements.txt
 ```
 
-Run `streamlit hello` to check that Streamlit installed. A "Welcome to Streamlit!" page should open in the browser.
-
-Create a login secret: `
+Create a login secret:
 
 ```shell
 echo "password = example" > src/.streamlit/secrets.toml
+```
+
+Run app:
+
+```shell
+cd src && streamlit run main.py
 ```
 
 ## Database connection
@@ -84,45 +88,10 @@ OCF team members can connect to the `forecast development database` using [these
 Run app:
 
 ```shell
-cd src && streamlit run main.py
+cd src && uv run streamlit run main.py
 ```
 
-### **Migration from pip to uv**
-
-If you're upgrading from pip, you can use the migration script:
-
-```shell
-./migrate_to_uv.sh
-```
-
-Or manually:
-
-1. Install uv: `curl -LsSf https://astral.sh/uv/install.sh | sh`
-2. Run: `uv sync`
-3. Use: `uv run <command>` instead of activating virtual environments
-
-## Development
-
-### Common uv Commands
-
-- **Install dependencies**: `uv sync`
-- **Add a new dependency**: `uv add package-name`
-- **Remove a dependency**: `uv remove package-name`
-- **Run commands**: `uv run <command>`
-- **Run tests**: `uv run pytest`
-- **Install development dependencies**: `uv sync --all-extras --dev`
-- **Update dependencies**: `uv lock --upgrade`
-
-### Benefits of uv
-
-- **Fast**: uv is 10-100x faster than pip
-- **Reliable**: Uses a lock file for reproducible builds
-- **Simple**: Single tool for all Python package management
-- **Compatible**: Works with existing Python projects
-
----
-
-### **Using Docker Compose**
+## Using Docker Compose**
 
 This method uses Docker Compose to set up the app and its environment automatically.
 
