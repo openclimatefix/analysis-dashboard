@@ -9,11 +9,28 @@ on:
     paths-ignore: ['README.md']
 
 jobs:
-  branch-ci:
-    uses: openclimatefix/.github/.github/workflows/nondefault_branch_push_ci_python.yml@main
-    secrets: inherit
-    with:
-      enable_linting: false # TODO: Lint whole package
-      enable_typechecking: false
-      tests_folder: tests
-      tests_conda_deps: "esmpy gdal hdf5=1.14.4 numpy>=2.0 pandas>=2.2"
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc g++ make
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+    
+    - name: Set up Python
+      run: uv python install 3.12
+    
+    - name: Install dependencies
+      run: uv sync --all-extras --dev
+    
+    - name: Run tests
+      run: uv run pytest tests/ -v
