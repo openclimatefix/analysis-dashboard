@@ -18,9 +18,48 @@ Thanks to the analysis dashboard, OCF has a valuable feedback tool for understan
 
 ## Installation
 
-### **Manual Installation**
+### **Using uv (Recommended)**
 
-You can install the `analysis-dashboard` package directly from GitHub.
+This project uses [uv](https://docs.astral.sh/uv/) for fast and reliable dependency management.
+
+**Prerequisites:**
+
+Install uv if you haven't already:
+
+```shell
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Steps:**
+
+1. Clone the repository and navigate to the project folder:
+
+```shell
+git clone https://github.com/openclimatefix/analysis-dashboard.git
+cd analysis-dashboard
+```
+
+2. Install dependencies:
+
+```shell
+uv sync
+```
+
+3. Create a login secret:
+
+```shell
+echo "password = example" > src/.streamlit/secrets.toml
+```
+
+4. Run the app:
+
+```shell
+cd src && uv run streamlit run main.py
+```
+
+### **Manual Installation (Legacy)**
+
+You can also install using pip, though uv is recommended for better performance:
 
 In the main project folder, install requirements:
 
@@ -47,6 +86,39 @@ Run app:
 ```shell
 cd src && streamlit run main.py
 ```
+
+### **Migration from pip to uv**
+
+If you're upgrading from pip, you can use the migration script:
+
+```shell
+./migrate_to_uv.sh
+```
+
+Or manually:
+
+1. Install uv: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+2. Run: `uv sync`
+3. Use: `uv run <command>` instead of activating virtual environments
+
+## Development
+
+### Common uv Commands
+
+- **Install dependencies**: `uv sync`
+- **Add a new dependency**: `uv add package-name`
+- **Remove a dependency**: `uv remove package-name`
+- **Run commands**: `uv run <command>`
+- **Run tests**: `uv run pytest`
+- **Install development dependencies**: `uv sync --all-extras --dev`
+- **Update dependencies**: `uv lock --upgrade`
+
+### Benefits of uv
+
+- **Fast**: uv is 10-100x faster than pip
+- **Reliable**: Uses a lock file for reproducible builds
+- **Simple**: Single tool for all Python package management
+- **Compatible**: Works with existing Python projects
 
 ---
 
