@@ -2,8 +2,8 @@ altair==5.5.0
 requests==2.32.3
 nowcasting_datamodel==1.7.3
 pvsite-datamodel==1.2.14
-numpy==2.0.0
-pandas==2.2.3
+numpy==1.26.4
+pandas==2.1.4
 plotly==5.24.1
 psycopg2-binary==2.9.10 
 SQLAlchemy==2.0.36
@@ -13,9 +13,9 @@ uvicorn==0.34.0
 geopandas==1.0.1
 garrett-streamlit-auth0==0.9
 pydantic==2.5.3
-xarray==2025.7.1
-fsspec==2024.12.0
-s3fs==2024.12.0
+xarray==2024.6.0
+fsspec==2024.6.1
+s3fs==2024.6.1
 ocf_blosc2==0.0.11
 zarr==3.1.1
 elexonpy==1.0.15
