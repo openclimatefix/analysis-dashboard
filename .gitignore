@@ -4,3 +4,12 @@ src/venv.
 shsohos
 *.pyc
 src/.streamlit/secrets.toml
+
+# uv
+.venv/
+.python-version
+__pycache__/
+*.py[cod]
+*$py.class
+uv.lock.bak
+uv.lock

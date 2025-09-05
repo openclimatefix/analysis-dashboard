@@ -1,0 +1,10 @@
+name: Default Branch Push CI
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  merged-ci:
+    uses: openclimatefix/.github/.github/workflows/default_branch_pr_merged_ci.yml@main
+    secrets: inherit
