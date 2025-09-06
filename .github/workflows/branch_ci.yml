@@ -11,4 +11,5 @@ jobs:
     uses: openclimatefix/.github/.github/workflows/branch_ci.yml@main
     with:
       enable_typechecking: false
+      test_python_versions: '["3.12"]'
     secrets: inherit
