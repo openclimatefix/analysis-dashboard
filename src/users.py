@@ -11,16 +11,13 @@ from pvsite_datamodel.connection import DatabaseConnection as SitesDatabaseConne
 from pvsite_datamodel.read.user import get_all_last_api_request as get_all_last_api_request_sites
 from pvsite_datamodel.read.user import (
     get_api_requests_for_one_user as get_api_requests_for_one_user_sites,
-    get_user_by_email,
 )
-from pvsite_datamodel.read.site import get_sites_from_user
 
 from plots.users import (
     make_api_requests_plot,
     make_api_frequency_requests_plot,
     make_sites_over_time_plot,
 )
-import plotly.graph_objects as go
 
 region = os.getenv("REGION", "uk")
 

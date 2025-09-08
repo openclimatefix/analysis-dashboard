@@ -2,8 +2,6 @@
 India Analysis dashboard for OCF
 """
 
-import os
-
 import streamlit as st
 
 from auth import check_password
