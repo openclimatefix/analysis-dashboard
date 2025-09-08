@@ -1,8 +1,8 @@
-name: Default Branch Push CI
+name: Branch Main Push CI
 
 on:
   push:
-    branches: [ "main", "copy-secrets-to-docker" ]
+    branches: [ "main" ]
 
 
 # Specify concurrency such that only one workflow can run at a time
