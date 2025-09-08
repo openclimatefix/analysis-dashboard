@@ -19,7 +19,7 @@ WORKDIR /app
 COPY pyproject.toml ./
 
 # Install dependencies using uv (generate lock file during build)
-RUN uv sync --frozen
+RUN uv sync
 
 # Copy the application source code
 COPY src .
