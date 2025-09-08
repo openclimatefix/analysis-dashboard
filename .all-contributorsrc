@@ -78,6 +78,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "AnujNayak108",
+      "name": "Anuj Nayak",
+      "avatar_url": "https://avatars.githubusercontent.com/u/86143398?v=4",
+      "profile": "https://github.com/AnujNayak108",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
