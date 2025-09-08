@@ -13,4 +13,5 @@ jobs:
       enable_typechecking: false
       enable_linting: false
       test_python_versions: '["3.12"]'
+      test_paths: '["tests"]'
     secrets: inherit
