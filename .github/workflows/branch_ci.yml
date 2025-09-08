@@ -1,0 +1,17 @@
+name: Branch CI
+run-name: Branch CI for ${{ github.ref_name }} by ${{ github.actor }}
+
+on:  
+  push:
+    branches-ignore: [ main ]
+    paths-ignore: ['README.md']
+
+jobs:
+  branch_ci:
+    uses: openclimatefix/.github/.github/workflows/branch_ci.yml@main
+    with:
+      enable_typechecking: false
+      enable_linting: false
+      test_python_versions: '["3.12"]'
+      tests_folder: 'tests'
+    secrets: inherit
