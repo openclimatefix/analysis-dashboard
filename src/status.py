@@ -5,7 +5,6 @@ import altair as alt
 import pandas as pd
 import requests
 import streamlit as st
-
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.models import Status
 from nowcasting_datamodel.read.read import get_latest_status
@@ -17,8 +16,7 @@ ENV = os.getenv("ENVIRONMENT", "development")
 STATUS_API_URL = "https://status.quartz.energy" if ENV == "production" else "https://status-dev.quartz.energy"
 
 def get_colour(status) -> str:
-    """
-    Get the colour for the status
+    """Get the colour for the status
 
     green = ok
     orange = warning
@@ -47,24 +45,24 @@ def get_current_status(session, national_or_sites="National"):
 
 
 def display_update_status(
-    status, session, national_or_sites="National"
+    status, session, national_or_sites="National",
 ):
     """Display the update status form"""
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col1:
-        st.markdown(f"""<div class="label">New status</div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="label">New status</div>""", unsafe_allow_html=True)
         status_level = st.selectbox(
-            "New status?", ("ok", "warning", "error"), label_visibility="collapsed"
+            "New status?", ("ok", "warning", "error"), label_visibility="collapsed",
         )
     with col2:
-        st.markdown(f"""<div class="label">Enter a message</div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="label">Enter a message</div>""", unsafe_allow_html=True)
         value = st.text_input("Message", label_visibility="collapsed")
     with col3:
-        st.markdown(f"""<div class="label">&nbsp;</div>""", unsafe_allow_html=True)
-        if st.button(f"Update", key="general_status_button"):
+        st.markdown("""<div class="label">&nbsp;</div>""", unsafe_allow_html=True)
+        if st.button("Update", key="general_status_button"):
             write_new_status(
-                session, status, status_level, value, national_or_sites=national_or_sites
+                session, status, status_level, value, national_or_sites=national_or_sites,
             )
             st.success(f"Status updated to {status_level} with message: {value}")
             st.rerun()
@@ -72,7 +70,6 @@ def display_update_status(
 
 def write_new_status(session, status, status_level, value, national_or_sites="National"):
     """Write a new status to the database"""
-
     """Write a new status to the database"""
     if national_or_sites == "National":
         # make a new Pydanitc object, this gets validated
@@ -135,6 +132,90 @@ def ocf_status():
 
         display_update_status(status, session, national_or_sites=national_or_sites)
 
+def example_status_messages():
+
+    st.markdown(
+        f'<h2 style="color:#63BCAF;font-size:24px;">{"Example messages"}</h2>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        f'<h3 style="color:#FF8F73;font-size:22px;">{"Investigating a major issue"}</h3>',
+        unsafe_allow_html=True,
+    )
+
+    st.write(
+        "We are currently investigating a major issue with the forecast, and will aim to "
+        "resolve them as soon as possible. "
+        "Please exercise caution when using the current forecast.",
+    )
+
+    st.markdown(
+        f'<h3 style="color:#FAA056;font-size:22px;">{"Investigating a minor issue"}</h3>',
+        unsafe_allow_html=True,
+    )
+
+    st.write(
+        "We are currently investigating minor issues with the forecast, "
+        "and will aim to resolve them as soon as possible.",
+    )
+
+    st.markdown(
+        f'<h3 style="color:#FAA056;font-size:22px;">{"Pre event issue"}</h3>',
+        unsafe_allow_html=True,
+    )
+
+    st.write(
+        "We are upgrading our infrastructure between 2025-04-28 17:00 and 2025-04-28 19:00, "
+        "and there maybe be some minor downtime. We hope to keep disruption to a minimum. ",
+    )
+
+    st.markdown(
+        f'<h3 style="color:#FAA056;font-size:22px;">{"Specific errors"}</h3>',
+        unsafe_allow_html=True,
+    )
+
+    st.write(
+        "We are currently experiencing issues with a third-party NWP data provider, "
+        "which may affect the forecast. We hope to resolve this as soon as possible.",
+    )
+
+    st.write(
+        "We are currently experiencing issues with a third-party satellite data provider, "
+        "which may affect the forecast. We hope to resolve this as soon as possible.",
+    )
+
+    st.write(
+        "A solar eclipse is expected at {datetime}, please exercise caution around the "
+        "forecast during this time. ",
+    )
+
+    st.markdown(
+        f'<h3 style="color:#ffd053;font-size:22px;">{"Post incident issues"}</h3>',
+        unsafe_allow_html=True,
+    )
+    # example messages
+    st.write(
+        "The {minor / major} issue with the forecast from {datetime} to {datetime} "
+        "is now resolved. This was due to {reason}.",
+    )
+
+    st.write(
+        "The {minor / major} issue with the forecast from {datetime} to {datetime} "
+        "{reason} has now been resolved.",
+    )
+
+    st.write(
+        "The {minor / major} issue with the forecast from {datetime} to {datetime} "
+        "has now been resolved as of {fixed_date}.",
+    )
+
+    st.write(
+        "More information can be found in  "
+        "[notion](https://www.notion.so/openclimatefix/Useful-Status-messages-d746d92701c8474293aedb12797b2d32)"  # noqa
+    )
+
+
 @st.cache_data(ttl=60)  # cache for 1 minute
 def fetch_data_providers_status():
     """Fetch the status of data providers"""
@@ -193,7 +274,7 @@ def display_eumetsat_details(satellite_id, details=None):
                 id_vars="datetime",
                 value_vars=["deliveryStatus", "timelyStatus"],
                 var_name="category",
-                value_name="status"
+                value_name="status",
             )
 
             chart = alt.Chart(df_melt).mark_rect(height=12).encode(
@@ -202,7 +283,7 @@ def display_eumetsat_details(satellite_id, details=None):
                 color=alt.Color("status:N",
                                 scale=alt.Scale(
                                     domain=["complete", "incomplete", "late", "onTime", "unavailable-unplanned", "unavailable-planned"],
-                                    range=["#4caf50", "#f44336", "#ff9800", "#2196f3", "#f44336", "#9e9e9e"]
+                                    range=["#4caf50", "#f44336", "#ff9800", "#2196f3", "#f44336", "#9e9e9e"],
                                 ),
                                 # no title
                                 legend=alt.Legend(title=None,
@@ -210,17 +291,17 @@ def display_eumetsat_details(satellite_id, details=None):
                                                   labelFontSize=10,
                                                   symbolSize=90,
                                                   padding=1,
-                                                  offset=10
-                                                  )
+                                                  offset=10,
+                                                  ),
                                 ),
                 tooltip=[
                     alt.Tooltip("datetime:T", title="Timestamp", format="%Y-%m-%d %H:%M"),
                     alt.Tooltip("category:N", title="Type"),
-                    alt.Tooltip("status:N", title="Status")
-                ]
+                    alt.Tooltip("status:N", title="Status"),
+                ],
             ).properties(
                 height=110,
-                width="container"
+                width="container",
             )
 
             st.altair_chart(chart, use_container_width=True)
@@ -276,7 +357,7 @@ def data_providers_status():
                 st.metric("Status", status)
 
             with col3:
-                st.markdown(f"""<div style="font-size: 0.875rem">Message</div>""", unsafe_allow_html=True)
+                st.markdown("""<div style="font-size: 0.875rem">Message</div>""", unsafe_allow_html=True)
                 st.markdown(f"<div style='font-size: 0.875rem; color:#ccc; margin-top: 0.25rem;'>{msg if msg else '–'}</div>", unsafe_allow_html=True)
 
             if provider == "EUMETSAT":
@@ -284,7 +365,7 @@ def data_providers_status():
                 # Display extra EUMETSAT details, with detailed delivery timeline, on request
                 display_eumetsat_details(satellite_id, details)
 
-            st.markdown(f"""<hr style="padding: 0; margin: 0;" />""", unsafe_allow_html=True)
+            st.markdown("""<hr style="padding: 0; margin: 0;" />""", unsafe_allow_html=True)
 
     else:
         st.error("Failed to fetch data provider statuses.")
@@ -308,4 +389,6 @@ def status_page():
 
     with col2:
         ocf_status()
+        example_status_messages()
+
 
