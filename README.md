@@ -1,9 +1,7 @@
 # uk analysis dashboard
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-
-[![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
-
+[![All Contributors](https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![ease of contribution: hard](https://img.shields.io/badge/ease%20of%20contribution:%20hard-bb2629)](https://github.com/openclimatefix#how-easy-is-it-to-get-involved)
@@ -199,6 +197,7 @@ The following folks have contributed to this repo.
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/MAYANK12SHARMA"><img src="https://avatars.githubusercontent.com/u/145884197?v=4?s=100" width="100px;" alt="MAYANK SHARMA"/><br /><sub><b>MAYANK SHARMA</b></sub></a><br /><a href="https://github.com/openclimatefix/analysis-dashboard/commits?author=MAYANK12SHARMA" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/AnujNayak108"><img src="https://avatars.githubusercontent.com/u/86143398?v=4?s=100" width="100px;" alt="Anuj Nayak"/><br /><sub><b>Anuj Nayak</b></sub></a><br /><a href="https://github.com/openclimatefix/analysis-dashboard/commits?author=AnujNayak108" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
