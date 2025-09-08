@@ -15,8 +15,9 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 # Set the working directory
 WORKDIR /app
 
-# Copy pyproject.toml for dependency installation
+# Copy pyproject.toml and README.md for dependency installation
 COPY pyproject.toml ./
+COPY README.md ./
 
 # Install dependencies using uv (generate lock file during build)
 RUN uv sync
