@@ -1,8 +1,6 @@
 """This module contains functions to get details from the database for a user, site or site group"""
 
-import streamlit as st
-import re
-from datetime import datetime
+
 from pvsite_datamodel.read import (
     get_user_by_email,
     get_site_by_uuid,

@@ -4,26 +4,13 @@ import xarray as xr
 import os, fsspec
 from datetime import datetime, timedelta
 
-# need this for some zarr files
-import ocf_blosc2
+from data_paths import all_nwp_paths
+
 
 region = os.getenv("REGION", "uk")
-environment = os.getenv("ENVIRONMENT", "development")
 
-all_nwps = {
-    "uk": {
-        "UKV": f"s3://nowcasting-nwp-{environment}/data-metoffice/latest.zarr",
-        "ECMWF": f"s3://nowcasting-nwp-{environment}/ecmwf/data/latest.zarr",
-        "ECMWF-NL": f"s3://nowcasting-nwp-{environment}/ecmwf-nl/data/latest.zarr",
-    },
-    "india": {
-        "ECMWF": f"s3://india-nwp-{environment}/ecmwf/data/latest.zarr",
-        "GFS": f"s3://india-nwp-{environment}/gfs/data/latest.zarr",
-        "MO Global": f"s3://india-nwp-{environment}/metoffice/data/latest.zarr",
-    },
-}
 
-nwp_key_list = list(all_nwps[region].keys()) + ["Other"]
+nwp_key_list = list(all_nwp_paths[region].keys()) + ["Other"]
 
 
 def get_data(zarr_file):
@@ -81,10 +68,10 @@ def nwp_page():
     if zarr_file in [None, "", "Other"]:
         zarr_file = st.text_input(
             label="Or enter the zarr file you want to explore",
-            value=all_nwps[region][nwp_key_list[0]],
+            value=all_nwp_paths[region][nwp_key_list[0]],
         )
     else:
-        zarr_file = all_nwps[region][zarr_file]
+        zarr_file = all_nwp_paths[region][zarr_file]
         st.text(f"Selected {zarr_file}")
 
     # open zarr file

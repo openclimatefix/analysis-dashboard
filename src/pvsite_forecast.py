@@ -6,7 +6,6 @@ from datetime import datetime, timedelta, time, timezone
 from zoneinfo import ZoneInfo
 from pvsite_datamodel.read import get_site_by_uuid
 from pvsite_datamodel.read.model import get_models
-from sqlalchemy.orm import Session
 from pvsite_datamodel.connection import DatabaseConnection
 from pvsite_datamodel.read import (
     get_all_sites,

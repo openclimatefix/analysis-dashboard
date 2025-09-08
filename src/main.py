@@ -33,7 +33,7 @@ from tables.summary import make_recent_summary_stats, make_forecast_horizon_tabl
 from users import user_page
 from nwp_page import nwp_page
 from satellite_page import satellite_page
-from satellite_forecast import satellite_forecast_page
+from cloudcasting_page import cloudcasting_page
 from adjuster import adjuster_page
 from batch_page import batch_page
 
@@ -266,7 +266,7 @@ if check_password():
         st.Page(user_page, title="👥 API Users"),
         st.Page(nwp_page, title="🌤️ NWP"),
         st.Page(satellite_page, title="🛰️ Satellite"),
-        st.Page(satellite_forecast_page, title="☁️ Cloudcasting"),
+        st.Page(cloudcasting_page, title="☁️ Cloudcasting"),
         st.Page(adjuster_page, title="🔧 Adjuster"),
         st.Page(batch_page, title="👀 Batch Visualisation Page")], position="top")
     pg.run()
