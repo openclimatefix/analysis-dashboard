@@ -6,14 +6,9 @@
 # TODO move to nowcasting_datamodel
 """
 import logging
-import json
-import re
-import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List, Optional
-import sqlalchemy as sa
 from sqlalchemy.orm.session import Session
-from sqlalchemy.sql.functions import func
 from sqlalchemy.orm import joinedload
 
 from nowcasting_datamodel.models.gsp import LocationSQL as GSPLocationSQL
@@ -23,10 +18,8 @@ from nowcasting_datamodel.models.metric import (
     MetricSQL,
     MetricValueSQL,
 )
-from pvsite_datamodel.sqlmodels import UserSQL, LocationGroupSQL, LocationSQL, ForecastValueSQL, ForecastSQL
+from pvsite_datamodel.sqlmodels import LocationSQL
 
-from data.gsp import get_gsp
-from data.dno import get_dno
 
 logger = logging.getLogger(__name__)
 

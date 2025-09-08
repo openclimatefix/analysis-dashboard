@@ -9,9 +9,11 @@ import zarr
 import plotly.graph_objects as go
 import streamlit as st
 
-import ocf_blosc2
+from data_paths import all_satellite_paths, cloudcasting_path
 
-environment = os.getenv("ENVIRONMENT", "development")
+
+sat_rss_path = all_satellite_paths["uk"]["rss"]
+sat_0deg_path = all_satellite_paths["uk"]["0-deg"]
 
 # Set the frame duration when playing the animation in ms
 FRAME_DUR = 150
@@ -106,22 +108,18 @@ def get_dataset(zarr_file: str) -> xr.Dataset:
         return None
 
 
-def satellite_forecast_page():
-    """Satellite page"""
+def cloudcasting_page():
+    """Satellite forecast page"""
 
     st.markdown(
         f'<h1 style="color:#63BCAF;font-size:48px;">{"Satellite Forecast"}</h1>',
         unsafe_allow_html=True,
     )
 
-    sat_5_zarr_path = f"s3://nowcasting-sat-{environment}/data/latest/latest.zarr.zip"
-    sat_15_zarr_path = f"s3://nowcasting-sat-{environment}/data/latest/latest_15.zarr.zip"
-    sat_forecast_zarr_path = f"s3://nowcasting-sat-{environment}/cloudcasting_forecast/latest.zarr"
-
     # Open the sat and the sat forecast zarrs
-    da_sat_5 = get_dataset(sat_5_zarr_path)
-    da_sat_15 = get_dataset(sat_15_zarr_path)
-    da_sat_forecast = get_dataset(sat_forecast_zarr_path)
+    da_sat_5 = get_dataset(sat_rss_path)
+    da_sat_15 = get_dataset(sat_0deg_path)
+    da_sat_forecast = get_dataset(cloudcasting_path)
 
     if da_sat_forecast is None:
         raise ValueError("Could not load the satellite forecast")
@@ -147,9 +145,6 @@ def satellite_forecast_page():
     # Filter to last hour before the forecast
     t0 = pd.Timestamp(da_sat_forecast.init_time.item())
     da_sat = da_sat.sel(time=slice(t0 - pd.Timedelta("1h"), t0))
-    
-    # Scale the satellite data
-    da_sat = da_sat / 1023
     
     # Select the channel - defaults to the VIS008 channel
     channels = list(da_sat.channel.values)
@@ -270,7 +265,6 @@ def make_figure(data: list[np.array], titles: list[str], x: np.array, y: np.arra
         frames=frames,
     )
 
-    
     return fig
 
     

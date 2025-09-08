@@ -1,4 +1,3 @@
-from nowcasting_datamodel.models import MetricValue
 from itertools import cycle
 from nowcasting_datamodel.read.read_models import get_models
 import os
@@ -49,14 +48,6 @@ def get_colour_from_model_name(model_name, opacity=1.0):
         else:
             colour = next(line_color_cycle)
             colour_per_model[model_name_only] = colour
-    return colour
-
-    # change opacity to hex
-    rgb = hex_to_rgb(colour)
-
-    # add opacity
-    colour = f"rgba({rgb[0]},{rgb[1]},{rgb[2]},{opacity})"
-
     return colour
 
 
