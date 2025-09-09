@@ -183,9 +183,12 @@ def pvsite_forecast_page():
             day_ahead_hours = 9
 
             # find the difference in hours for the timezone
+            # make sure its between -12 and 12
+            # Note India is +5.5 Offset from UTC
             now = datetime.now()
-            d = timezone_selected.localize(now) - now.replace(tzinfo=timezone.utc)
-            day_ahead_timezone_delta_hours = (24 - d.seconds / 3600) % 24
+            d = timezone_selected.utcoffset(now)
+            day_ahead_timezone_delta_hours = (d.seconds / 3600 -12 ) % 24 - 12
+
 
             # get site from database, if india set day_ahead_timezone_delta_hours to 5.5 hours
             site = get_site_by_uuid(session, site_selection_uuid)
