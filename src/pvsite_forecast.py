@@ -134,7 +134,7 @@ def pvsite_forecast_page():
         day_after_tomorrow = datetime.today() + timedelta(days=3)
         starttime = st.sidebar.date_input(
             "Start Date",
-            min_value=datetime.today() - timedelta(days=365),
+            min_value=datetime.today() - timedelta(days=365*2),
             max_value=datetime.today(),
         )
         endtime = st.sidebar.date_input("End Date", day_after_tomorrow)
