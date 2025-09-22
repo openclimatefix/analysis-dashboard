@@ -37,13 +37,11 @@ from cloudcasting_page import cloudcasting_page
 from adjuster import adjuster_page
 from batch_page import batch_page
 
-import tomllib
+from importlib.metadata import PackageNotFoundError, version
 
 try:
-    with open("pyproject.toml", "rb") as f:
-        pyproject_data = tomllib.load(f)
-    __version__ = pyproject_data["project"]["version"]
-except (FileNotFoundError, KeyError):
+    __version__ = version("analysis-dashboard")
+except PackageNotFoundError:
     __version__ = "v?"
 
 st.get_option("theme.primaryColor")
