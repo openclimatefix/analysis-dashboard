@@ -3,25 +3,13 @@ import streamlit as st
 import xarray as xr
 import os, fsspec
 from datetime import datetime, timedelta
+from data_paths import all_satellite_paths
 
-# need this for some zarr files
-import ocf_blosc2
 
 region = os.getenv("REGION", "uk")
-environment = os.getenv("ENVIRONMENT", "development")
 
 
-all_satellite = {
-    "uk": {
-        "0deg": f"s3://nowcasting-sat-{environment}/data/latest/latest.zarr.zip",
-        "0deg_HRV": f"s3://nowcasting-sat-{environment}/data/latest/hrv_latest.zarr.zip",
-        "9deg": f"s3://nowcasting-sat-{environment}/data/latest/latest_15.zarr.zip",
-        "9deg_HRV": f"s3://nowcasting-sat-{environment}/data/latest/15_hrv_latest.zarr.zip",
-    },
-    "india": {"45.5deg": f"s3://india-satellite-{environment}/data/latest/iodc_latest.zarr.zip"},
-}
-
-satellite_key_list = list(all_satellite[region].keys()) + ["Other"]
+satellite_key_list = list(all_satellite_paths[region].keys()) + ["Other"]
 
 
 def get_data(zarr_file):
@@ -63,7 +51,7 @@ def get_data(zarr_file):
 
     if not os.path.exists(hash_filename_unzip):
         print("Unzipping")
-        os.system(f"unzip -qq {hash_filename} -d {hash_filename_unzip}")
+        os.system(f"unzip -qqo {hash_filename} -d {hash_filename_unzip}")
     ds = xr.open_dataset(hash_filename_unzip)
     print("Loading")
 
@@ -84,15 +72,15 @@ def satellite_page():
     if zarr_file in [None, "", "Other"]:
         zarr_file = st.text_input(
             label="Or enter the zarr file you want to explore",
-            value=all_satellite[region][satellite_key_list[0]],
+            value=all_satellite_paths[region][satellite_key_list[0]],
         )
     else:
-        zarr_file = all_satellite[region][zarr_file]
+        zarr_file = all_satellite_paths[region][zarr_file]
         st.text(f"Selected {zarr_file}")
 
     if region == "UK":
         st.text(
-            "The 0deg satellite, is 5 minute data. The 9deg satellite is 15 minute data. \n"
+            "The 0deg satellite, is 15 minute data. The 9deg satellite is 5 minute data. \n"
             "We currently only pull 15 minute data, if 5 minute data is not available"
         )
 

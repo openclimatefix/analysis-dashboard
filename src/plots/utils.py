@@ -1,4 +1,3 @@
-from nowcasting_datamodel.models import MetricValue
 from itertools import cycle
 from nowcasting_datamodel.read.read_models import get_models
 import os

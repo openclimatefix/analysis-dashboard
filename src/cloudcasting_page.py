@@ -4,11 +4,16 @@ import fsspec
 import numpy as np
 import pandas as pd
 import xarray as xr
+import zarr
 
 import plotly.graph_objects as go
 import streamlit as st
 
-import ocf_blosc2
+from data_paths import all_satellite_paths, cloudcasting_path
+
+
+sat_rss_path = all_satellite_paths["uk"]["rss"]
+sat_0deg_path = all_satellite_paths["uk"]["0-deg"]
 
 # Set the frame duration when playing the animation in ms
 FRAME_DUR = 150
@@ -88,28 +93,33 @@ def get_dataset(zarr_file: str) -> xr.Dataset:
             fs.get(zarr_file, hash_filename, recursive=True)
 
     if os.path.exists(hash_filename):
-        ds = xr.open_dataset(hash_filename, engine="zarr")
+        if hash_filename.endswith(".zip"):
+            with zarr.storage.ZipStore(hash_filename, mode='r') as store:
+                ds = xr.open_zarr(store)
+        else:
+            ds = xr.open_zarr(hash_filename)
+
+        for coord in ["x_geostationary", "y_geostationary"]:
+            if ds[coord][0] > ds[coord][-1]:
+                ds = ds.isel({coord: slice(None, None, -1)})
+
         return ds.rename({"variable": "channel"})
     else:
         return None
 
 
-def satellite_forecast_page():
-    """Satellite page"""
+def cloudcasting_page():
+    """Satellite forecast page"""
 
     st.markdown(
         f'<h1 style="color:#63BCAF;font-size:48px;">{"Satellite Forecast"}</h1>',
         unsafe_allow_html=True,
     )
 
-    sat_5_zarr_path = "s3://nowcasting-sat-development/data/latest/latest.zarr.zip"
-    sat_15_zarr_path = "s3://nowcasting-sat-development/data/latest/latest_15.zarr.zip"
-    sat_forecast_zarr_path = "s3://nowcasting-sat-development/cloudcasting_forecast/latest.zarr"
-
     # Open the sat and the sat forecast zarrs
-    da_sat_5 = get_dataset(sat_5_zarr_path)
-    da_sat_15 = get_dataset(sat_15_zarr_path)
-    da_sat_forecast = get_dataset(sat_forecast_zarr_path)
+    da_sat_5 = get_dataset(sat_rss_path)
+    da_sat_15 = get_dataset(sat_0deg_path)
+    da_sat_forecast = get_dataset(cloudcasting_path)
 
     if da_sat_forecast is None:
         raise ValueError("Could not load the satellite forecast")
@@ -118,21 +128,23 @@ def satellite_forecast_page():
         raise ValueError("Could not load either 5- or 15-minutely satellite data")
     
     # Select the most recent available satellite data
-    if da_sat_5 is not None:
-        da_sat = da_sat_5
+
+    if da_sat_5 is not None and da_sat_15 is not None:
+        use_5_min_sat = (da_sat_5.time.max() > da_sat_15.time.max()) 
+    elif da_sat_5 is not None:
+        use_5_min_sat = True
     elif da_sat_15 is not None:
-        da_sat = da_sat_15
+        use_5_min_sat = False
     else:
-        da_sat = da_sat_5 if (da_sat_5.time.max() > da_sat_15.time.max()) else da_sat_15
+        raise Exception("Neither the 5 or 15-min sat is available")
+    
+    da_sat = da_sat_5 if use_5_min_sat else da_sat_15
     
     # Filter to 15 minutely timestamps regardless of the source
     da_sat = da_sat.sel(time=(da_sat.time.dt.minute%15 == 0))
     # Filter to last hour before the forecast
     t0 = pd.Timestamp(da_sat_forecast.init_time.item())
     da_sat = da_sat.sel(time=slice(t0 - pd.Timedelta("1h"), t0))
-    
-    # Scale the satellite data
-    da_sat = da_sat / 1023
     
     # Select the channel - defaults to the VIS008 channel
     channels = list(da_sat.channel.values)
@@ -148,13 +160,29 @@ def satellite_forecast_page():
     # Only use the true satellite data up to t0
     da_sat = da_sat.sel(time=slice(None, t0))
     
-    # Match the spatial coords. We assume that the forecast will always have a smaller spatial
-    # extent than the ground truths
-    da_sat = da_sat.sel(
-        y_geostationary=da_sat_forecast.y_geostationary, 
-        x_geostationary=da_sat_forecast.x_geostationary, 
-    )
+    # Match the spatial coords between the satellite and the satelite forecast. We assume 
+    # that the forecast will always have a smaller spatial extent than the ground truths.
+
+    # For 5-minutely data to match the coords explicitly
+    if use_5_min_sat:
+        da_sat = da_sat.sel(
+            y_geostationary=da_sat_forecast.y_geostationary, 
+            x_geostationary=da_sat_forecast.x_geostationary, 
+        )
     
+    # For 15-minutely data just match the bottom left hand corner(ish) and the shape
+    else:
+        da_sat = (
+            da_sat.sel(
+                y_geostationary=slice(da_sat_forecast.y_geostationary.min(), None),
+                x_geostationary=slice(da_sat_forecast.x_geostationary.min(), None)
+            )
+            .isel(
+                y_geostationary=slice(0, len(da_sat_forecast.y_geostationary)),
+                x_geostationary=slice(0, len(da_sat_forecast.x_geostationary))
+            )
+        )
+        
     # Eagerly load the datasets
     da_sat = da_sat.compute()
     da_sat_forecast = da_sat_forecast.compute()
@@ -237,7 +265,6 @@ def make_figure(data: list[np.array], titles: list[str], x: np.array, y: np.arra
         frames=frames,
     )
 
-    
     return fig
 
     

@@ -43,7 +43,7 @@ def test_fetch_forecast_data_api_failure():
 def test_add_elexon_plot_with_data(mock_fetch):
     # Mock fetch_forecast_data to return a non-empty DataFrame
     mock_fetch.return_value = pd.DataFrame({
-        "start_time": pd.date_range("2024-08-01", periods=3, freq="30T"),
+        "start_time": pd.date_range("2024-08-01", periods=3, freq="30min"),
         "quantity": [100, 200, 150]
     })
 

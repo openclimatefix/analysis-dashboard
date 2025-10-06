@@ -3,18 +3,18 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 from datetime import datetime, timedelta, time, timezone
+from zoneinfo import ZoneInfo
 from pvsite_datamodel.read import get_site_by_uuid
 from pvsite_datamodel.read.model import get_models
-from sqlalchemy.orm import Session
 from pvsite_datamodel.connection import DatabaseConnection
 from pvsite_datamodel.read import (
     get_all_sites,
     get_pv_generation_by_sites,
-    get_latest_forecast_values_by_site,
+    get_forecast_values_fast,
+    get_forecast_values_day_ahead_fast,
 )
 
 import plotly.graph_objects as go
-import pytz
 
 # Penalty Calculator
 def calculate_penalty(df, region, asset_type, capacity_kw):
@@ -125,25 +125,25 @@ def pvsite_forecast_page():
                 if sites.client_location_name == client_site_name
             ][0]
 
-    timezone_selected = st.sidebar.selectbox(
-        "Select timezone", ["UTC", "Asia/Calcutta"]
-    )
-    timezone_selected = pytz.timezone(timezone_selected)
+        timezone_selected = st.sidebar.selectbox(
+            "Select timezone", ["UTC", "Asia/Calcutta"]
+        )
+        
+        timezone_selected = ZoneInfo(timezone_selected)
 
-    day_after_tomorrow = datetime.today() + timedelta(days=3)
-    starttime = st.sidebar.date_input(
-        "Start Date",
-        min_value=datetime.today() - timedelta(days=365),
-        max_value=datetime.today(),
-    )
-    endtime = st.sidebar.date_input("End Date", day_after_tomorrow)
+        day_after_tomorrow = datetime.today() + timedelta(days=3)
+        starttime = st.sidebar.date_input(
+            "Start Date",
+            min_value=datetime.today() - timedelta(days=365*2),
+            max_value=datetime.today(),
+        )
+        endtime = st.sidebar.date_input("End Date", day_after_tomorrow)
 
-    forecast_type = st.sidebar.selectbox(
-        "Select Forecast Type", ["Latest", "Forecast_horizon", "DA"], 0
-    )
+        forecast_type = st.sidebar.selectbox(
+            "Select Forecast Type", ["Latest", "Forecast_horizon", "DA"], 0
+        )
 
-    with connection.get_session() as session:
-
+        # get site from database
         site = get_site_by_uuid(session, site_selection_uuid)
         capacity = site.capacity_kw
         site_client_site_name = site.client_location_name
@@ -154,98 +154,97 @@ def pvsite_forecast_page():
         asset_type = site.asset_type  # Assume site object has an 'asset_type' attribute
         capacity_kw = site.capacity_kw  # Extract capacity dynamically
 
-    if forecast_type == "Latest":
-        created = pd.Timestamp.utcnow().ceil("15min")
-        created = created.astimezone(timezone.utc)
-        created = created.astimezone(timezone_selected)
-        created = created.replace(tzinfo=None)
-        created = st.sidebar.text_input("Created Before", created)
-
-        if created == "":
+        if forecast_type == "Latest":
             created = pd.Timestamp.utcnow().ceil("15min")
             created = created.astimezone(timezone.utc)
             created = created.astimezone(timezone_selected)
             created = created.replace(tzinfo=None)
+            created = st.sidebar.text_input("Created Before", created)
+
+            if created == "":
+                created = pd.Timestamp.utcnow().ceil("15min")
+                created = created.astimezone(timezone.utc)
+                created = created.astimezone(timezone_selected)
+                created = created.replace(tzinfo=None)
+            else:
+                created = datetime.fromisoformat(created)
         else:
-            created = datetime.fromisoformat(created)
-    else:
-        created = None
+            created = None
 
-    if forecast_type == "Forecast_horizon":
-        forecast_horizon = st.sidebar.selectbox(
-            "Select Forecast Horizon", range(0, 2880, 15), 6
-        )
-    else:
-        forecast_horizon = None
+        if forecast_type == "Forecast_horizon":
+            forecast_horizon = st.sidebar.selectbox(
+                "Select Forecast Horizon", range(0, 2880, 15), 6
+            )
+        else:
+            forecast_horizon = None
 
-    if forecast_type == "DA":
-        # TODO make these more flexible
-        day_ahead_hours = 9
+        if forecast_type == "DA":
+            # TODO make these more flexible
+            day_ahead_hours = 9
 
-        # find the difference in hours for the timezone
-        now = datetime.now()
-        d = timezone_selected.localize(now) - now.replace(tzinfo=timezone.utc)
-        day_ahead_timezone_delta_hours = (24 - d.seconds / 3600) % 24
+            # find the difference in hours for the timezone
+            # make sure its between -12 and 12
+            # Note India is +5.5 Offset from UTC
+            now = datetime.now()
+            d = timezone_selected.utcoffset(now)
+            day_ahead_timezone_delta_hours = (d.seconds / 3600 -12 ) % 24 - 12
 
-        # get site from database, if india set day_ahead_timezone_delta_hours to 5.5 hours
-        with connection.get_session() as session:
+
+            # get site from database, if india set day_ahead_timezone_delta_hours to 5.5 hours
             site = get_site_by_uuid(session, site_selection_uuid)
             if site.country == "india":
                 day_ahead_timezone_delta_hours = 5.5
 
+            st.write(
+                f"Forecast for {day_ahead_hours} oclock the day before "
+                f"with {day_ahead_timezone_delta_hours} hour timezone delta"
+            )
+        else:
+            day_ahead_hours = None
+            day_ahead_timezone_delta_hours = None
+
+        # an option to resample to the data
+        resample = st.sidebar.selectbox("Resample data", [None, "15min", "30min"], None)
+
         st.write(
-            f"Forecast for {day_ahead_hours} oclock the day before "
-            f"with {day_ahead_timezone_delta_hours} hour timezone delta"
+            "Forecast for",
+            site_selection_uuid,
+            " - `",
+            site_client_site_name,
+            "`, starting on",
+            starttime,
+            "created by",
+            created,
+            "ended on",
+            endtime,
         )
-    else:
-        day_ahead_hours = None
-        day_ahead_timezone_delta_hours = None
 
-    # an option to resample to the data
-    resample = st.sidebar.selectbox("Resample data", [None, "15T", "30T"], None)
+        # change date to datetime
+        starttime = datetime.combine(starttime, time.min)
+        endtime = datetime.combine(endtime, time.min)
 
-    st.write(
-        "Forecast for",
-        site_selection_uuid,
-        " - `",
-        site_client_site_name,
-        "`, starting on",
-        starttime,
-        "created by",
-        created,
-        "ended on",
-        endtime,
-    )
+        # change to the correct timezone
+        starttime = starttime.replace(tzinfo=timezone_selected)
+        endtime = endtime.replace(tzinfo=timezone_selected)
 
-    # change date to datetime
-    starttime = datetime.combine(starttime, time.min)
-    endtime = datetime.combine(endtime, time.min)
+        # change to utc
+        starttime = starttime.astimezone(timezone.utc)
+        endtime = endtime.astimezone(timezone.utc)
 
-    # change to the correct timezone
-    # starttime = starttime.replace(tzinfo=timezone_selected)
-    # endtime = endtime.replace(tzinfo=timezone_selected)
-    starttime = timezone_selected.localize(starttime)
-    endtime = timezone_selected.localize(endtime)
+        if created is not None:
+            created = created.replace(tzinfo=timezone_selected)
+            created = created.astimezone(timezone.utc)
 
-    # change to utc
-    starttime = starttime.astimezone(pytz.utc)
-    endtime = endtime.astimezone(pytz.utc)
+        # great ml model names for this site
 
-    if created is not None:
-        created = timezone_selected.localize(created)
-        created = created.astimezone(pytz.utc)
-
-    # great ml model names for this site
-
-    # get forecast values for selected sites and plot
-    with connection.get_session() as session:
-
+        # get forecast values for selected sites and plot
         # great ml model names for this site
         ml_models = get_models(
             session=session,
             start_datetime=starttime,
             end_datetime=endtime,
             site_uuid=site_selection_uuid,
+            forecast_horizon=15, # we use 15 because some models dont have a horizon of 0
         )
 
         if len(ml_models) == 0:
@@ -259,33 +258,42 @@ def pvsite_forecast_page():
         xs = {}
         for model in ml_models:
 
-            forecasts = get_latest_forecast_values_by_site(
-                session=session,
-                site_uuids=[site_selection_uuid],
-                start_utc=starttime,
-                created_by=created,
-                created_after=starttime - timedelta(days=2),
-                forecast_horizon_minutes=forecast_horizon,
-                day_ahead_hours=day_ahead_hours,
-                day_ahead_timezone_delta_hours=day_ahead_timezone_delta_hours,
-                end_utc=endtime,
-                model_name=model.name,
-            )
-            forecasts = forecasts.values()
+            if day_ahead_hours is not None:
 
-            for forecast in forecasts:
-                x = [i.start_utc for i in forecast]
-                y = [i.forecast_power_kw for i in forecast]
+                forecast_values = get_forecast_values_day_ahead_fast(
+                    session=session,
+                    site_uuid=site_selection_uuid,
+                    start_utc=starttime,
+                    day_ahead_hours=day_ahead_hours,
+                    day_ahead_timezone_delta_hours=day_ahead_timezone_delta_hours,
+                    end_utc=endtime,
+                    model_name=model.name,
+                )
 
-                # convert to timezone
-                x = [i.replace(tzinfo=pytz.utc) for i in x]
-                x = [i.astimezone(timezone_selected) for i in x]
+            else:
+
+                forecast_values = get_forecast_values_fast(
+                    session=session,
+                    site_uuid=site_selection_uuid,
+                    start_utc=starttime,
+                    created_by=created,
+                    created_after=starttime - timedelta(days=2),
+                    forecast_horizon_minutes=forecast_horizon,
+                    end_utc=endtime,
+                    model_name=model.name,
+                )
+
+            x = [i.start_utc for i in forecast_values]
+            y = [i.forecast_power_kw for i in forecast_values]
+
+            # convert to timezone
+            x = [i.replace(tzinfo=timezone.utc) for i in x]
+            x = [i.astimezone(timezone_selected) for i in x]
 
             ys[model.name] = y
             xs[model.name] = x
 
-    # get generation values for selected sites and plot
-    with connection.get_session() as session:
+        # get generation values for selected sites and plot
         generations = get_pv_generation_by_sites(
             session=session,
             site_uuids=[site_selection_uuid],
@@ -303,7 +311,7 @@ def pvsite_forecast_page():
         ]
 
         # convert to timezone
-        xx = [i.replace(tzinfo=pytz.utc) for i in xx]
+        xx = [i.replace(tzinfo=timezone.utc) for i in xx]
         xx = [i.astimezone(timezone_selected) for i in xx]
 
     df_forecast = []
@@ -386,7 +394,7 @@ def pvsite_forecast_page():
     now = datetime.now().isoformat()
 
     if resample is None:
-        st.caption("Please resample to '15T' to get MAE")
+        st.caption("Please resample to '15min' to get MAE")
     else:
         metrics = []
         for model in ml_models:
@@ -466,7 +474,7 @@ def pvsite_forecast_page():
 
     # Check if resampling is applied - if not, show a clear message
     if resample is None:
-        st.warning("Please select a resample option (e.g., '15T') in the sidebar to view error metrics. Without resampling, error metrics cannot be calculated properly.")
+        st.warning("Please select a resample option (e.g., '15min') in the sidebar to view error metrics. Without resampling, error metrics cannot be calculated properly.")
     else:
         # Create time series of error metrics for each model
         error_dfs = {}

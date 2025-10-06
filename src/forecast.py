@@ -1,7 +1,5 @@
 import os
-from datetime import date, datetime, timedelta, time, timezone
-import numpy as np
-import pandas as pd
+from datetime import datetime, timedelta, time
 import plotly.graph_objects as go
 import streamlit as st
 from nowcasting_datamodel.connection import DatabaseConnection
