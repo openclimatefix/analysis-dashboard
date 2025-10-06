@@ -3,17 +3,20 @@ from itertools import cycle
 from nowcasting_datamodel.read.read_models import get_models
 import os
 from datetime import datetime, timedelta
+import plotly.express as px
 
-line_color = [
-    "#9EC8FA",
-    "#9AA1F9",
-    "#FFAC5F",
-    "#9F973A",
-    "#7BCDF3",
-    "#086788",
-    "#63BCAF",
-    "#4C9A8E",
-]
+PALETTE = px.colors.qualitative.Dark24
+
+# line_color = [
+#     "#9EC8FA",
+#     "#9AA1F9",
+#     "#FFAC5F",
+#     "#9F973A",
+#     "#7BCDF3",
+#     "#086788",
+#     "#63BCAF",
+#     "#4C9A8E",
+# ]
 
 colour_per_model = {
     "cnn": "#FFD053",
@@ -29,7 +32,7 @@ colour_per_model = {
 
 # Make a cycle for extra models not in colour_per_model
 # Skip first 3 colours as they are too similar to colours in colour_per_model
-line_color_cycle = cycle(line_color[3:])
+#line_color_cycle = cycle(line_color[3:])
 
 def hex_to_rgb(value):
     value = value.lstrip("#")
@@ -40,24 +43,25 @@ def hex_to_rgb(value):
 def get_colour_from_model_name(model_name, opacity=1.0):
     """Get colour from model label"""
     if "PVLive" in model_name:
-        colour = colour_per_model.get(model_name, "#FFFFFF")
+        return colour_per_model.get(model_name, "#e4e4e4")
     else:
         # Some models have a space and a datetime
         model_name_only = model_name.split(" ")[0]
         if model_name_only in colour_per_model:
             colour = colour_per_model[model_name_only]
         else:
-            colour = next(line_color_cycle)
+            idx = abs(hash(model_name_only)) % len(PALETTE)
+            colour = PALETTE[idx]
             colour_per_model[model_name_only] = colour
     return colour
 
-    # change opacity to hex
-    rgb = hex_to_rgb(colour)
+    # # change opacity to hex
+    # rgb = hex_to_rgb(colour)
 
-    # add opacity
-    colour = f"rgba({rgb[0]},{rgb[1]},{rgb[2]},{opacity})"
+    # # add opacity
+    # colour = f"rgba({rgb[0]},{rgb[1]},{rgb[2]},{opacity})"
 
-    return colour
+    # return colour
 
 
 def get_x_y(metric_values):
