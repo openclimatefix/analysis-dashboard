@@ -56,17 +56,14 @@ def add_elexon_plot(
             full_time_range = pd.date_range(
                 start=start_datetime_utc,
                 end=end_datetime_utc,
-                freq="30T",
+                freq="30min",
                 tz=forecast["start_time"].dt.tz,
             )
             full_time_df = pd.DataFrame(full_time_range, columns=["start_time"])
             forecast = full_time_df.merge(forecast, on="start_time", how="left")
 
-            # Set visibility based on process type
-            if process_types[i] in ["Intraday Process", "Intraday Total"]:
-                visibility = 'legendonly'
-            else:
-                visibility = True
+            # Hide all Elexon forecast types by default
+            visibility = 'legendonly'
 
             fig.add_trace(
                 go.Scatter(
@@ -115,7 +112,7 @@ def fetch_forecast_data(
 
         # Resample if there's data
         if not solar_df.empty:
-            solar_df = solar_df.resample("30T")["quantity"].sum().reset_index()
+            solar_df = solar_df.resample("30min")["quantity"].sum().reset_index()
 
         return solar_df
     except Exception as e:

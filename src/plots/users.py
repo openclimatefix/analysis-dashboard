@@ -2,7 +2,6 @@ import pandas as pd
 import plotly.graph_objects as go
 from pvsite_datamodel.read.user import get_user_by_email
 from pvsite_datamodel.read.site import get_sites_from_user
-import streamlit as st
 
 from datetime import datetime
 

@@ -78,6 +78,24 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "AnujNayak108",
+      "name": "Anuj Nayak",
+      "avatar_url": "https://avatars.githubusercontent.com/u/86143398?v=4",
+      "profile": "https://github.com/AnujNayak108",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "ram-from-tvl",
+      "name": "Ramkumar R",
+      "avatar_url": "https://avatars.githubusercontent.com/u/114728749?v=4",
+      "profile": "http://www.linkedin.com/in/ram-from-tvl",
+      "contributions": [
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7,

@@ -1,8 +1,6 @@
 import streamlit as st
-import json
-import requests
-from datetime import datetime
-import pytz
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 
 def load_css(css_file):
@@ -24,13 +22,13 @@ def parse_timestamp(status):
         raise ValueError(f"Invalid timestamp format: {e}")
 
     if parsed_time.tzinfo is not None:
-        utc_time = parsed_time.astimezone(pytz.utc)
+        utc_time = parsed_time.astimezone(timezone.utc)
     else:
         # If no timezone is specified, assume it's UTC
-        utc_time = parsed_time.replace(tzinfo=pytz.utc)
+        utc_time = parsed_time.replace(tzinfo=timezone.utc)
 
     # Convert to specific timezone (Asia/Kolkata)
-    local_timezone = pytz.timezone("Asia/Kolkata")
+    local_timezone = ZoneInfo("Asia/Kolkata")
     local_time = parsed_time.astimezone(local_timezone)
 
     return local_time

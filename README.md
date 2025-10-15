@@ -1,9 +1,7 @@
 # uk analysis dashboard
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-
-[![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
-
+[![All Contributors](https://img.shields.io/badge/all_contributors-10-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![ease of contribution: hard](https://img.shields.io/badge/ease%20of%20contribution:%20hard-bb2629)](https://github.com/openclimatefix#how-easy-is-it-to-get-involved)
@@ -18,22 +16,65 @@ Thanks to the analysis dashboard, OCF has a valuable feedback tool for understan
 
 ## Installation
 
-### **Manual Installation**
+### **Using uv (Recommended)**
 
-You can install the `analysis-dashboard` package directly from GitHub.
+This project uses [uv](https://docs.astral.sh/uv/) for fast and reliable dependency management.
 
-In the main project folder, install requirements:
+**Prerequisites:**
+
+Install uv if you haven't already:
 
 ```shell
-pip install -r requirements.txt
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Run `streamlit hello` to check that Streamlit installed. A "Welcome to Streamlit!" page should open in the browser.
+**Steps:**
 
-Create a login secret: `
+1. Clone the repository and navigate to the project folder:
+
+```shell
+git clone https://github.com/openclimatefix/analysis-dashboard.git
+cd analysis-dashboard
+```
+
+2. Install dependencies:
+
+```shell
+uv sync
+```
+
+3. Create a login secret:
 
 ```shell
 echo "password = example" > src/.streamlit/secrets.toml
+```
+
+4. Run the app:
+
+```shell
+cd src && uv run streamlit run main.py
+```
+
+### **Manual Installation (Legacy)**
+
+You can also install using pip, though uv is recommended for better performance:
+
+In the main project folder, install from pyproject.toml:
+
+```shell
+pip install -e .
+```
+
+Create a login secret:
+
+```shell
+echo "password = example" > src/.streamlit/secrets.toml
+```
+
+Run app:
+
+```shell
+cd src && streamlit run main.py
 ```
 
 ## Database connection
@@ -45,12 +86,10 @@ OCF team members can connect to the `forecast development database` using [these
 Run app:
 
 ```shell
-cd src && streamlit run main.py
+cd src && uv run streamlit run main.py
 ```
 
----
-
-### **Using Docker Compose**
+## Using Docker Compose**
 
 This method uses Docker Compose to set up the app and its environment automatically.
 
@@ -199,6 +238,8 @@ The following folks have contributed to this repo.
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/MAYANK12SHARMA"><img src="https://avatars.githubusercontent.com/u/145884197?v=4?s=100" width="100px;" alt="MAYANK SHARMA"/><br /><sub><b>MAYANK SHARMA</b></sub></a><br /><a href="https://github.com/openclimatefix/analysis-dashboard/commits?author=MAYANK12SHARMA" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/AnujNayak108"><img src="https://avatars.githubusercontent.com/u/86143398?v=4?s=100" width="100px;" alt="Anuj Nayak"/><br /><sub><b>Anuj Nayak</b></sub></a><br /><a href="https://github.com/openclimatefix/analysis-dashboard/commits?author=AnujNayak108" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://www.linkedin.com/in/ram-from-tvl"><img src="https://avatars.githubusercontent.com/u/114728749?v=4?s=100" width="100px;" alt="Ramkumar R"/><br /><sub><b>Ramkumar R</b></sub></a><br /><a href="#infra-ram-from-tvl" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
     </tr>
   </tbody>
 </table>

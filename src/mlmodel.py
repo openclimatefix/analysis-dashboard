@@ -7,7 +7,7 @@ import plotly.express as px
 from pvsite_datamodel.connection import DatabaseConnection
 from pvsite_datamodel.read.model import get_models
 from pvsite_datamodel.read.site import get_all_sites
-from pvsite_datamodel.sqlmodels import GenerationSQL, LocationSQL, MLModelSQL
+from pvsite_datamodel.sqlmodels import GenerationSQL, MLModelSQL
 
 def color_survived(val):
     now = pd.Timestamp.utcnow()

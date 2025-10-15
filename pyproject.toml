@@ -1,0 +1,74 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "analysis-dashboard"
+version = "0.1.0"
+description = "Analysis dashboard for OCF forecasting systems"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.12.0,<3.13"
+dependencies = [
+    "altair==5.5.0",
+    "requests==2.32.3",
+    "nowcasting_datamodel==1.7.3",
+    "pvsite-datamodel==1.2.14",
+    "numpy==2.0.0",
+    "pandas==2.2.3",
+    "plotly==5.24.1",
+    "psycopg2-binary==2.9.10",
+    "SQLAlchemy==2.0.36",
+    "streamlit==1.46.1",
+    "testcontainers==4.9.0",
+    "uvicorn==0.34.0",
+    "geopandas==1.0.1",
+    "garrett-streamlit-auth0==0.9",
+    "pydantic==2.5.3",
+    "xarray>=2024.6",
+    "fsspec>=2024.6",
+    "s3fs>=2024.6",
+    "zarr>=3.0,<4.0",
+    "elexonpy==1.0.15",
+    "fiona>=1.9,<2.0",
+    "herbie-data",
+    "numcodecs>=0.12,<1.0",
+    "torch @ https://download.pytorch.org/whl/cpu/torch-2.3.1%2Bcpu-cp312-cp312-linux_x86_64.whl ; platform_system == 'Linux' and platform_machine == 'x86_64'",
+    "torch @ https://download.pytorch.org/whl/cpu/torch-2.3.1-cp312-none-macosx_11_0_arm64.whl ; platform_system == 'Darwin' and platform_machine == 'arm64'",
+    "matplotlib>=3.8,<4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/",
+    "pyproject.toml",
+    "README.md",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+]
+index-url = "https://download.pytorch.org/whl/cpu"
+extra-index-url = ["https://pypi.org/simple"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+pythonpath = ["src"]
