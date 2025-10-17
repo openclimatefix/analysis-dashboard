@@ -30,7 +30,7 @@ def hex_to_rgb(value):
 def get_colour_from_model_name(model_name, opacity=1.0):
     """Get colour from model label"""
     if "PVLive" in model_name:
-        return colour_per_model.get(model_name, "#e4e4e4")
+        return colour_per_model.get(model_name, "#FFFFFF")
     else:
         # Some models have a space and a datetime
         model_name_only = model_name.split(" ")[0]
