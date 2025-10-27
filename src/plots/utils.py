@@ -18,9 +18,6 @@ colour_per_model = {
     "PVLive GSP Sum Updated": "#FF9736",
 }
 
-# Make a cycle for extra models not in colour_per_model
-# Skip first 3 colours as they are too similar to colours in colour_per_model
-
 def hex_to_rgb(value):
     value = value.lstrip("#")
     lv = len(value)
