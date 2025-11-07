@@ -47,7 +47,7 @@ def forecast_page():
     with connection.get_session() as session:
         # Add dropdown to select GSP region
         locations = get_all_locations(session=session)
-        locations = [Location.from_orm(loc) for loc in locations if loc.gsp_id < 318]
+        locations = [Location.from_orm(loc) for loc in locations if loc.gsp_id < 342]
         gsp_ids = [loc.gsp_id for loc in locations]
         gsp_names = [loc.region_name for loc in locations]
 
@@ -320,14 +320,14 @@ def get_pvlive_data(end_datetime, gsp_id, session, start_datetime):
     )
     pvlive_gsp_sum_inday = get_gsp_yield_sum(
         session=session,
-        gsp_ids=list(range(1, 318)),
+        gsp_ids=list(range(1, 342)),
         start_datetime_utc=start_datetime,
         end_datetime_utc=end_datetime,
         regime="in-day",
     )
     pvlive_gsp_sum_dayafter = get_gsp_yield_sum(
         session=session,
-        gsp_ids=list(range(1, 318)),
+        gsp_ids=list(range(1, 342)),
         start_datetime_utc=start_datetime,
         end_datetime_utc=end_datetime,
         regime="day-after",
