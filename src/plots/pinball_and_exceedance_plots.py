@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 from nowcasting_datamodel.models.metric import MetricValue
 
 from get_data import get_metric_value
-from .utils import line_color
+from .utils import get_colour_from_model_name
 
 
 def make_pinball_or_exceedance_plot(
@@ -61,6 +61,8 @@ def make_pinball_or_exceedance_plot(
             x_horizon = [value.datetime_interval.start_datetime_utc for value in metric_values]
             y_horizon = [round(float(value.value), 2) for value in metric_values]
 
+            color = get_colour_from_model_name(f"{metric_name}_p{plevel}_{forecast_horizon}")
+
             # add to plot
             fig.add_traces(
                 [
@@ -69,7 +71,7 @@ def make_pinball_or_exceedance_plot(
                         y=y_horizon,
                         name=f"p{plevel}_{forecast_horizon}-minute horizon",
                         mode="lines",
-                        line=dict(color=line_color[i%len(line_color)]),
+                        line=dict(color=color),
                     )
                 ]
             )
