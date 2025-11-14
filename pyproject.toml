@@ -35,6 +35,7 @@ dependencies = [
     "torch @ https://download.pytorch.org/whl/cpu/torch-2.3.1%2Bcpu-cp312-cp312-linux_x86_64.whl ; platform_system == 'Linux' and platform_machine == 'x86_64'",
     "torch @ https://download.pytorch.org/whl/cpu/torch-2.3.1-cp312-none-macosx_11_0_arm64.whl ; platform_system == 'Darwin' and platform_machine == 'arm64'",
     "matplotlib>=3.8,<4.0",
+    "dp-sdk",
 ]
 
 [project.optional-dependencies]
@@ -65,6 +66,9 @@ dev-dependencies = [
 ]
 index-url = "https://download.pytorch.org/whl/cpu"
 extra-index-url = ["https://pypi.org/simple"]
+
+[tool.uv.sources]
+dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.12.0/dp_sdk-0.12.0-py3-none-any.whl" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

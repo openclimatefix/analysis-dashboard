@@ -36,6 +36,7 @@ from satellite_page import satellite_page
 from cloudcasting_page import cloudcasting_page
 from adjuster import adjuster_page
 from batch_page import batch_page
+from dataplatform.forecast import dp_forecast_page
 
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
@@ -262,6 +263,7 @@ if check_password():
         st.Page(status_page, title="🚦 Status"),
         st.Page(forecast_page, title="📈 Forecast"),
         st.Page(pvsite_forecast_page, title="📉 Site Forecast"),
+        st.Page(dp_forecast_page, title="📉 DP Forecast"),
         st.Page(sites_toolbox_page, title="🛠️ Sites Toolbox"),
         st.Page(user_page, title="👥 API Users"),
         st.Page(nwp_page, title="🌤️ NWP"),
