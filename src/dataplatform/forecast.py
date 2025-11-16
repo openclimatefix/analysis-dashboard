@@ -267,3 +267,14 @@ async def async_dp_forecast_page():
             file_name=f"summary_accuracy_{selected_location.location_uuid}_{start_date}_{end_date}.csv",
             mime="text/csv",
         )
+
+
+        st.header("TODO")
+
+        st.write("Metrics summary table")
+        st.write("Add more metrics")
+        st.write("Add forecast horizon options")
+        st.write("Add creation time forecast filter")
+        st.write("Daily Metrics graphs")
+        st.write("colours")
+        st.write("speed up read, use async and more caching")
