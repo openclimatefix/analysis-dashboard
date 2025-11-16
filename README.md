@@ -83,6 +83,8 @@ To run the app locally, you'll need to connect it to the `forecast development d
 
 OCF team members can connect to the `forecast development database` using [these Notion instructions](https://www.notion.so/openclimatefix/Connecting-to-AWS-RDS-bf35b3fbd61f40df9c974c240e042354). Add `DB_URL= (db_url from notion documents)` to a `secrets.toml` file. Follow the instructions in the Notion document to connect to the database v.
 
+To connect to the database platform, use `DATA_PLATFORM_HOST` and `DATA_PLATFORM_PORT`. 
+
 Run app:
 
 ```shell
