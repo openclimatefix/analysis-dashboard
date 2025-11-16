@@ -271,6 +271,7 @@ async def async_dp_forecast_page():
 
         st.header("TODO")
 
+        st.write("Change from % to MW")
         st.write("Metrics summary table")
         st.write("Add more metrics")
         st.write("Add forecast horizon options")
