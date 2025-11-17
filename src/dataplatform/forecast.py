@@ -484,6 +484,7 @@ async def async_dp_forecast_page():
 
         st.header("TODO")
 
+        st.write("Add caching on data")
         st.write("Add probabilistic")
         st.write("Scale to KW/MW/GW as needed")
         st.write("Align forecasts on t0")
