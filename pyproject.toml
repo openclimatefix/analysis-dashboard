@@ -68,7 +68,7 @@ index-url = "https://download.pytorch.org/whl/cpu"
 extra-index-url = ["https://pypi.org/simple"]
 
 [tool.uv.sources]
-dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.13.1/dp_sdk-0.13.1-py3-none-any.whl" }
+dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.13.2/dp_sdk-0.13.2-py3-none-any.whl" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
