@@ -15,12 +15,13 @@ data_platform_port = int(os.getenv("DATA_PLATFORM_PORT", "50051"))
 observer_names = ["pvlive_in_day", "pvlive_day_after"]
 
 
+
 async def get_forecast_data(
     _client, location, start_date, end_date, selected_forecasters
 ) -> pd.DataFrame:
     all_data_df = []
 
-    # loop over 7 days of data
+    # loop over 30 days of data
     temp_start_date = start_date
     while temp_start_date <= end_date:
         temp_end_date = temp_start_date + timedelta(days=30)
@@ -31,7 +32,9 @@ async def get_forecast_data(
         stream_forecast_data_request = dp.StreamForecastDataRequest(
             location_uuid=location.location_uuid,
             energy_source=dp.EnergySource.SOLAR,
-            time_window=dp.TimeWindow(start_timestamp_utc=temp_start_date, end_timestamp_utc=temp_end_date),
+            time_window=dp.TimeWindow(
+                start_timestamp_utc=temp_start_date, end_timestamp_utc=temp_end_date
+            ),
             forecasters=selected_forecasters,
         )
         forecasts = []
@@ -58,12 +61,15 @@ async def get_forecast_data(
     all_data_df = pd.concat(all_data_df, ignore_index=True)
 
     # get watt value
-    all_data_df['p50_watts'] = all_data_df['p50_fraction'].astype(float) * all_data_df['effective_capacity_watts'].astype(float)
+    all_data_df["p50_watts"] = all_data_df["p50_fraction"].astype(float) * all_data_df[
+        "effective_capacity_watts"
+    ].astype(float)
 
     return all_data_df
 
 
 async def get_all_observations(client, location, start_date, end_date) -> pd.DataFrame:
+
     all_observations_df = []
 
     for observer_name in observer_names:
@@ -105,7 +111,9 @@ async def get_all_observations(client, location, start_date, end_date) -> pd.Dat
 
     all_observations_df = pd.concat(all_observations_df, ignore_index=True)
 
-    all_observations_df['value_watts'] = all_observations_df['value_fraction'].astype(float) * all_observations_df['effective_capacity_watts'].astype(float)
+    all_observations_df["value_watts"] = all_observations_df["value_fraction"].astype(
+        float
+    ) * all_observations_df["effective_capacity_watts"].astype(float)
 
     return all_observations_df
 
@@ -175,8 +183,12 @@ async def async_dp_forecast_page():
         end_date = st.sidebar.date_input(
             "End date:", datetime.now().date() + timedelta(days=3)
         )
-        start_date = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=timezone.utc)
-        end_date = datetime.combine(end_date, datetime.min.time()).replace(tzinfo=timezone.utc)
+        start_date = datetime.combine(start_date, datetime.min.time()).replace(
+            tzinfo=timezone.utc
+        )
+        end_date = datetime.combine(end_date, datetime.min.time()).replace(
+            tzinfo=timezone.utc
+        )
 
         # select forecast type
         st.sidebar.write("TODO Select Forecast Type:")
@@ -261,6 +273,18 @@ async def async_dp_forecast_page():
         st.plotly_chart(fig)
 
         st.header("Summary Accuracy Graph")
+        metrics = {
+            "MAE": "MAE is absolute mean error, average(abs(y-x))",
+            "ME": "ME is mean (bias) error, average((y-x))",
+            "NMAE (by capacity)": " NMAE (by capacity), average(abs(y-x)) / mean(capacity)",
+            "NMAE (by mean observed generation)": " NMAE (by mean observed generation), average(abs(y-x)) / mean(y)",
+            #    "NMAE (by observed generation)":" NAME (by observed generation)"
+        }
+        selected_metric = st.sidebar.selectbox(
+            "Select a Metrics", metrics.keys(), index=0
+        )
+
+        st.write(metrics)
 
         # take the foecast data, and group by horizonMins, forecasterFullName
         # calculate mean absolute error between p50Fraction and observations valueFraction
@@ -275,9 +299,19 @@ async def async_dp_forecast_page():
             how="inner",
             suffixes=("_forecast", "_observation"),
         )
-        merged_df["absolute_error"] = (
-            merged_df["p50_watts"] - merged_df["value_watts"]
-        ).abs()
+        merged_df["effective_capacity_watts_observation"] = merged_df[
+            "effective_capacity_watts_observation"
+        ].astype(float)
+
+        # error
+        merged_df["error"] = merged_df["p50_watts"] - merged_df["value_watts"]
+
+        # absolute error
+        merged_df["absolute_error"] = (merged_df["error"]).abs()
+
+        # absolute error, normalized by mean observed generation
+        mean_observed_generation = merged_df["value_watts"].mean()
+        # merged_df['absolute_error_normalized_by_generation'] = merged_df['absolute_error'] / merged_df['value_watts']
 
         summary_df = (
             merged_df.groupby(["horizon_mins", "forecaster_fullname"])
@@ -296,6 +330,35 @@ async def async_dp_forecast_page():
         )
         summary_df["sem"] = summary_df["std"] / (summary_df["count"] ** 0.5)
 
+        # ME
+        summary_df["ME"] = (
+            merged_df.groupby(["horizon_mins", "forecaster_fullname"])
+            .agg({"error": "mean"})
+            .reset_index()["error"]
+        )
+
+        # summary_df["absolute_error_divided_by_observed"] = (
+        #     merged_df.groupby(["horizon_mins", "forecaster_fullname"])
+        #     .agg({"absolute_error_normalized_by_generation": "mean"})
+        #     .reset_index()["absolute_error_normalized_by_generation"]
+        # )
+
+        summary_df["effective_capacity_watts_observation"] = (
+            merged_df.groupby(["horizon_mins", "forecaster_fullname"])
+            .agg({"effective_capacity_watts_observation": "mean"})
+            .reset_index()["effective_capacity_watts_observation"]
+        )
+
+        # rename absolute_error to MAE
+        summary_df = summary_df.rename(columns={"absolute_error": "MAE"})
+        summary_df["NMAE (by capacity)"] = (
+            summary_df["MAE"] / summary_df["effective_capacity_watts_observation"]
+        )
+        summary_df["NMAE (by mean observed generation)"] = (
+            summary_df["MAE"] / mean_observed_generation
+        )
+        # summary_df["NMAE (by observed generation)"] = summary_df["absolute_error_divided_by_observed"]
+
         fig2 = go.Figure()
 
         for forecaster in selected_forecasters:
@@ -308,7 +371,7 @@ async def async_dp_forecast_page():
             fig2.add_trace(
                 go.Scatter(
                     x=forecaster_df["horizon_mins"],
-                    y=forecaster_df["absolute_error"],
+                    y=forecaster_df[selected_metric],
                     mode="lines+markers",
                     name=forecaster.forecaster_name,
                 )
@@ -317,7 +380,7 @@ async def async_dp_forecast_page():
             fig2.add_trace(
                 go.Scatter(
                     x=forecaster_df["horizon_mins"],
-                    y=forecaster_df["absolute_error"] - 1.96 * forecaster_df["sem"],
+                    y=forecaster_df[selected_metric] - 1.96 * forecaster_df["sem"],
                     mode="lines",
                     # name="p10: " + model,
                     # line=dict(color=get_colour_from_model_name(model), width=0),
@@ -329,7 +392,7 @@ async def async_dp_forecast_page():
             fig2.add_trace(
                 go.Scatter(
                     x=forecaster_df["horizon_mins"],
-                    y=forecaster_df["absolute_error"] + 1.96 * forecaster_df["sem"],
+                    y=forecaster_df[selected_metric] + 1.96 * forecaster_df["sem"],
                     mode="lines",
                     # name="p10: " + model,
                     # line=dict(color=get_colour_from_model_name(model), width=0),
@@ -340,9 +403,9 @@ async def async_dp_forecast_page():
             )
 
         fig2.update_layout(
-            title="Mean Absolute Error by Horizon",
+            title=f"{selected_metric} by Horizon",
             xaxis_title="Horizon (Minutes)",
-            yaxis_title="Mean Absolute Error [watts]",
+            yaxis_title=selected_metric,
             legend_title="Forecaster",
         )
 
@@ -356,12 +419,74 @@ async def async_dp_forecast_page():
             mime="text/csv",
         )
 
+        st.header("Summary Accuracy Table")
+
+        # add slider to select min and max horizon mins
+        min_horizon, max_horizon = st.slider(
+            "Select Horizon Mins Range",
+            int(summary_df["horizon_mins"].min()),
+            int(summary_df["horizon_mins"].max()),
+            (
+                int(summary_df["horizon_mins"].min()),
+                int(summary_df["horizon_mins"].max()),
+            ),
+            step=30,
+        )
+
+        # Reduce my horizon mins
+        summary_table_df = merged_df[
+            (merged_df["horizon_mins"] >= min_horizon)
+            & (merged_df["horizon_mins"] <= max_horizon)
+        ]
+
+        summary_table_df = summary_table_df.rename(
+            columns={
+                "effective_capacity_watts_observation": "Capacity_watts",
+                "value_watts": "Mean_Observed_Generation_watts",
+            }
+        )
+
+        value_columns = [
+            "error",
+            "absolute_error",
+            #  'absolute_error_normalized_by_generation',
+            "Mean_Observed_Generation_watts",
+            "Capacity_watts",
+        ]
+
+        summary_table_df = summary_table_df[["forecaster_fullname"] + value_columns]
+
+        summary_table_df["Capacity_watts"] = summary_table_df["Capacity_watts"].astype(
+            float
+        )
+
+        # group by forecaster full name a
+        summary_table_df = summary_table_df.groupby("forecaster_fullname").mean()
+
+        # rename
+        summary_table_df = summary_table_df.rename(
+            columns={
+                "error": "ME",
+                "absolute_error": "MAE",
+                # 'absolute_error_normalized_by_generation': 'NMAE (by observed generation)',
+                "Capacity_watts": "Mean Capacity",
+                "Mean_Observed_Generation_watts": "Mean Observed Generation",
+            }
+        )
+
+        # pivot table, so forecaster_fullname is columns
+        summary_table_df = summary_table_df.pivot_table(
+            columns=summary_table_df.index,
+            values=summary_table_df.columns.tolist(),
+        )
+
+        st.dataframe(summary_table_df)
+
         st.header("TODO")
 
         st.write("Add probabilistic")
         st.write("Scale to KW/MW/GW as needed")
         st.write("Align forecasts on t0")
-        st.write("Metrics summary table")
         st.write("Add more metrics")
         st.write("Add forecast horizon options")
         st.write("Add creation time forecast filter")
