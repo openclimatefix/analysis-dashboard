@@ -24,7 +24,7 @@ async def get_forecast_data(
     # loop over 30 days of data
     temp_start_date = start_date
     while temp_start_date <= end_date:
-        temp_end_date = temp_start_date + timedelta(days=30)
+        temp_end_date = temp_start_date + timedelta(days=7)
         if temp_end_date > end_date:
             temp_end_date = end_date
 
