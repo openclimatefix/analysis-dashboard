@@ -57,6 +57,9 @@ async def get_forecast_data(
 
     all_data_df = pd.concat(all_data_df, ignore_index=True)
 
+    # get watt value
+    all_data_df['p50_watts'] = all_data_df['p50_fraction'].astype(float) * all_data_df['effective_capacity_watts'].astype(float)
+
     return all_data_df
 
 
@@ -101,6 +104,8 @@ async def get_all_observations(client, location, start_date, end_date) -> pd.Dat
         all_observations_df.append(observation_one_df)
 
     all_observations_df = pd.concat(all_observations_df, ignore_index=True)
+
+    all_observations_df['value_watts'] = all_observations_df['value_fraction'].astype(float) * all_observations_df['effective_capacity_watts'].astype(float)
 
     return all_observations_df
 
@@ -227,7 +232,7 @@ async def async_dp_forecast_page():
             fig.add_trace(
                 go.Scatter(
                     x=forecaster_df["target_timestamp_utc"],
-                    y=forecaster_df["p50_fraction"],
+                    y=forecaster_df["p50_watts"],
                     mode="lines",
                     name=forecaster.forecaster_name,
                 )
@@ -240,7 +245,7 @@ async def async_dp_forecast_page():
             fig.add_trace(
                 go.Scatter(
                     x=obs_df["timestamp_utc"],
-                    y=obs_df["value_fraction"],
+                    y=obs_df["value_watts"],
                     mode="lines",
                     name=observer_name,
                 )
@@ -249,7 +254,7 @@ async def async_dp_forecast_page():
         fig.update_layout(
             title="Current Forecast",
             xaxis_title="Time",
-            yaxis_title="Generation [%]",
+            yaxis_title="Generation [Watts]",
             legend_title="Forecaster",
         )
 
@@ -271,7 +276,7 @@ async def async_dp_forecast_page():
             suffixes=("_forecast", "_observation"),
         )
         merged_df["absolute_error"] = (
-            merged_df["p50_fraction"] - merged_df["value_fraction"]
+            merged_df["p50_watts"] - merged_df["value_watts"]
         ).abs()
 
         summary_df = (
@@ -337,7 +342,7 @@ async def async_dp_forecast_page():
         fig2.update_layout(
             title="Mean Absolute Error by Horizon",
             xaxis_title="Horizon (Minutes)",
-            yaxis_title="Mean Absolute Error [%]",
+            yaxis_title="Mean Absolute Error [watts]",
             legend_title="Forecaster",
         )
 
@@ -353,8 +358,8 @@ async def async_dp_forecast_page():
 
         st.header("TODO")
 
-        st.write("Change from % to MW")
         st.write("Add probabilistic")
+        st.write("Scale to KW/MW/GW as needed")
         st.write("Align forecasts on t0")
         st.write("Metrics summary table")
         st.write("Add more metrics")
