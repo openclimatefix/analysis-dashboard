@@ -43,7 +43,11 @@ async def get_forecast_data(
         )
         forecasts = []
         async for chunk in _client.stream_forecast_data(stream_forecast_data_request):
-            forecasts.append(chunk.to_dict(casing=betterproto.Casing.SNAKE))
+            forecasts.append(
+                chunk.to_dict(
+                    include_default_values=True, casing=betterproto.Casing.SNAKE
+                )
+            )
 
         if len(forecasts) > 0:
             all_data_df.append(
@@ -92,16 +96,20 @@ async def get_all_observations(client, location, start_date, end_date) -> pd.Dat
                 get_observations_request
             )
 
-            i = 0
-            for value in get_observations_response.values:
-                observations_df = pd.DataFrame(value.to_dict(), index=[i])
-                observation_one_df.append(observations_df)
-                i += 1
+            observations = []
+            for chunk in get_observations_response.values:
+                observations.append(
+                    chunk.to_dict(
+                        include_default_values=True, casing=betterproto.Casing.SNAKE
+                    )
+                )
+
+            observation_one_df.append(pd.DataFrame.from_dict(observations))
 
             temp_start_date = temp_start_date + timedelta(days=7)
 
         observation_one_df = pd.concat(observation_one_df, ignore_index=True)
-        observation_one_df = observation_one_df.sort_values(by="timestampUtc")
+        observation_one_df = observation_one_df.sort_values(by="timestamp_utc")
         observation_one_df["observer_name"] = observer_name
 
         all_observations_df.append(observation_one_df)
@@ -243,8 +251,8 @@ async def async_dp_forecast_page():
             ]
             fig.add_trace(
                 go.Scatter(
-                    x=obs_df["timestampUtc"],
-                    y=obs_df["valueFraction"],
+                    x=obs_df["timestamp_utc"],
+                    y=obs_df["value_fraction"],
                     mode="lines",
                     name=observer_name,
                 )
@@ -263,19 +271,19 @@ async def async_dp_forecast_page():
 
         # take the foecast data, and group by horizonMins, forecasterFullName
         # calculate mean absolute error between p50Fraction and observations valueFraction
-        all_observations_df["timestampUtc"] = pd.to_datetime(
-            all_observations_df["timestampUtc"]
+        all_observations_df["timestamp_utc"] = pd.to_datetime(
+            all_observations_df["timestamp_utc"]
         )
         merged_df = pd.merge(
             all_forecast_data_df,
             all_observations_df,
             left_on=["target_timestamp_utc"],
-            right_on=["timestampUtc"],
+            right_on=["timestamp_utc"],
             how="inner",
             suffixes=("_forecast", "_observation"),
         )
         merged_df["absolute_error"] = (
-            merged_df["p50_fraction"] - merged_df["valueFraction"]
+            merged_df["p50_fraction"] - merged_df["value_fraction"]
         ).abs()
 
         summary_df = (
