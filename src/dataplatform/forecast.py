@@ -31,14 +31,7 @@ async def get_forecast_data(
         stream_forecast_data_request = dp.StreamForecastDataRequest(
             location_uuid=location.location_uuid,
             energy_source=dp.EnergySource.SOLAR,
-            time_window=dp.TimeWindow(
-                start_timestamp_utc=datetime.combine(
-                    temp_start_date, datetime.min.time()
-                ).replace(tzinfo=timezone.utc),
-                end_timestamp_utc=datetime.combine(
-                    temp_end_date, datetime.min.time()
-                ).replace(tzinfo=timezone.utc),
-            ),
+            time_window=dp.TimeWindow(start_timestamp_utc=temp_start_date, end_timestamp_utc=temp_end_date),
             forecasters=selected_forecasters,
         )
         forecasts = []
@@ -83,14 +76,7 @@ async def get_all_observations(client, location, start_date, end_date) -> pd.Dat
                 observer_name=observer_name,
                 location_uuid=location.location_uuid,
                 energy_source=dp.EnergySource.SOLAR,
-                time_window=dp.TimeWindow(
-                    start_timestamp_utc=datetime.combine(
-                        temp_start_date, datetime.min.time()
-                    ).replace(tzinfo=timezone.utc),
-                    end_timestamp_utc=datetime.combine(
-                        temp_end_date, datetime.min.time()
-                    ).replace(tzinfo=timezone.utc),
-                ),
+                time_window=dp.TimeWindow(temp_start_date, temp_end_date),
             )
             get_observations_response = await client.get_observations_as_timeseries(
                 get_observations_request
@@ -184,6 +170,8 @@ async def async_dp_forecast_page():
         end_date = st.sidebar.date_input(
             "End date:", datetime.now().date() + timedelta(days=3)
         )
+        start_date = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=timezone.utc)
+        end_date = datetime.combine(end_date, datetime.min.time()).replace(tzinfo=timezone.utc)
 
         # select forecast type
         st.sidebar.write("TODO Select Forecast Type:")
