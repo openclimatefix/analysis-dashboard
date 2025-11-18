@@ -7,6 +7,8 @@ import pandas as pd
 from grpclib.client import Channel
 import plotly.graph_objects as go
 import betterproto
+import time
+from aiocache import Cache, cached
 
 data_platform_host = os.getenv("DATA_PLATFORM_HOST", "localhost")
 data_platform_port = int(os.getenv("DATA_PLATFORM_PORT", "50051"))
@@ -15,9 +17,45 @@ data_platform_port = int(os.getenv("DATA_PLATFORM_PORT", "50051"))
 observer_names = ["pvlive_in_day", "pvlive_day_after"]
 
 
+def key_builder_remove_client(func, *args, **kwargs):
+    """Custom key builder that ignores the client argument for caching purposes."""
+
+    key = f"{func.__name__}:"
+    for arg in args:
+        if isinstance(arg, dp.DataPlatformDataServiceStub):
+            continue
+        key += f"{arg}-"
+
+    for k, v in kwargs.items():
+        key += f"{k}={v}-"
+
+    return key
+
 
 async def get_forecast_data(
     _client, location, start_date, end_date, selected_forecasters
+) -> pd.DataFrame:
+    all_data_df = []
+
+    for forecaster in selected_forecasters:
+        forecaster_data_df = await get_forecast_data_one_forecaster(
+            _client, location, start_date, end_date, forecaster
+        )
+        all_data_df.append(forecaster_data_df)
+
+    all_data_df = pd.concat(all_data_df, ignore_index=True)
+
+    # get watt value
+    all_data_df["p50_watts"] = all_data_df["p50_fraction"].astype(float) * all_data_df[
+        "effective_capacity_watts"
+    ].astype(float)
+
+    return all_data_df
+
+
+@cached(ttl=300, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
+async def get_forecast_data_one_forecaster(
+    client, location, start_date, end_date, selected_forecaster
 ) -> pd.DataFrame:
     all_data_df = []
 
@@ -35,10 +73,10 @@ async def get_forecast_data(
             time_window=dp.TimeWindow(
                 start_timestamp_utc=temp_start_date, end_timestamp_utc=temp_end_date
             ),
-            forecasters=selected_forecasters,
+            forecasters=[selected_forecaster],
         )
         forecasts = []
-        async for chunk in _client.stream_forecast_data(stream_forecast_data_request):
+        async for chunk in client.stream_forecast_data(stream_forecast_data_request):
             forecasts.append(
                 chunk.to_dict(
                     include_default_values=True, casing=betterproto.Casing.SNAKE
@@ -60,16 +98,11 @@ async def get_forecast_data(
 
     all_data_df = pd.concat(all_data_df, ignore_index=True)
 
-    # get watt value
-    all_data_df["p50_watts"] = all_data_df["p50_fraction"].astype(float) * all_data_df[
-        "effective_capacity_watts"
-    ].astype(float)
-
     return all_data_df
 
 
-async def get_all_observations(client, location, start_date, end_date) -> pd.DataFrame:
-
+@cached(ttl=300, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
+async def get_all_observations(_client, location, start_date, end_date) -> pd.DataFrame:
     all_observations_df = []
 
     for observer_name in observer_names:
@@ -87,7 +120,7 @@ async def get_all_observations(client, location, start_date, end_date) -> pd.Dat
                 energy_source=dp.EnergySource.SOLAR,
                 time_window=dp.TimeWindow(temp_start_date, temp_end_date),
             )
-            get_observations_response = await client.get_observations_as_timeseries(
+            get_observations_response = await _client.get_observations_as_timeseries(
                 get_observations_request
             )
 
@@ -167,8 +200,14 @@ async def async_dp_forecast_page():
         )
         forecasters = get_forecasters_response.forecasters
         forecaster_names = [forecaster.forecaster_name for forecaster in forecasters]
+        if "pvnet_v2" in forecaster_names:
+            default_index = forecaster_names.index("pvnet_v2")
+        else:
+            default_index = 0
         selected_forecaster_name = st.sidebar.multiselect(
-            "Select a Forecaster", forecaster_names, default=forecaster_names[0]
+            "Select a Forecaster",
+            forecaster_names,
+            default=forecaster_names[default_index],
         )
         selected_forecasters = [
             forecaster
@@ -193,21 +232,24 @@ async def async_dp_forecast_page():
         # select forecast type
         st.sidebar.write("TODO Select Forecast Type:")
 
-        # setup page
-        st.header("Time Series Plot")
-
         # get generation data
+        time_start = time.time()
         all_observations_df = await get_all_observations(
             client, selected_location, start_date, end_date
         )
+        observation_seconds = time.time() - time_start
 
         # get forcast all data
+        time_start = time.time()
         all_forecast_data_df = await get_forecast_data(
             client, selected_location, start_date, end_date, selected_forecasters
         )
+        forecast_seconds = time.time() - time_start
+        st.write(f"Selected Location uuid: `{selected_location.location_uuid}`.")
         st.write(
-            f"Selected Location uuid: {selected_location.location_uuid}. \
-                 Fetched {len(all_forecast_data_df)} rows of forecast data"
+            f"Fetched `{len(all_forecast_data_df)}` rows of forecast data in `{forecast_seconds:.2f}` seconds. \
+                 Fetched `{len(all_observations_df)}` rows of observation data in `{observation_seconds:.2f}` seconds. \
+                 We cache data for 5 minutses to speed up repeated requests."
         )
 
         # add download button
@@ -218,6 +260,9 @@ async def async_dp_forecast_page():
             file_name=f"site_forecast_{selected_location.location_uuid}_{start_date}_{end_date}.csv",
             mime="text/csv",
         )
+
+        # 1. Plot of raw forecast data
+        st.header("Time Series Plot")
 
         all_forecast_data_df["target_timestamp_utc"] = pd.to_datetime(
             all_forecast_data_df["init_timestamp"]

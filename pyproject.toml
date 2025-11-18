@@ -18,7 +18,7 @@ dependencies = [
     "plotly==5.24.1",
     "psycopg2-binary==2.9.10",
     "SQLAlchemy==2.0.36",
-    "streamlit==1.46.1",
+    "streamlit==1.51.0",
     "testcontainers==4.9.0",
     "uvicorn==0.34.0",
     "geopandas==1.0.1",
@@ -36,6 +36,7 @@ dependencies = [
     "torch @ https://download.pytorch.org/whl/cpu/torch-2.3.1-cp312-none-macosx_11_0_arm64.whl ; platform_system == 'Darwin' and platform_machine == 'arm64'",
     "matplotlib>=3.8,<4.0",
     "dp-sdk",
+    "aiocache",
 ]
 
 [project.optional-dependencies]
