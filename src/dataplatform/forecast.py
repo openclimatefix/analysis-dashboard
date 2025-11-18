@@ -111,6 +111,16 @@ async def async_dp_forecast_page():
         # select forecast type
         st.sidebar.write("TODO Select Forecast Type:")
 
+        # select units
+        if location_type == dp.LocationType.NATION:
+            default_unit_index = 3  # GW
+        else:
+            default_unit_index = 2  # MW
+        units = st.sidebar.selectbox("Select Units", ["W", "kW", "MW", "GW"], index=default_unit_index)
+        scale_factors = {"W": 1, "kW": 1e3, "MW": 1e6, "GW": 1e9}
+        scale_factor = scale_factors[units]
+
+
         # get generation data
         time_start = time.time()
         all_observations_df = await get_all_observations(
@@ -174,7 +184,7 @@ async def async_dp_forecast_page():
             fig.add_trace(
                 go.Scatter(
                     x=obs_df["timestamp_utc"],
-                    y=obs_df["value_watts"],
+                    y=obs_df["value_watts"] / scale_factor,
                     mode="lines",
                     name=observer_name,
                     line=line,
@@ -191,7 +201,7 @@ async def async_dp_forecast_page():
             fig.add_trace(
                 go.Scatter(
                     x=forecaster_df["target_timestamp_utc"],
-                    y=forecaster_df["p50_watts"],
+                    y=forecaster_df["p50_watts"] / scale_factor,
                     mode="lines",
                     name=forecaster.forecaster_name,
                     line=dict(color=colours[i % len(colours)]),
@@ -201,7 +211,7 @@ async def async_dp_forecast_page():
         fig.update_layout(
             title="Current Forecast",
             xaxis_title="Time",
-            yaxis_title="Generation [Watts]",
+            yaxis_title=f"Generation [{units}]",
             legend_title="Forecaster",
         )
 
@@ -296,7 +306,7 @@ async def async_dp_forecast_page():
 
         fig2 = go.Figure()
 
-        for forecaster in selected_forecasters:
+        for i, forecaster in enumerate(selected_forecasters):
             name_and_version = (
                 f"{forecaster.forecaster_name}:{forecaster.forecaster_version}"
             )
@@ -306,19 +316,19 @@ async def async_dp_forecast_page():
             fig2.add_trace(
                 go.Scatter(
                     x=forecaster_df["horizon_mins"],
-                    y=forecaster_df[selected_metric],
+                    y=forecaster_df[selected_metric] / scale_factor,
                     mode="lines+markers",
                     name=forecaster.forecaster_name,
+                    line=dict(color=colours[i % len(colours)]),
                 )
             )
 
             fig2.add_trace(
                 go.Scatter(
                     x=forecaster_df["horizon_mins"],
-                    y=forecaster_df[selected_metric] - 1.96 * forecaster_df["sem"],
+                    y=(forecaster_df[selected_metric] - 1.96 * forecaster_df["sem"]) / scale_factor,
                     mode="lines",
-                    # name="p10: " + model,
-                    # line=dict(color=get_colour_from_model_name(model), width=0),
+                    line=dict(color=colours[i % len(colours)], width=0),
                     legendgroup=forecaster.forecaster_name,
                     showlegend=False,
                 )
@@ -327,10 +337,9 @@ async def async_dp_forecast_page():
             fig2.add_trace(
                 go.Scatter(
                     x=forecaster_df["horizon_mins"],
-                    y=forecaster_df[selected_metric] + 1.96 * forecaster_df["sem"],
+                    y=(forecaster_df[selected_metric] + 1.96 * forecaster_df["sem"]) / scale_factor,
                     mode="lines",
-                    # name="p10: " + model,
-                    # line=dict(color=get_colour_from_model_name(model), width=0),
+                    line=dict(color=colours[i % len(colours)], width=0),
                     legendgroup=forecaster.forecaster_name,
                     showlegend=False,
                     fill="tonexty",
@@ -340,7 +349,7 @@ async def async_dp_forecast_page():
         fig2.update_layout(
             title=f"{selected_metric} by Horizon",
             xaxis_title="Horizon (Minutes)",
-            yaxis_title=selected_metric,
+            yaxis_title=f"{selected_metric} [{units}]",
             legend_title="Forecaster",
         )
 
@@ -410,11 +419,19 @@ async def async_dp_forecast_page():
             }
         )
 
+        # scale by units
+        summary_table_df = summary_table_df / scale_factor
+        summary_table_df = summary_table_df.rename(
+            {col: f'{col} [{units}]' for col in summary_table_df.columns},
+            axis=1,
+        )
+
         # pivot table, so forecaster_fullname is columns
         summary_table_df = summary_table_df.pivot_table(
             columns=summary_table_df.index,
             values=summary_table_df.columns.tolist(),
         )
+
 
         st.dataframe(summary_table_df)
 
@@ -425,7 +442,6 @@ async def async_dp_forecast_page():
         st.header("TODO")
 
         st.write("Add probabilistic")
-        st.write("Scale to KW/MW/GW as needed")
         st.write("Align forecasts on t0")
         st.write("Add more metrics")
         st.write("Add forecast horizon options")
