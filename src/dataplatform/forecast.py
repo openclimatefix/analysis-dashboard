@@ -109,7 +109,14 @@ async def async_dp_forecast_page():
         )
 
         # select forecast type
-        st.sidebar.write("TODO Select Forecast Type:")
+        selected_forecast_type = st.sidebar.selectbox(
+            "Select a Forecast Type", ['Current', "Horizon", "t0"], index=0
+        )
+
+        if selected_forecast_type == 'Horizon':
+            selected_forecast_horizon = st.sidebar.selectbox(
+                "Select a Forecast Horizon", list(range(0,2400,30)), index=3
+            )
 
         # select units
         if location_type == dp.LocationType.NATION:
@@ -157,14 +164,27 @@ async def async_dp_forecast_page():
             all_forecast_data_df["init_timestamp"]
         ) + pd.to_timedelta(all_forecast_data_df["horizon_mins"], unit="m")
 
-        # Choose current forecast
-        # this is done by selecting the unique target_timestamp_utc with the the lowest horizonMins
-        # it should also be unique for each forecasterFullName
-        current_forecast_df = all_forecast_data_df.loc[
-            all_forecast_data_df.groupby(
-                ["target_timestamp_utc", "forecaster_fullname"]
-            )["horizon_mins"].idxmin()
-        ]
+        if selected_forecast_type == 'Current':
+            # Choose current forecast
+            # this is done by selecting the unique target_timestamp_utc with the the lowest horizonMins
+            # it should also be unique for each forecasterFullName
+            current_forecast_df = all_forecast_data_df.loc[
+                all_forecast_data_df.groupby(
+                    ["target_timestamp_utc", "forecaster_fullname"]
+                )["horizon_mins"].idxmin()
+            ]
+        elif selected_forecast_type == 'Horizon':
+            # Choose horizon forecast
+            current_forecast_df = all_forecast_data_df[
+                all_forecast_data_df["horizon_mins"] >= selected_forecast_horizon
+            ]
+            current_forecast_df = current_forecast_df.loc[
+                current_forecast_df.groupby(
+                    ["target_timestamp_utc", "forecaster_fullname"]
+                )["horizon_mins"].idxmin()
+            ]
+        else:
+            pass
 
         # plot the results
         fig = go.Figure()
@@ -462,14 +482,49 @@ async def async_dp_forecast_page():
 
         # 4. Daily metric plots
         st.header("Daily Metrics Plots")
-        st.write("TODO")
+        st.write("Plotted below are the daily MAE for each forecaster. This is for all forecast horizons.")
+        daily_plots_df = merged_df
+        daily_plots_df["date_utc"] = daily_plots_df["timestamp_utc"].dt.date
+
+        # group by forecaster name and date
+        daily_metrics_df = (
+            daily_plots_df.groupby(["date_utc", "forecaster_fullname"])
+            .agg({"absolute_error": "mean"})
+            .reset_index()
+        )
+
+        fig3 = go.Figure()
+        for i, forecaster in enumerate(selected_forecasters):
+            name_and_version = (
+                f"{forecaster.forecaster_name}:{forecaster.forecaster_version}"
+            )
+            forecaster_df = daily_metrics_df[
+                daily_metrics_df["forecaster_fullname"] == name_and_version
+            ]
+            fig3.add_trace(
+                go.Scatter(
+                    x=forecaster_df["date_utc"],
+                    y=forecaster_df["absolute_error"] / scale_factor,
+                    # mode="lines+markers",
+                    name=forecaster.forecaster_name,
+                    line=dict(color=colours[i % len(colours)]),
+                )
+            )
+
+        fig3.update_layout(
+            title=f"Daily MAE",
+            xaxis_title="Date",
+            yaxis_title=f"MAE [{units}]",
+            legend_title="Forecaster",
+        )
+
+        st.plotly_chart(fig3)
+
+
 
         st.header("TODO")
 
         st.write("Align forecasts on t0")
         st.write("Add more metrics")
-        st.write("Add forecast horizon options")
-        st.write("Add creation time forecast filter")
-        st.write("Daily Metrics graphs")
-        st.write("colours")
+        st.write("Add creation time / t0 forecast filter")
         st.write("speed up read, use async and more caching")
