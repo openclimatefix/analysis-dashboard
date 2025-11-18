@@ -207,6 +207,31 @@ async def async_dp_forecast_page():
                     line=dict(color=colours[i % len(colours)]),
                 )
             )
+            print(forecaster_df.columns)
+            if 'p10_watts' in forecaster_df.columns and 'p90_watts' in forecaster_df.columns:
+                fig.add_trace(
+                go.Scatter(
+                    x=forecaster_df["target_timestamp_utc"],
+                    y=forecaster_df["p10_watts"] / scale_factor,
+                    mode="lines",
+                    line=dict(color=colours[i % len(colours)], width=0),
+                    legendgroup=forecaster.forecaster_name,
+                    showlegend=False,
+                    )
+                )
+
+                fig.add_trace(
+                    go.Scatter(
+                        x=forecaster_df["target_timestamp_utc"],
+                        y=forecaster_df["p90_watts"] / scale_factor,
+                        mode="lines",
+                        line=dict(color=colours[i % len(colours)], width=0),
+                        legendgroup=forecaster.forecaster_name,
+                        showlegend=False,
+                        fill="tonexty",
+                        )
+                    )
+            
 
         fig.update_layout(
             title="Current Forecast",
@@ -441,7 +466,6 @@ async def async_dp_forecast_page():
 
         st.header("TODO")
 
-        st.write("Add probabilistic")
         st.write("Align forecasts on t0")
         st.write("Add more metrics")
         st.write("Add forecast horizon options")

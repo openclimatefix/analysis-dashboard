@@ -45,6 +45,12 @@ async def get_forecast_data(
         "effective_capacity_watts"
     ].astype(float)
 
+    for col in ["p10", "p25", "p75", "p90"]:
+        if col in all_data_df.columns:
+            all_data_df[f"{col}_watts"] = all_data_df[col].astype(float) * all_data_df[
+                "effective_capacity_watts"
+            ].astype(float)
+
     return all_data_df
 
 
