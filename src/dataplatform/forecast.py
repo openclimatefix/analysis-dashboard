@@ -16,6 +16,19 @@ data_platform_port = int(os.getenv("DATA_PLATFORM_PORT", "50051"))
 # TODO make this dynamic
 observer_names = ["pvlive_in_day", "pvlive_day_after"]
 
+colours = [
+    "#FFD480",
+    "#FF8F73",
+    "#4675C1",
+    "#65B0C9",
+    "#58B0A9",
+    "#FAA056",
+    "#306BFF",
+    "#FF4901",
+    "#B701FF",
+    "#17E58F",
+]
+
 
 def dp_forecast_page():
     asyncio.run(async_dp_forecast_page())
@@ -145,7 +158,30 @@ async def async_dp_forecast_page():
 
         # plot the results
         fig = go.Figure()
-        for forecaster in selected_forecasters:
+        for observer_name in observer_names:
+            obs_df = all_observations_df[
+                all_observations_df["observer_name"] == observer_name
+            ]
+
+            if observer_name == "pvlive_in_day":
+                # dashed white line
+                line = dict(color="white", dash="dash")
+            elif observer_name == "pvlive_day_after":
+                line = dict(color="white")
+            else:
+                line = dict()
+
+            fig.add_trace(
+                go.Scatter(
+                    x=obs_df["timestamp_utc"],
+                    y=obs_df["value_watts"],
+                    mode="lines",
+                    name=observer_name,
+                    line=line,
+                )
+            )
+
+        for i, forecaster in enumerate(selected_forecasters):
             name_and_version = (
                 f"{forecaster.forecaster_name}:{forecaster.forecaster_version}"
             )
@@ -158,19 +194,7 @@ async def async_dp_forecast_page():
                     y=forecaster_df["p50_watts"],
                     mode="lines",
                     name=forecaster.forecaster_name,
-                )
-            )
-
-        for observer_name in observer_names:
-            obs_df = all_observations_df[
-                all_observations_df["observer_name"] == observer_name
-            ]
-            fig.add_trace(
-                go.Scatter(
-                    x=obs_df["timestamp_utc"],
-                    y=obs_df["value_watts"],
-                    mode="lines",
-                    name=observer_name,
+                    line=dict(color=colours[i % len(colours)]),
                 )
             )
 
@@ -395,7 +419,6 @@ async def async_dp_forecast_page():
 
         st.header("TODO")
 
-        st.write("Add caching on data")
         st.write("Add probabilistic")
         st.write("Scale to KW/MW/GW as needed")
         st.write("Align forecasts on t0")
