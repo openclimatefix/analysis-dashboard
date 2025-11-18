@@ -266,8 +266,8 @@ async def async_dp_forecast_page():
         metrics = {
             "MAE": "MAE is absolute mean error, average(abs(y-x))",
             "ME": "ME is mean (bias) error, average((y-x))",
-            "NMAE (by capacity)": " NMAE (by capacity), average(abs(y-x)) / mean(capacity)",
-            "NMAE (by mean observed generation)": " NMAE (by mean observed generation), average(abs(y-x)) / mean(y)",
+            # "TODO NMAE (by capacity)": " NMAE (by capacity), average(abs(y-x)) / mean(capacity)",
+            # "TODO NMAE (by mean observed generation)": " NMAE (by mean observed generation), average(abs(y-x)) / mean(y)",
             #    "NMAE (by observed generation)":" NAME (by observed generation)"
         }
         selected_metric = st.sidebar.selectbox(
@@ -491,6 +491,12 @@ async def async_dp_forecast_page():
             daily_plots_df.groupby(["date_utc", "forecaster_fullname"])
             .agg({"absolute_error": "mean"})
             .reset_index()
+        ).rename(columns={"absolute_error": "MAE"})
+         # ME
+        daily_metrics_df["ME"] = (
+            daily_plots_df.groupby(["date_utc", "forecaster_fullname"])
+            .agg({"error": "mean"})
+            .reset_index()["error"]
         )
 
         fig3 = go.Figure()
@@ -504,7 +510,7 @@ async def async_dp_forecast_page():
             fig3.add_trace(
                 go.Scatter(
                     x=forecaster_df["date_utc"],
-                    y=forecaster_df["absolute_error"] / scale_factor,
+                    y=forecaster_df[selected_metric] / scale_factor,
                     # mode="lines+markers",
                     name=forecaster.forecaster_name,
                     line=dict(color=colours[i % len(colours)]),
@@ -512,9 +518,9 @@ async def async_dp_forecast_page():
             )
 
         fig3.update_layout(
-            title=f"Daily MAE",
+            title=f"Daily {selected_metric}",
             xaxis_title="Date",
-            yaxis_title=f"MAE [{units}]",
+            yaxis_title=f"{selected_metric} [{units}]",
             legend_title="Forecaster",
         )
 
