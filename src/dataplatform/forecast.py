@@ -8,7 +8,7 @@ from grpclib.client import Channel
 import plotly.graph_objects as go
 import time
 
-from src.dataplatform.data import get_all_observations, get_forecast_data
+from dataplatform.data import get_all_observations, get_forecast_data
 
 data_platform_host = os.getenv("DATA_PLATFORM_HOST", "localhost")
 data_platform_port = int(os.getenv("DATA_PLATFORM_PORT", "50051"))
@@ -354,6 +354,7 @@ async def async_dp_forecast_page():
             mime="text/csv",
         )
 
+        # 3. Summary Accuracy Table, with slider to select min and max horizon mins
         st.header("Summary Accuracy Table")
 
         # add slider to select min and max horizon mins
@@ -416,6 +417,10 @@ async def async_dp_forecast_page():
         )
 
         st.dataframe(summary_table_df)
+
+        # 4. Daily metric plots
+        st.header("Daily Metrics Plots")
+        st.write("TODO")
 
         st.header("TODO")
 
