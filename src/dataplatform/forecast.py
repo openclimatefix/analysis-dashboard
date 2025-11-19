@@ -73,12 +73,12 @@ async def async_dp_forecast_page():
         )
 
         # get models
-        get_forecasters_request = dp.ListForecastersRequest(latest_versions_only=True)
+        get_forecasters_request = dp.ListForecastersRequest()
         get_forecasters_response = await client.list_forecasters(
             get_forecasters_request
         )
         forecasters = get_forecasters_response.forecasters
-        forecaster_names = [forecaster.forecaster_name for forecaster in forecasters]
+        forecaster_names = sorted(list(set([forecaster.forecaster_name for forecaster in forecasters])))
         if "pvnet_v2" in forecaster_names:
             default_index = forecaster_names.index("pvnet_v2")
         else:
@@ -170,7 +170,7 @@ async def async_dp_forecast_page():
             # it should also be unique for each forecasterFullName
             current_forecast_df = all_forecast_data_df.loc[
                 all_forecast_data_df.groupby(
-                    ["target_timestamp_utc", "forecaster_fullname"]
+                    ["target_timestamp_utc", "forecaster_name"]
                 )["horizon_mins"].idxmin()
             ]
         elif selected_forecast_type == 'Horizon':
@@ -180,7 +180,7 @@ async def async_dp_forecast_page():
             ]
             current_forecast_df = current_forecast_df.loc[
                 current_forecast_df.groupby(
-                    ["target_timestamp_utc", "forecaster_fullname"]
+                    ["target_timestamp_utc", "forecaster_name"]
                 )["horizon_mins"].idxmin()
             ]
         else:
@@ -211,23 +211,19 @@ async def async_dp_forecast_page():
                 )
             )
 
-        for i, forecaster in enumerate(selected_forecasters):
-            name_and_version = (
-                f"{forecaster.forecaster_name}:{forecaster.forecaster_version}"
-            )
+        for i, forecaster_name in enumerate(forecaster_names):
             forecaster_df = current_forecast_df[
-                current_forecast_df["forecaster_fullname"] == name_and_version
+                current_forecast_df["forecaster_name"] == forecaster_name
             ]
             fig.add_trace(
                 go.Scatter(
                     x=forecaster_df["target_timestamp_utc"],
                     y=forecaster_df["p50_watts"] / scale_factor,
                     mode="lines",
-                    name=forecaster.forecaster_name,
+                    name=forecaster_name,
                     line=dict(color=colours[i % len(colours)]),
                 )
             )
-            print(forecaster_df.columns)
             if 'p10_watts' in forecaster_df.columns and 'p90_watts' in forecaster_df.columns:
                 fig.add_trace(
                 go.Scatter(
@@ -235,7 +231,7 @@ async def async_dp_forecast_page():
                     y=forecaster_df["p10_watts"] / scale_factor,
                     mode="lines",
                     line=dict(color=colours[i % len(colours)], width=0),
-                    legendgroup=forecaster.forecaster_name,
+                    legendgroup=forecaster_name,
                     showlegend=False,
                     )
                 )
@@ -246,7 +242,7 @@ async def async_dp_forecast_page():
                         y=forecaster_df["p90_watts"] / scale_factor,
                         mode="lines",
                         line=dict(color=colours[i % len(colours)], width=0),
-                        legendgroup=forecaster.forecaster_name,
+                        legendgroup=forecaster_name,
                         showlegend=False,
                         fill="tonexty",
                         )
@@ -304,17 +300,17 @@ async def async_dp_forecast_page():
         # merged_df['absolute_error_normalized_by_generation'] = merged_df['absolute_error'] / merged_df['value_watts']
 
         summary_df = (
-            merged_df.groupby(["horizon_mins", "forecaster_fullname"])
+            merged_df.groupby(["horizon_mins", "forecaster_name"])
             .agg({"absolute_error": "mean"})
             .reset_index()
         )
         summary_df["std"] = (
-            merged_df.groupby(["horizon_mins", "forecaster_fullname"])
+            merged_df.groupby(["horizon_mins", "forecaster_name"])
             .agg({"absolute_error": "std"})
             .reset_index()["absolute_error"]
         )
         summary_df["count"] = (
-            merged_df.groupby(["horizon_mins", "forecaster_fullname"])
+            merged_df.groupby(["horizon_mins", "forecaster_name"])
             .agg({"absolute_error": "count"})
             .reset_index()["absolute_error"]
         )
@@ -322,19 +318,19 @@ async def async_dp_forecast_page():
 
         # ME
         summary_df["ME"] = (
-            merged_df.groupby(["horizon_mins", "forecaster_fullname"])
+            merged_df.groupby(["horizon_mins", "forecaster_name"])
             .agg({"error": "mean"})
             .reset_index()["error"]
         )
 
         # summary_df["absolute_error_divided_by_observed"] = (
-        #     merged_df.groupby(["horizon_mins", "forecaster_fullname"])
+        #     merged_df.groupby(["horizon_mins", "forecaster_name"])
         #     .agg({"absolute_error_normalized_by_generation": "mean"})
         #     .reset_index()["absolute_error_normalized_by_generation"]
         # )
 
         summary_df["effective_capacity_watts_observation"] = (
-            merged_df.groupby(["horizon_mins", "forecaster_fullname"])
+            merged_df.groupby(["horizon_mins", "forecaster_name"])
             .agg({"effective_capacity_watts_observation": "mean"})
             .reset_index()["effective_capacity_watts_observation"]
         )
@@ -351,19 +347,17 @@ async def async_dp_forecast_page():
 
         fig2 = go.Figure()
 
-        for i, forecaster in enumerate(selected_forecasters):
-            name_and_version = (
-                f"{forecaster.forecaster_name}:{forecaster.forecaster_version}"
-            )
+        for i, forecaster_name in enumerate(forecaster_names):
+  
             forecaster_df = summary_df[
-                summary_df["forecaster_fullname"] == name_and_version
+                summary_df["forecaster_name"] == forecaster_name
             ]
             fig2.add_trace(
                 go.Scatter(
                     x=forecaster_df["horizon_mins"],
                     y=forecaster_df[selected_metric] / scale_factor,
                     mode="lines+markers",
-                    name=forecaster.forecaster_name,
+                    name=forecaster_name,
                     line=dict(color=colours[i % len(colours)]),
                 )
             )
@@ -374,7 +368,7 @@ async def async_dp_forecast_page():
                     y=(forecaster_df[selected_metric] - 1.96 * forecaster_df["sem"]) / scale_factor,
                     mode="lines",
                     line=dict(color=colours[i % len(colours)], width=0),
-                    legendgroup=forecaster.forecaster_name,
+                    legendgroup=forecaster_name,
                     showlegend=False,
                 )
             )
@@ -385,7 +379,7 @@ async def async_dp_forecast_page():
                     y=(forecaster_df[selected_metric] + 1.96 * forecaster_df["sem"]) / scale_factor,
                     mode="lines",
                     line=dict(color=colours[i % len(colours)], width=0),
-                    legendgroup=forecaster.forecaster_name,
+                    legendgroup=forecaster_name,
                     showlegend=False,
                     fill="tonexty",
                 )
@@ -444,14 +438,14 @@ async def async_dp_forecast_page():
             "Capacity_watts",
         ]
 
-        summary_table_df = summary_table_df[["forecaster_fullname"] + value_columns]
+        summary_table_df = summary_table_df[["forecaster_name"] + value_columns]
 
         summary_table_df["Capacity_watts"] = summary_table_df["Capacity_watts"].astype(
             float
         )
 
         # group by forecaster full name a
-        summary_table_df = summary_table_df.groupby("forecaster_fullname").mean()
+        summary_table_df = summary_table_df.groupby("forecaster_name").mean()
 
         # rename
         summary_table_df = summary_table_df.rename(
@@ -471,7 +465,7 @@ async def async_dp_forecast_page():
             axis=1,
         )
 
-        # pivot table, so forecaster_fullname is columns
+        # pivot table, so forecaster_name is columns
         summary_table_df = summary_table_df.pivot_table(
             columns=summary_table_df.index,
             values=summary_table_df.columns.tolist(),
@@ -488,13 +482,13 @@ async def async_dp_forecast_page():
 
         # group by forecaster name and date
         daily_metrics_df = (
-            daily_plots_df.groupby(["date_utc", "forecaster_fullname"])
+            daily_plots_df.groupby(["date_utc", "forecaster_name"])
             .agg({"absolute_error": "mean"})
             .reset_index()
         ).rename(columns={"absolute_error": "MAE"})
          # ME
         daily_metrics_df["ME"] = (
-            daily_plots_df.groupby(["date_utc", "forecaster_fullname"])
+            daily_plots_df.groupby(["date_utc", "forecaster_name"])
             .agg({"error": "mean"})
             .reset_index()["error"]
         )
@@ -502,10 +496,10 @@ async def async_dp_forecast_page():
         fig3 = go.Figure()
         for i, forecaster in enumerate(selected_forecasters):
             name_and_version = (
-                f"{forecaster.forecaster_name}:{forecaster.forecaster_version}"
+                f"{forecaster.forecaster_name}"
             )
             forecaster_df = daily_metrics_df[
-                daily_metrics_df["forecaster_fullname"] == name_and_version
+                daily_metrics_df["forecaster_name"] == name_and_version
             ]
             fig3.add_trace(
                 go.Scatter(

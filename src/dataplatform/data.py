@@ -99,6 +99,11 @@ async def get_forecast_data_one_forecaster(
 
     all_data_df = pd.concat(all_data_df, ignore_index=True)
 
+    # create column forecaster_name, its forecaster_fullname with version removed
+    all_data_df["forecaster_name"] = all_data_df["forecaster_fullname"].apply(
+        lambda x: x.rsplit(":", 1)[0]  # split from right, max 1 split
+    )
+
     return all_data_df
 
 
