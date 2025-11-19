@@ -529,7 +529,9 @@ async def async_dp_forecast_page():
 
 
         st.header("TODO")
-
+        
+        st.write("Deal with new forecast versions")
+        st.write("Turn off probability when line clicked off")
         st.write("Align forecasts on t0")
         st.write("Add more metrics")
         st.write("Add creation time / t0 forecast filter")
