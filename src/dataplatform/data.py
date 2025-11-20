@@ -28,13 +28,13 @@ def key_builder_remove_client(func, *args, **kwargs):
 
 
 async def get_forecast_data(
-    _client, location, start_date, end_date, selected_forecasters
+    client, location, start_date, end_date, selected_forecasters
 ) -> pd.DataFrame:
     all_data_df = []
 
     for forecaster in selected_forecasters:
         forecaster_data_df = await get_forecast_data_one_forecaster(
-            _client, location, start_date, end_date, forecaster
+            client, location, start_date, end_date, forecaster
         )
         all_data_df.append(forecaster_data_df)
 
@@ -108,7 +108,7 @@ async def get_forecast_data_one_forecaster(
 
 
 @cached(ttl=300, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
-async def get_all_observations(_client, location, start_date, end_date) -> pd.DataFrame:
+async def get_all_observations(client, location, start_date, end_date) -> pd.DataFrame:
     all_observations_df = []
 
     for observer_name in observer_names:
@@ -126,7 +126,7 @@ async def get_all_observations(_client, location, start_date, end_date) -> pd.Da
                 energy_source=dp.EnergySource.SOLAR,
                 time_window=dp.TimeWindow(temp_start_date, temp_end_date),
             )
-            get_observations_response = await _client.get_observations_as_timeseries(
+            get_observations_response = await client.get_observations_as_timeseries(
                 get_observations_request
             )
 
