@@ -222,6 +222,8 @@ async def async_dp_forecast_page():
                     mode="lines",
                     name=forecaster_name,
                     line=dict(color=colours[i % len(colours)]),
+                    legendgroup=forecaster_name,
+                        
                 )
             )
             if 'p10_watts' in forecaster_df.columns and 'p90_watts' in forecaster_df.columns:
@@ -524,7 +526,7 @@ async def async_dp_forecast_page():
 
         st.header("TODO")
         
-        st.write("Turn off probability when line clicked off")
+        st.write("Make metrics based on pvlive_data_after")
         st.write("Align forecasts on t0")
         st.write("Add more metrics")
         st.write("Add creation time / t0 forecast filter")
