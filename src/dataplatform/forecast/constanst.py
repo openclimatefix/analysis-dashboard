@@ -1,0 +1,20 @@
+colours = [
+    "#FFD480",
+    "#FF8F73",
+    "#4675C1",
+    "#65B0C9",
+    "#58B0A9",
+    "#FAA056",
+    "#306BFF",
+    "#FF4901",
+    "#B701FF",
+    "#17E58F",
+]
+
+metrics = {
+    "MAE": "MAE is absolute mean error, average(abs(y-x))",
+    "ME": "ME is mean (bias) error, average((y-x))",
+    # "TODO NMAE (by capacity)": " NMAE (by capacity), average(abs(y-x)) / mean(capacity)",
+    # "TODO NMAE (by mean observed generation)": " NMAE (by mean observed generation), average(abs(y-x)) / mean(y)",
+    #    "NMAE (by observed generation)":" NAME (by observed generation)"
+}
