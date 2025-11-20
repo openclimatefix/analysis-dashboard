@@ -260,6 +260,7 @@ async def async_dp_forecast_page():
 
         st.plotly_chart(fig)
 
+        # 2. Summary Accuracy Graph
         st.header("Summary Accuracy Graph")
         metrics = {
             "MAE": "MAE is absolute mean error, average(abs(y-x))",
@@ -274,6 +275,12 @@ async def async_dp_forecast_page():
 
         st.write(metrics)
 
+        # If the observation data includes pvlive_day_after and pvlive_in_day, then lets just take pvlive_day_after
+        if "pvlive_day_after" in all_observations_df["observer_name"].values:
+            all_observations_df = all_observations_df[
+                all_observations_df["observer_name"] == "pvlive_day_after"
+            ]
+  
         # take the foecast data, and group by horizonMins, forecasterFullName
         # calculate mean absolute error between p50Fraction and observations valueFraction
         all_observations_df["timestamp_utc"] = pd.to_datetime(
@@ -291,16 +298,14 @@ async def async_dp_forecast_page():
             "effective_capacity_watts_observation"
         ].astype(float)
 
-        # error
+        # error and absolute error
         merged_df["error"] = merged_df["p50_watts"] - merged_df["value_watts"]
+        merged_df["absolute_error"] = merged_df["error"].abs()
 
-        # absolute error
-        merged_df["absolute_error"] = (merged_df["error"]).abs()
-
-        # absolute error, normalized by mean observed generation
+        # Get the mean observed generation
         mean_observed_generation = merged_df["value_watts"].mean()
-        # merged_df['absolute_error_normalized_by_generation'] = merged_df['absolute_error'] / merged_df['value_watts']
-
+        
+        # mean absolute error by horizonMins and forecasterFullName
         summary_df = (
             merged_df.groupby(["horizon_mins", "forecaster_name"])
             .agg({"absolute_error": "mean"})
@@ -325,11 +330,7 @@ async def async_dp_forecast_page():
             .reset_index()["error"]
         )
 
-        # summary_df["absolute_error_divided_by_observed"] = (
-        #     merged_df.groupby(["horizon_mins", "forecaster_name"])
-        #     .agg({"absolute_error_normalized_by_generation": "mean"})
-        #     .reset_index()["absolute_error_normalized_by_generation"]
-        # )
+        # TODO more metrics
 
         summary_df["effective_capacity_watts_observation"] = (
             merged_df.groupby(["horizon_mins", "forecaster_name"])
@@ -526,7 +527,6 @@ async def async_dp_forecast_page():
 
         st.header("TODO")
         
-        st.write("Make metrics based on pvlive_data_after")
         st.write("Align forecasts on t0")
         st.write("Add more metrics")
         st.write("Add creation time / t0 forecast filter")
