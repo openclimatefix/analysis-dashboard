@@ -76,7 +76,7 @@ async def get_forecast_data_one_forecaster(
     # loop over 30 days of data
     temp_start_date = start_date
     while temp_start_date <= end_date:
-        temp_end_date = temp_start_date + timedelta(days=7)
+        temp_end_date = temp_start_date + timedelta(days=30)
         if temp_end_date > end_date:
             temp_end_date = end_date
 
@@ -103,7 +103,7 @@ async def get_forecast_data_one_forecaster(
                 .drop("other_statistics_fractions", axis=1),
             )
 
-        temp_start_date = temp_start_date + timedelta(days=7)
+        temp_start_date = temp_start_date + timedelta(days=30)
 
     all_data_df = pd.concat(all_data_df, ignore_index=True)
 
