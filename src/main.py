@@ -11,6 +11,7 @@ from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.metric import MetricValue
 
 from auth import check_password
+from dataplatform.forecast.main import dp_forecast_page
 from forecast import forecast_page
 from get_data import get_metric_value
 from plots.all_gsps import make_all_gsps_plots
@@ -36,7 +37,6 @@ from satellite_page import satellite_page
 from cloudcasting_page import cloudcasting_page
 from adjuster import adjuster_page
 from batch_page import batch_page
-from dataplatform.forecast import dp_forecast_page
 
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
