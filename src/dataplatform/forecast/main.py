@@ -146,7 +146,7 @@ async def async_dp_forecast_page():
 
         fig3 = plot_forecast_metric_per_day(
             merged_df=merged_df,
-            selected_forecasters=selected_forecasters,
+            forecaster_names=forecaster_names,
             scale_factor=scale_factor,
             units=units,
             selected_metric=selected_metric
@@ -168,7 +168,7 @@ async def async_dp_forecast_page():
         st.write("Done: Reduce to last 7 days")
         st.write("Done: Options to togle probablies in MAE")
         st.write("Done: Change y/x to actual and forecast")
-        st.write("Remove duplicate names in legend of daily metrics plot")
+        st.write("Done: Remove duplicate names in legend of daily metrics plot")
         st.write("Look into shading areas disappering")
 
 

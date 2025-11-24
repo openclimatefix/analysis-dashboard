@@ -203,7 +203,7 @@ def plot_forecast_metric_vs_horizon_minutes(
 
 
 def plot_forecast_metric_per_day(
-    merged_df, selected_forecasters, selected_metric, scale_factor, units
+    merged_df, forecaster_names, selected_metric, scale_factor, units
 ):
     daily_plots_df = merged_df
     daily_plots_df["date_utc"] = daily_plots_df["timestamp_utc"].dt.date
@@ -222,15 +222,15 @@ def plot_forecast_metric_per_day(
     )
 
     fig3 = go.Figure()
-    for i, forecaster in enumerate(selected_forecasters):
-        name_and_version = f"{forecaster.forecaster_name}"
+    for i, forecaster_name in enumerate(forecaster_names):
+        name_and_version = f"{forecaster_name}"
         forecaster_df = daily_metrics_df[daily_metrics_df["forecaster_name"] == name_and_version]
         fig3.add_trace(
             go.Scatter(
                 x=forecaster_df["date_utc"],
                 y=forecaster_df[selected_metric] / scale_factor,
                 # mode="lines+markers",
-                name=forecaster.forecaster_name,
+                name=forecaster_name,
                 line=dict(color=colours[i % len(colours)]),
             ),
         )
