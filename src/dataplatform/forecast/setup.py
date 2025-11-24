@@ -57,7 +57,7 @@ async def setup_page(client) -> dict:
     start_date = st.sidebar.date_input("Start date:", datetime.now().date() - timedelta(days=7))
     end_date = st.sidebar.date_input("End date:", datetime.now().date() + timedelta(days=3))
     start_date = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=UTC)
-    end_date = datetime.combine(end_date, datetime.min.time()).replace(tzinfo=UTC)
+    end_date = datetime.combine(end_date, datetime.min.time()).replace(tzinfo=UTC) - timedelta(seconds=1)
 
     # select forecast type
     selected_forecast_type = st.sidebar.selectbox(

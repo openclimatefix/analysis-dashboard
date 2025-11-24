@@ -162,15 +162,9 @@ async def async_dp_forecast_page():
         st.write("Add creation time / t0 forecast filter")
         st.write("speed up read, use async and more caching")
         st.write("Get page working with no observations data")
-        st.write("Done: Change UK to use MW")
-        st.write("Done: Add GSP id to name: done")
-        st.write("Remove last MAE point")
-        st.write("Done: Reduce to last 7 days")
-        st.write("Done: Options to togle probablies in MAE")
-        st.write("Done: Change y/x to actual and forecast")
-        st.write("Done: Remove duplicate names in legend of daily metrics plot")
-        st.write("Look into shading areas disappering")
-
+        st.write("Check works for diffrent version of observers")
+        st.write("Remove last MAE point: done in solar consumer")
+    
 
 def make_summary_data(merged_df, min_horizon, max_horizon, scale_factor, units):
     # Reduce my horizon mins
