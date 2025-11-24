@@ -107,7 +107,7 @@ def plot_forecast_time_series(
 
 
 def plot_forecast_metric_vs_horizon_minutes(
-    merged_df, forecaster_names, selected_metric, scale_factor, units
+    merged_df, forecaster_names, selected_metric, scale_factor, units, show_sem
 ):
     # Get the mean observed generation
     mean_observed_generation = merged_df["value_watts"].mean()
@@ -168,28 +168,29 @@ def plot_forecast_metric_vs_horizon_minutes(
             ),
         )
 
-        fig2.add_trace(
-            go.Scatter(
-                x=forecaster_df["horizon_mins"],
-                y=(forecaster_df[selected_metric] - 1.96 * forecaster_df["sem"]) / scale_factor,
-                mode="lines",
-                line=dict(color=colours[i % len(colours)], width=0),
-                legendgroup=forecaster_name,
-                showlegend=False,
-            ),
-        )
+        if show_sem:
+            fig2.add_trace(
+                go.Scatter(
+                    x=forecaster_df["horizon_mins"],
+                    y=(forecaster_df[selected_metric] - 1.96 * forecaster_df["sem"]) / scale_factor,
+                    mode="lines",
+                    line=dict(color=colours[i % len(colours)], width=0),
+                    legendgroup=forecaster_name,
+                    showlegend=False,
+                ),
+            )
 
-        fig2.add_trace(
-            go.Scatter(
-                x=forecaster_df["horizon_mins"],
-                y=(forecaster_df[selected_metric] + 1.96 * forecaster_df["sem"]) / scale_factor,
-                mode="lines",
-                line=dict(color=colours[i % len(colours)], width=0),
-                legendgroup=forecaster_name,
-                showlegend=False,
-                fill="tonexty",
-            ),
-        )
+            fig2.add_trace(
+                go.Scatter(
+                    x=forecaster_df["horizon_mins"],
+                    y=(forecaster_df[selected_metric] + 1.96 * forecaster_df["sem"]) / scale_factor,
+                    mode="lines",
+                    line=dict(color=colours[i % len(colours)], width=0),
+                    legendgroup=forecaster_name,
+                    showlegend=False,
+                    fill="tonexty",
+                ),
+            )
 
     fig2.update_layout(
         title=f"{selected_metric} by Horizon",

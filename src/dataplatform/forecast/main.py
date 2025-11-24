@@ -93,9 +93,14 @@ async def async_dp_forecast_page():
         st.header("Summary Accuracy Graph")
 
         st.write(metrics)
+        if selected_metric == 'MAE':
+            show_sem = st.checkbox("Show SEM", value=True)
+        else:
+            show_sem = False
+
 
         fig2, summary_df = plot_forecast_metric_vs_horizon_minutes(
-            merged_df, forecaster_names, selected_metric, scale_factor, units
+            merged_df, forecaster_names, selected_metric, scale_factor, units, show_sem
         )
 
         st.plotly_chart(fig2)
@@ -162,7 +167,7 @@ async def async_dp_forecast_page():
         st.write("Done: Add GSP id to name: done")
         st.write("Remove last MAE point")
         st.write("Done: Reduce to last 7 days")
-        st.write("Options to togle probablies in MAE ")
+        st.write("Options to togle probablies in MAE: Done")
         st.write("Change y/x to actula and forecast")
         st.write("Remove duplicate names in legend of daily metrics plot")
         st.write("Look into shading areas disappering")
