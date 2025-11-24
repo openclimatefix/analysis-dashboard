@@ -158,6 +158,14 @@ async def async_dp_forecast_page():
         st.write("speed up read, use async and more caching")
         st.write("Improve GSP labels")
         st.write("Get page working with no observations data")
+        st.write("Change UK to use MW")
+        st.write("Add GSP to name")
+        st.write("Remove last MAE point")
+        st.write("Reduce to last 7 days")
+        st.write("Options to togle probablies in MAE ")
+        st.write("Change y/x to actula and forecast")
+        st.write("Remove duplicate names in legend of daily metrics plot")
+        st.write("Look into shading areas disappering")
 
 
 def make_summary_data(merged_df, min_horizon, max_horizon, scale_factor, units):
