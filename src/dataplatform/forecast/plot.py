@@ -199,6 +199,9 @@ def plot_forecast_metric_vs_horizon_minutes(
         legend_title="Forecaster",
     )
 
+    if selected_metric == "MAE":
+        fig2.update_yaxes(range=[0, None])
+
     return fig2, summary_df
 
 

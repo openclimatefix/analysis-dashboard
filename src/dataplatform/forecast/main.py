@@ -94,16 +94,17 @@ async def async_dp_forecast_page():
         
 
         st.write(metrics)
-        if selected_metric == 'MAE':
-            show_sem = st.checkbox("Show SEM", value=True)
-        else:
-            show_sem = False
-
-        align_t0s = st.checkbox("Align t0s", value=True)
+    
+        align_t0s = st.checkbox("Align t0s (Only common t0s across all forecaster are used)", value=True)
         if align_t0s:
             merged_df = align_t0(merged_df)
 
         st.subheader("Summary Accuracy Graph")
+
+        if selected_metric == 'MAE':
+            show_sem = st.checkbox("Show SEM", value=True)
+        else:
+            show_sem = False
 
         fig2, summary_df = plot_forecast_metric_vs_horizon_minutes(
             merged_df, forecaster_names, selected_metric, scale_factor, units, show_sem
