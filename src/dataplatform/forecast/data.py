@@ -221,3 +221,26 @@ async def get_all_data(client, selected_location, start_date, end_date, selected
         "forecast_seconds": forecast_seconds,
         "observation_seconds": observation_seconds,
     }
+
+
+def align_t0(merged_df: pd.DataFrame) -> pd.DataFrame:
+    """ Align t0 forecasts for different forecasters """
+
+    # get all forecaster names
+    forecaster_names = merged_df["forecaster_name"].unique()
+
+    # align t0 for each forecaster
+    t0s_per_forecaster = {}
+    for forecaster_name in forecaster_names:
+        forecaster_df = merged_df[merged_df["forecaster_name"] == forecaster_name]
+        
+        t0s = forecaster_df["init_timestamp"].unique()
+        t0s_per_forecaster[forecaster_name] = set(t0s)
+
+    # find common t0s
+    common_t0s = set.intersection(*t0s_per_forecaster.values())
+
+    # align common t0s in merged_df
+    merged_df = merged_df[merged_df["init_timestamp"].isin(common_t0s)]
+
+    return merged_df

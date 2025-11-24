@@ -6,7 +6,7 @@ from dp_sdk.ocf import dp
 from grpclib.client import Channel
 
 from dataplatform.forecast.constanst import metrics
-from dataplatform.forecast.data import get_all_data
+from dataplatform.forecast.data import get_all_data, align_t0
 from dataplatform.forecast.plot import (
     plot_forecast_metric_per_day,
     plot_forecast_metric_vs_horizon_minutes,
@@ -90,7 +90,8 @@ async def async_dp_forecast_page():
         st.plotly_chart(fig)
 
         ### 3. Summary Accuracy Graph. ###
-        st.header("Summary Accuracy Graph")
+        st.header("Summary Accuracy")
+        
 
         st.write(metrics)
         if selected_metric == 'MAE':
@@ -98,6 +99,11 @@ async def async_dp_forecast_page():
         else:
             show_sem = False
 
+        align_t0s = st.checkbox("Align t0s", value=True)
+        if align_t0s:
+            merged_df = align_t0(merged_df)
+
+        st.subheader("Summary Accuracy Graph")
 
         fig2, summary_df = plot_forecast_metric_vs_horizon_minutes(
             merged_df, forecaster_names, selected_metric, scale_factor, units, show_sem
@@ -114,7 +120,7 @@ async def async_dp_forecast_page():
         )
 
         ### 4. Summary Accuracy Table, with slider to select min and max horizon mins. ###
-        st.header("Summary Accuracy Table")
+        st.subheader("Summary Accuracy Table")
 
         # add slider to select min and max horizon mins
         min_horizon, max_horizon = st.slider(
@@ -139,7 +145,7 @@ async def async_dp_forecast_page():
         st.dataframe(summary_table_df)
 
         ### 4. Daily metric plots. ###
-        st.header("Daily Metrics Plots")
+        st.subheader("Daily Metrics Plots")
         st.write(
             "Plotted below are the daily MAE for each forecaster. This is for all forecast horizons.",
         )
@@ -157,7 +163,6 @@ async def async_dp_forecast_page():
         st.header("TODO")
 
         st.write("Bug: cache not releasing")
-        st.write("Align forecasts on t0")
         st.write("Add more metrics")
         st.write("Add creation time / t0 forecast filter")
         st.write("speed up read, use async and more caching")
