@@ -73,8 +73,6 @@ async def setup_page(client) -> dict:
 
     # select units
     default_unit_index = 2  # MW
-    if location_type == dp.LocationType.NATION:
-        default_unit_index = 3  # GW
     units = st.sidebar.selectbox("Select Units", ["W", "kW", "MW", "GW"], index=default_unit_index)
     scale_factors = {"W": 1, "kW": 1e3, "MW": 1e6, "GW": 1e9}
     scale_factor = scale_factors[units]

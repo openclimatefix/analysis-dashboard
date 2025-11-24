@@ -158,7 +158,7 @@ async def async_dp_forecast_page():
         st.write("speed up read, use async and more caching")
         st.write("Improve GSP labels")
         st.write("Get page working with no observations data")
-        st.write("Change UK to use MW")
+        st.write("Change UK to use MW: done")
         st.write("Add GSP to name")
         st.write("Remove last MAE point")
         st.write("Reduce to last 7 days")
