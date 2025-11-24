@@ -164,6 +164,7 @@ def plot_forecast_metric_vs_horizon_minutes(
                 mode="lines+markers",
                 name=forecaster_name,
                 line=dict(color=colours[i % len(colours)]),
+                legendgroup=forecaster_name,
             ),
         )
 
