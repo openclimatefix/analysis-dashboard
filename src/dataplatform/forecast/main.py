@@ -162,8 +162,6 @@ async def async_dp_forecast_page():
         st.write("Add creation time / t0 forecast filter")
         st.write("speed up read, use async and more caching")
         st.write("Get page working with no observations data")
-        st.write("Check works for diffrent version of observers")
-        st.write("Remove last MAE point: done in solar consumer")
     
 
 def make_summary_data(merged_df, min_horizon, max_horizon, scale_factor, units):

@@ -7,9 +7,6 @@ import pandas as pd
 from aiocache import Cache, cached
 from dp_sdk.ocf import dp
 
-data_platform_host = os.getenv("DATA_PLATFORM_HOST", "localhost")
-data_platform_port = int(os.getenv("DATA_PLATFORM_PORT", "50051"))
-
 # TODO make this dynamic
 observer_names = ["pvlive_in_day", "pvlive_day_after"]
 
