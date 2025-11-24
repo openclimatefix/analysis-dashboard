@@ -21,14 +21,17 @@ async def setup_page(client) -> dict:
     # List Location
     list_locations_request = dp.ListLocationsRequest(location_type_filter=location_type)
     list_locations_response = await client.list_locations(list_locations_request)
-    locations = list_locations_response.locations
-    location_names = [loc.location_name for loc in locations]
+    all_locations = list_locations_response.locations
+    
+    location_names = {loc.location_name:loc for loc in all_locations}
+    if location_type == dp.LocationType.GSP:
+        location_names = {f'{int(loc.metadata.fields['gsp_id'].number_value)}:{loc.location_name}': loc for loc in all_locations}
+        # sort by gsp id
+        location_names = dict(sorted(location_names.items(), key=lambda item: int(item[0].split(":")[0])))
 
     # slect locations
-    selected_location_name = st.sidebar.selectbox("Select a Location", location_names, index=0)
-    selected_location = next(
-        loc for loc in locations if loc.location_name == selected_location_name
-    )
+    selected_location_name = st.sidebar.selectbox("Select a Location", location_names.keys(), index=0)
+    selected_location = location_names[selected_location_name]
 
     # get models
     get_forecasters_request = dp.ListForecastersRequest()
