@@ -161,7 +161,7 @@ async def async_dp_forecast_page():
         st.write("Done: Change UK to use MW")
         st.write("Done: Add GSP id to name: done")
         st.write("Remove last MAE point")
-        st.write("Reduce to last 7 days")
+        st.write("Done: Reduce to last 7 days")
         st.write("Options to togle probablies in MAE ")
         st.write("Change y/x to actula and forecast")
         st.write("Remove duplicate names in legend of daily metrics plot")

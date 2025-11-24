@@ -54,7 +54,7 @@ async def setup_page(client) -> dict:
     ]
 
     # select start and end date
-    start_date = st.sidebar.date_input("Start date:", datetime.now().date() - timedelta(days=30))
+    start_date = st.sidebar.date_input("Start date:", datetime.now().date() - timedelta(days=7))
     end_date = st.sidebar.date_input("End date:", datetime.now().date() + timedelta(days=3))
     start_date = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=UTC)
     end_date = datetime.combine(end_date, datetime.min.time()).replace(tzinfo=UTC)
