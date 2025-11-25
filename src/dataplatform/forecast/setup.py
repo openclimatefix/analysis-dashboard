@@ -1,5 +1,6 @@
 from datetime import UTC, datetime, timedelta
 
+import pandas as pd
 import streamlit as st
 from dp_sdk.ocf import dp
 
@@ -67,11 +68,23 @@ async def setup_page(client) -> dict:
     )
 
     selected_forecast_horizon = None
+    selected_t0s = None
     if selected_forecast_type == "Horizon":
         selected_forecast_horizon = st.sidebar.selectbox(
             "Select a Forecast Horizon",
-            list(range(0, 2400, 30)),
+            list(range(0, 24*60, 30)),
             index=3,
+        )
+    if selected_forecast_type == "t0":
+
+        # make datetimes every 30 minutes from start_date to end_date
+        all_t0s = pd.date_range(start=start_date, end=end_date, freq='30T').to_pydatetime().tolist()
+
+        
+        selected_t0s = st.sidebar.multiselect(
+            "Select t0s",
+            all_t0s,
+            default=all_t0s[:5],
         )
 
     # select units
@@ -92,5 +105,6 @@ async def setup_page(client) -> dict:
         "selected_metric": selected_metric,
         "forecaster_names": forecaster_names,
         "selected_forecast_horizon": selected_forecast_horizon,
+        "selected_t0s": selected_t0s,
         "units": units,
     }

@@ -191,6 +191,7 @@ async def get_all_data(client, selected_location, start_date, end_date, selected
     
 
     # make target_timestamp_utc
+    all_forecast_data_df["init_timestamp"] = pd.to_datetime(all_forecast_data_df["init_timestamp"])
     all_forecast_data_df["target_timestamp_utc"] = pd.to_datetime(
         all_forecast_data_df["init_timestamp"],
     ) + pd.to_timedelta(all_forecast_data_df["horizon_mins"], unit="m")

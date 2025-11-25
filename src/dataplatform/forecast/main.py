@@ -42,6 +42,7 @@ async def async_dp_forecast_page():
         selected_forecast_type = setup_page_dict["selected_forecast_type"]
         scale_factor = setup_page_dict["scale_factor"]
         selected_forecast_horizon = setup_page_dict["selected_forecast_horizon"]
+        selected_t0s = setup_page_dict["selected_t0s"]
         units = setup_page_dict["units"]
 
         ### 1. Get all the data ###
@@ -77,6 +78,8 @@ async def async_dp_forecast_page():
         ### 2. Plot of raw forecast data. ###
         st.header("Time Series Plot")
 
+        show_probabilistic = st.checkbox("Show Probabilistic Forecasts", value=True)
+
         fig = plot_forecast_time_series(
             all_forecast_data_df=all_forecast_data_df,
             all_observations_df=all_observations_df,
@@ -86,11 +89,13 @@ async def async_dp_forecast_page():
             units=units,
             selected_forecast_type=selected_forecast_type,
             selected_forecast_horizon=selected_forecast_horizon,
+            selected_t0s=selected_t0s,
+            show_probabilistic=show_probabilistic
         )
         st.plotly_chart(fig)
 
         ### 3. Summary Accuracy Graph. ###
-        st.header("Summary Accuracy")
+        st.header("Accuracy")
         
 
         st.write(metrics)
@@ -99,7 +104,7 @@ async def async_dp_forecast_page():
         if align_t0s:
             merged_df = align_t0(merged_df)
 
-        st.subheader("Summary Accuracy Graph")
+        st.subheader("Metric vs Forecast Horizon")
 
         if selected_metric == 'MAE':
             show_sem = st.checkbox("Show SEM", value=True)
@@ -165,7 +170,6 @@ async def async_dp_forecast_page():
 
         st.write("Bug: cache not releasing, the cache should stay for 5 minutes")
         st.write("Add more metrics")
-        st.write("Add creation time / t0 forecast filter")
         st.write("speed up read, use async and more caching")
         st.write("Get page working with no observations data")
     
