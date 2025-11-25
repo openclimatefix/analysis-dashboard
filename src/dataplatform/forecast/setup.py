@@ -78,13 +78,12 @@ async def setup_page(client) -> dict:
     if selected_forecast_type == "t0":
 
         # make datetimes every 30 minutes from start_date to end_date
-        all_t0s = pd.date_range(start=start_date, end=end_date, freq='30T').to_pydatetime().tolist()
+        all_t0s = pd.date_range(start=start_date, end=end_date, freq='30min').to_pydatetime().tolist()
 
-        
         selected_t0s = st.sidebar.multiselect(
             "Select t0s",
             all_t0s,
-            default=all_t0s[:5],
+            default=all_t0s[:min(5, len(all_t0s))],
         )
 
     # select units

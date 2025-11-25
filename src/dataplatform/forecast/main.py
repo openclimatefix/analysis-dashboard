@@ -172,6 +172,7 @@ async def async_dp_forecast_page():
         st.write("Add more metrics")
         st.write("speed up read, use async and more caching")
         st.write("Get page working with no observations data")
+        st.write("MAE vs horizon plot should start at 0")
     
 
 def make_summary_data(merged_df, min_horizon, max_horizon, scale_factor, units):
