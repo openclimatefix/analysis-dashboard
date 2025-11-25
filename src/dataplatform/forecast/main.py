@@ -161,9 +161,9 @@ async def async_dp_forecast_page():
 
         st.plotly_chart(fig3)
 
-        st.header("TODO")
+        st.header("Known Issues and TODOs")
 
-        st.write("Bug: cache not releasing")
+        st.write("Bug: cache not releasing, the cache should stay for 5 minutes")
         st.write("Add more metrics")
         st.write("Add creation time / t0 forecast filter")
         st.write("speed up read, use async and more caching")

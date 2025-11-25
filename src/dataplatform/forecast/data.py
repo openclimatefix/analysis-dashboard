@@ -15,9 +15,8 @@ def key_builder_remove_client(func, *args, **kwargs):
     """Custom key builder that ignores the client argument for caching purposes."""
     key = f"{func.__name__}:"
     for arg in args:
-        if isinstance(arg, dp.DataPlatformDataServiceStub):
-            continue
-        key += f"{arg}-"
+        if not isinstance(arg, dp.DataPlatformDataServiceStub):
+            key += f"{arg}-"
 
     for k, v in kwargs.items():
         key += f"{k}={v}-"
