@@ -164,12 +164,14 @@ async def async_dp_forecast_page():
             selected_metric=selected_metric
         )
 
+
         st.plotly_chart(fig3)
 
         st.header("Known Issues and TODOs")
 
         st.write("Bug: cache not releasing, the cache should stay for 5 minutes")
         st.write("Add more metrics")
+        st.write("Group adjust and non-adjust")
         st.write("speed up read, use async and more caching")
         st.write("Get page working with no observations data")
         st.write("MAE vs horizon plot should start at 0")
