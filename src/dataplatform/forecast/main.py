@@ -74,12 +74,13 @@ async def async_dp_forecast_page() -> None:
         )
 
         # add download button
-        csv = all_forecast_data_df.to_csv().encode("utf-8")
+        csv = merged_df.to_csv().encode("utf-8")
         st.download_button(
-            label="⬇️",
+            label="⬇️ Download data",
             data=csv,
             file_name=f"site_forecast_{selected_location.location_uuid}_{start_date}_{end_date}.csv",
             mime="text/csv",
+            help='Download the forecast and generation data as a CSV file.'
         )
 
         ### 2. Plot of raw forecast data. ###
@@ -115,7 +116,13 @@ async def async_dp_forecast_page() -> None:
 
         st.subheader("Metric vs Forecast Horizon")
 
-        show_sem = st.checkbox("Show SEM", value=True) if selected_metric == "MAE" else False
+        if selected_metric == "MAE":
+            show_sem = st.checkbox("Show Uncertainty", 
+                                   value=True, 
+                                   help='On the plot below show the uncertainty bands associated with the MAE. ' \
+                                   'This is done by looking at Standard Error of the Mean (SEM) of the absolute errors.')
+        else:
+            show_sem = False
 
         fig2, summary_df = plot_forecast_metric_vs_horizon_minutes(
             merged_df,
@@ -130,10 +137,11 @@ async def async_dp_forecast_page() -> None:
 
         csv = summary_df.to_csv().encode("utf-8")
         st.download_button(
-            label="⬇️",
+            label="⬇️ Download summary",
             data=csv,
             file_name=f"summary_accuracy_{selected_location.location_uuid}_{start_date}_{end_date}.csv",
             mime="text/csv",
+            help='Download the summary accuracy data as a CSV file.'
         )
 
         ### 4. Summary Accuracy Table, with slider to select min and max horizon mins. ###
@@ -185,7 +193,6 @@ async def async_dp_forecast_page() -> None:
         st.write("Group adjust and non-adjust")
         st.write("speed up read, use async and more caching")
         st.write("Get page working with no observations data")
-        st.write("MAE vs horizon plot should start at 0")
 
 
 def make_summary_data(

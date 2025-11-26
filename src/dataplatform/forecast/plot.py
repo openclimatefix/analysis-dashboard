@@ -310,4 +310,7 @@ def plot_forecast_metric_per_day(
         legend_title="Forecaster",
     )
 
+    if selected_metric == "MAE":
+        fig3.update_yaxes(range=[0, None])
+
     return fig3
