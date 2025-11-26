@@ -1,11 +1,14 @@
+"""Data Platform Forecast Streamlit Page Main Code."""
+
 import asyncio
 import os
 
+import pandas as pd
 import streamlit as st
 from dp_sdk.ocf import dp
 from grpclib.client import Channel
 
-from dataplatform.forecast.constanst import metrics
+from dataplatform.forecast.constant import metrics
 from dataplatform.forecast.data import align_t0, get_all_data
 from dataplatform.forecast.plot import (
     plot_forecast_metric_per_day,
@@ -21,11 +24,13 @@ data_platform_port = int(os.getenv("DATA_PLATFORM_PORT", "50051"))
 observer_names = ["pvlive_in_day", "pvlive_day_after"]
 
 
-def dp_forecast_page():
+def dp_forecast_page() -> None:
+    """Wrapper function that is not async to call the main async function."""
     asyncio.run(async_dp_forecast_page())
 
 
-async def async_dp_forecast_page():
+async def async_dp_forecast_page() -> None:
+    """Async Main function for the Data Platform Forecast Streamlit page."""
     st.title("Data Platform Forecast Page")
     st.write("This is the forecast page from the Data Platform module. This is very much a WIP")
 
@@ -61,8 +66,10 @@ async def async_dp_forecast_page():
 
         st.write(f"Selected Location uuid: `{selected_location.location_uuid}`.")
         st.write(
-            f"Fetched `{len(all_forecast_data_df)}` rows of forecast data in `{forecast_seconds:.2f}` seconds. \
-            Fetched `{len(all_observations_df)}` rows of observation data in `{observation_seconds:.2f}` seconds. \
+            f"Fetched `{len(all_forecast_data_df)}` rows of forecast data \
+            in `{forecast_seconds:.2f}` seconds. \
+            Fetched `{len(all_observations_df)}` rows of observation data \
+            in `{observation_seconds:.2f}` seconds. \
             We cache data for 5 minutses to speed up repeated requests.",
         )
 
@@ -100,17 +107,15 @@ async def async_dp_forecast_page():
         st.write(metrics)
 
         align_t0s = st.checkbox(
-            "Align t0s (Only common t0s across all forecaster are used)", value=True,
+            "Align t0s (Only common t0s across all forecaster are used)",
+            value=True,
         )
         if align_t0s:
             merged_df = align_t0(merged_df)
 
         st.subheader("Metric vs Forecast Horizon")
 
-        if selected_metric == "MAE":
-            show_sem = st.checkbox("Show SEM", value=True)
-        else:
-            show_sem = False
+        show_sem = st.checkbox("Show SEM", value=True) if selected_metric == "MAE" else False
 
         fig2, summary_df = plot_forecast_metric_vs_horizon_minutes(
             merged_df,
@@ -159,7 +164,8 @@ async def async_dp_forecast_page():
         ### 4. Daily metric plots. ###
         st.subheader("Daily Metrics Plots")
         st.write(
-            "Plotted below are the daily MAE for each forecaster. This is for all forecast horizons.",
+            "Plotted below are the daily MAE for each forecaster. "
+            "This is for all forecast horizons.",
         )
 
         fig3 = plot_forecast_metric_per_day(
@@ -182,7 +188,14 @@ async def async_dp_forecast_page():
         st.write("MAE vs horizon plot should start at 0")
 
 
-def make_summary_data(merged_df, min_horizon, max_horizon, scale_factor, units):
+def make_summary_data(
+    merged_df: pd.DataFrame,
+    min_horizon: int,
+    max_horizon: int,
+    scale_factor: float,
+    units: str,
+) -> pd.DataFrame:
+    """Make summary data table for given min and max horizon mins."""
     # Reduce my horizon mins
     summary_table_df = merged_df[
         (merged_df["horizon_mins"] >= min_horizon) & (merged_df["horizon_mins"] <= max_horizon)
@@ -203,7 +216,7 @@ def make_summary_data(merged_df, min_horizon, max_horizon, scale_factor, units):
         "Capacity_watts",
     ]
 
-    summary_table_df = summary_table_df[["forecaster_name"] + value_columns]
+    summary_table_df = summary_table_df[["forecaster_name", *value_columns]]
 
     summary_table_df["Capacity_watts"] = summary_table_df["Capacity_watts"].astype(float)
 

@@ -1,3 +1,5 @@
+"""Setup Forecast Streamlit Page."""
+
 from datetime import UTC, datetime, timedelta
 
 import pandas as pd
@@ -6,11 +8,15 @@ from aiocache import Cache, cached
 from dp_sdk.ocf import dp
 
 from dataplatform.forecast.cache import key_builder_remove_client
-from dataplatform.forecast.constanst import metrics
+from dataplatform.forecast.constant import metrics
 
 
 @cached(ttl=300, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
-async def get_location_names(client, location_type) -> dict:
+async def get_location_names(
+    client: dp.DataPlatformDataServiceStub,
+    location_type: dp.LocationType,
+) -> dict:
+    """Get location names for a given location type."""
     # List Location
     list_locations_request = dp.ListLocationsRequest(location_type_filter=location_type)
     list_locations_response = await client.list_locations(list_locations_request)
@@ -31,16 +37,18 @@ async def get_location_names(client, location_type) -> dict:
 
 
 @cached(ttl=300, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
-async def get_forecasters(client):
+async def get_forecasters(client: dp.DataPlatformDataServiceStub) -> list[dp.Forecaster]:
+    """Get all forecasters."""
     get_forecasters_request = dp.ListForecastersRequest()
     get_forecasters_response = await client.list_forecasters(get_forecasters_request)
     forecasters = get_forecasters_response.forecasters
     return forecasters
 
 
-async def setup_page(client) -> dict:
+async def setup_page(client: dp.DataPlatformDataServiceStub) -> dict:
+    """Setup the Streamlit page with sidebar options."""
     # Select Country
-    country = st.sidebar.selectbox("TODO Select a Country", ["UK", "NL"], index=0)
+    st.sidebar.selectbox("TODO Select a Country", ["UK", "NL"], index=0)
 
     # Select Location Type
     location_types = [
@@ -53,17 +61,16 @@ async def setup_page(client) -> dict:
     # select locations
     location_names = await get_location_names(client, location_type)
     selected_location_name = st.sidebar.selectbox(
-        "Select a Location", location_names.keys(), index=0,
+        "Select a Location",
+        location_names.keys(),
+        index=0,
     )
     selected_location = location_names[selected_location_name]
 
     # get models
     forecasters = await get_forecasters(client)
-    forecaster_names = sorted(list(set([forecaster.forecaster_name for forecaster in forecasters])))
-    if "pvnet_v2" in forecaster_names:
-        default_index = forecaster_names.index("pvnet_v2")
-    else:
-        default_index = 0
+    forecaster_names = sorted({forecaster.forecaster_name for forecaster in forecasters})
+    default_index = forecaster_names.index("pvnet_v2") if "pvnet_v2" in forecaster_names else 0
     selected_forecaster_name = st.sidebar.multiselect(
         "Select a Forecaster",
         forecaster_names,
@@ -76,8 +83,11 @@ async def setup_page(client) -> dict:
     ]
 
     # select start and end date
-    start_date = st.sidebar.date_input("Start date:", datetime.now().date() - timedelta(days=7))
-    end_date = st.sidebar.date_input("End date:", datetime.now().date() + timedelta(days=3))
+    start_date = st.sidebar.date_input(
+        "Start date:",
+        datetime.now(tz=UTC).date() - timedelta(days=7),
+    )
+    end_date = st.sidebar.date_input("End date:", datetime.now(tz=UTC).date() + timedelta(days=3))
     start_date = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=UTC)
     end_date = datetime.combine(end_date, datetime.min.time()).replace(tzinfo=UTC) - timedelta(
         seconds=1,

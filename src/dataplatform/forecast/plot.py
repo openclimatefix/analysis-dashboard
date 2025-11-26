@@ -1,18 +1,32 @@
+"""Plotting functions for forecast analysis."""
+
+from datetime import datetime
+
+import pandas as pd
 import plotly.graph_objects as go
 
-from dataplatform.forecast.constanst import colours
+from dataplatform.forecast.constant import colours
 
 
 def make_time_series_trace(
-    fig, forecaster_df, forecaster_name, scale_factor, i, show_probabilistic=True,
-):
+    fig: go.Figure,
+    forecaster_df: pd.DataFrame,
+    forecaster_name: str,
+    scale_factor: float,
+    i: int,
+    show_probabilistic: bool = True,
+) -> go.Figure:
+    """Make time series trace for a forecaster.
+
+    Include p10 and p90 shading if show_probabilistic is True.
+    """
     fig.add_trace(
         go.Scatter(
             x=forecaster_df["target_timestamp_utc"],
             y=forecaster_df["p50_watts"] / scale_factor,
             mode="lines",
             name=forecaster_name,
-            line=dict(color=colours[i % len(colours)]),
+            line={"color": colours[i % len(colours)]},
             legendgroup=forecaster_name,
         ),
     )
@@ -26,7 +40,7 @@ def make_time_series_trace(
                 x=forecaster_df["target_timestamp_utc"],
                 y=forecaster_df["p10_watts"] / scale_factor,
                 mode="lines",
-                line=dict(color=colours[i % len(colours)], width=0),
+                line={"color": colours[i % len(colours)], "width": 0},
                 legendgroup=forecaster_name,
                 showlegend=False,
             ),
@@ -37,7 +51,7 @@ def make_time_series_trace(
                 x=forecaster_df["target_timestamp_utc"],
                 y=forecaster_df["p90_watts"] / scale_factor,
                 mode="lines",
-                line=dict(color=colours[i % len(colours)], width=0),
+                line={"color": colours[i % len(colours)], "width": 0},
                 legendgroup=forecaster_name,
                 showlegend=False,
                 fill="tonexty",
@@ -48,17 +62,21 @@ def make_time_series_trace(
 
 
 def plot_forecast_time_series(
-    all_forecast_data_df,
-    all_observations_df,
-    forecaster_names,
-    observer_names,
-    scale_factor,
-    units,
-    selected_forecast_type,
-    selected_forecast_horizon,
-    selected_t0s,
-    show_probabilistic=True,
-):
+    all_forecast_data_df: pd.DataFrame,
+    all_observations_df: pd.DataFrame,
+    forecaster_names: list[str],
+    observer_names: list[str],
+    scale_factor: float,
+    units: str,
+    selected_forecast_type: str,
+    selected_forecast_horizon: int,
+    selected_t0s: list[datetime],
+    show_probabilistic: bool = True,
+) -> go.Figure:
+    """Plot forecast time series.
+
+    This make a plot of the raw forecasts and observations, for mulitple forecast.
+    """
     if selected_forecast_type == "Current":
         # Choose current forecast
         # this is done by selecting the unique target_timestamp_utc with the the lowest horizonMins
@@ -90,11 +108,11 @@ def plot_forecast_time_series(
 
         if observer_name == "pvlive_in_day":
             # dashed white line
-            line = dict(color="white", dash="dash")
+            line = {"color": "white", "dash": "dash"}
         elif observer_name == "pvlive_day_after":
-            line = dict(color="white")
+            line = {"color": "white"}
         else:
-            line = dict()
+            line = {}
 
         fig.add_trace(
             go.Scatter(
@@ -112,7 +130,12 @@ def plot_forecast_time_series(
         ]
         if selected_forecast_type in ["Current", "Horizon"]:
             fig = make_time_series_trace(
-                fig, forecaster_df, forecaster_name, scale_factor, i, show_probabilistic,
+                fig,
+                forecaster_df,
+                forecaster_name,
+                scale_factor,
+                i,
+                show_probabilistic,
             )
         elif selected_forecast_type == "t0":
             for _, t0 in enumerate(selected_t0s):
@@ -138,13 +161,14 @@ def plot_forecast_time_series(
 
 
 def plot_forecast_metric_vs_horizon_minutes(
-    merged_df,
-    forecaster_names,
-    selected_metric,
-    scale_factor,
-    units,
-    show_sem,
-):
+    merged_df: pd.DataFrame,
+    forecaster_names: list[str],
+    selected_metric: str,
+    scale_factor: float,
+    units: str,
+    show_sem: bool,
+) -> go.Figure:
+    """Plot forecast metric vs horizon minutes."""
     # Get the mean observed generation
     mean_observed_generation = merged_df["value_watts"].mean()
 
@@ -199,7 +223,7 @@ def plot_forecast_metric_vs_horizon_minutes(
                 y=forecaster_df[selected_metric] / scale_factor,
                 mode="lines+markers",
                 name=forecaster_name,
-                line=dict(color=colours[i % len(colours)]),
+                line={"color": colours[i % len(colours)]},
                 legendgroup=forecaster_name,
             ),
         )
@@ -210,7 +234,7 @@ def plot_forecast_metric_vs_horizon_minutes(
                     x=forecaster_df["horizon_mins"],
                     y=(forecaster_df[selected_metric] - 1.96 * forecaster_df["sem"]) / scale_factor,
                     mode="lines",
-                    line=dict(color=colours[i % len(colours)], width=0),
+                    line={"color": colours[i % len(colours)], "width": 0},
                     legendgroup=forecaster_name,
                     showlegend=False,
                 ),
@@ -221,7 +245,7 @@ def plot_forecast_metric_vs_horizon_minutes(
                     x=forecaster_df["horizon_mins"],
                     y=(forecaster_df[selected_metric] + 1.96 * forecaster_df["sem"]) / scale_factor,
                     mode="lines",
-                    line=dict(color=colours[i % len(colours)], width=0),
+                    line={"color": colours[i % len(colours)], "width": 0},
                     legendgroup=forecaster_name,
                     showlegend=False,
                     fill="tonexty",
@@ -242,12 +266,13 @@ def plot_forecast_metric_vs_horizon_minutes(
 
 
 def plot_forecast_metric_per_day(
-    merged_df,
-    forecaster_names,
-    selected_metric,
-    scale_factor,
-    units,
-):
+    merged_df: pd.DataFrame,
+    forecaster_names: list,
+    selected_metric: str,
+    scale_factor: float,
+    units: str,
+) -> go.Figure:
+    """Plot forecast metric per day."""
     daily_plots_df = merged_df
     daily_plots_df["date_utc"] = daily_plots_df["timestamp_utc"].dt.date
 
@@ -274,7 +299,7 @@ def plot_forecast_metric_per_day(
                 y=forecaster_df[selected_metric] / scale_factor,
                 # mode="lines+markers",
                 name=forecaster_name,
-                line=dict(color=colours[i % len(colours)]),
+                line={"color": colours[i % len(colours)]},
             ),
         )
 

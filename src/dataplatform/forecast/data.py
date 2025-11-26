@@ -1,5 +1,7 @@
+"""Functions to get forecast and observation data from Data Platform."""
+
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import betterproto
 import pandas as pd
@@ -13,12 +15,13 @@ observer_names = ["pvlive_in_day", "pvlive_day_after"]
 
 
 async def get_forecast_data(
-    client,
-    location,
-    start_date,
-    end_date,
-    selected_forecasters,
+    client: dp.DataPlatformDataServiceStub,
+    location: dp.ListLocationsResponseLocationSummary,
+    start_date: datetime,
+    end_date: datetime,
+    selected_forecasters: list[dp.Forecaster],
 ) -> pd.DataFrame:
+    """Get forecast data for the given location and time window."""
     all_data_df = []
 
     for forecaster in selected_forecasters:
@@ -49,12 +52,13 @@ async def get_forecast_data(
 
 @cached(ttl=300, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
 async def get_forecast_data_one_forecaster(
-    client,
-    location,
-    start_date,
-    end_date,
-    selected_forecaster,
+    client: dp,
+    location: dp.ListLocationsResponseLocationSummary,
+    start_date: datetime,
+    end_date: datetime,
+    selected_forecaster: dp.Forecaster,
 ) -> pd.DataFrame:
+    """Get forecast data for one forecaster for the given location and time window."""
     all_data_df = []
 
     # loop over 30 days of data
@@ -100,7 +104,13 @@ async def get_forecast_data_one_forecaster(
 
 
 @cached(ttl=300, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
-async def get_all_observations(client, location, start_date, end_date) -> pd.DataFrame:
+async def get_all_observations(
+    client: dp.DataPlatformDataServiceStub,
+    location: dp.ListLocationsResponseLocationSummary,
+    start_date: datetime,
+    end_date: datetime,
+) -> pd.DataFrame:
+    """Get all observations for the given location and time window."""
     all_observations_df = []
 
     for observer_name in observer_names:
@@ -148,7 +158,14 @@ async def get_all_observations(client, location, start_date, end_date) -> pd.Dat
     return all_observations_df
 
 
-async def get_all_data(client, selected_location, start_date, end_date, selected_forecasters):
+async def get_all_data(
+    client: dp.DataPlatformDataServiceStub,
+    selected_location: dp.ListLocationsResponseLocationSummary,
+    start_date: datetime,
+    end_date: datetime,
+    selected_forecasters: list[dp.Forecaster],
+) -> dict:
+    """Get all forecast and observation data, and merge them."""
     # get generation data
     time_start = time.time()
     all_observations_df = await get_all_observations(
@@ -170,7 +187,8 @@ async def get_all_data(client, selected_location, start_date, end_date, selected
     )
     forecast_seconds = time.time() - time_start
 
-    # If the observation data includes pvlive_day_after and pvlive_in_day, then lets just take pvlive_day_after
+    # If the observation data includes pvlive_day_after and pvlive_in_day,
+    # then lets just take pvlive_day_after
     one_observations_df = all_observations_df.copy()
     if "pvlive_day_after" in all_observations_df["observer_name"].values:
         one_observations_df = all_observations_df[
@@ -211,7 +229,7 @@ async def get_all_data(client, selected_location, start_date, end_date, selected
 
 
 def align_t0(merged_df: pd.DataFrame) -> pd.DataFrame:
-    """Align t0 forecasts for different forecasters"""
+    """Align t0 forecasts for different forecasters."""
     # get all forecaster names
     forecaster_names = merged_df["forecaster_name"].unique()
 

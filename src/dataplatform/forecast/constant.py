@@ -1,3 +1,5 @@
+"""Constants for the forecast module."""
+
 colours = [
     "#FFD480",
     "#FF8F73",
@@ -14,7 +16,4 @@ colours = [
 metrics = {
     "MAE": "MAE is absolute mean error, average(abs(forecast-actual))",
     "ME": "ME is mean (bias) error, average((forecast-actual))",
-    # "TODO NMAE (by capacity)": " NMAE (by capacity), average(abs(y-x)) / mean(capacity)",
-    # "TODO NMAE (by mean observed generation)": " NMAE (by mean observed generation), average(abs(y-x)) / mean(y)",
-    #    "NMAE (by observed generation)":" NAME (by observed generation)"
 }
