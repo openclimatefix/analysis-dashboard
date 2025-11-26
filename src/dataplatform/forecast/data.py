@@ -1,4 +1,3 @@
-import os
 import time
 from datetime import timedelta
 
@@ -7,21 +6,10 @@ import pandas as pd
 from aiocache import Cache, cached
 from dp_sdk.ocf import dp
 
+from dataplatform.forecast.cache import key_builder_remove_client
+
 # TODO make this dynamic
 observer_names = ["pvlive_in_day", "pvlive_day_after"]
-
-
-def key_builder_remove_client(func, *args, **kwargs):
-    """Custom key builder that ignores the client argument for caching purposes."""
-    key = f"{func.__name__}:"
-    for arg in args:
-        if not isinstance(arg, dp.DataPlatformDataServiceStub):
-            key += f"{arg}-"
-
-    for k, v in kwargs.items():
-        key += f"{k}={v}-"
-
-    return key
 
 
 async def get_forecast_data(
@@ -156,7 +144,7 @@ async def get_all_observations(client, location, start_date, end_date) -> pd.Dat
         float,
     ) * all_observations_df["effective_capacity_watts"].astype(float)
     all_observations_df["timestamp_utc"] = pd.to_datetime(all_observations_df["timestamp_utc"])
-    
+
     return all_observations_df
 
 
@@ -188,7 +176,6 @@ async def get_all_data(client, selected_location, start_date, end_date, selected
         one_observations_df = all_observations_df[
             all_observations_df["observer_name"] == "pvlive_day_after"
         ]
-    
 
     # make target_timestamp_utc
     all_forecast_data_df["init_timestamp"] = pd.to_datetime(all_forecast_data_df["init_timestamp"])
@@ -224,8 +211,7 @@ async def get_all_data(client, selected_location, start_date, end_date, selected
 
 
 def align_t0(merged_df: pd.DataFrame) -> pd.DataFrame:
-    """ Align t0 forecasts for different forecasters """
-
+    """Align t0 forecasts for different forecasters"""
     # get all forecaster names
     forecaster_names = merged_df["forecaster_name"].unique()
 
@@ -233,7 +219,7 @@ def align_t0(merged_df: pd.DataFrame) -> pd.DataFrame:
     t0s_per_forecaster = {}
     for forecaster_name in forecaster_names:
         forecaster_df = merged_df[merged_df["forecaster_name"] == forecaster_name]
-        
+
         t0s = forecaster_df["init_timestamp"].unique()
         t0s_per_forecaster[forecaster_name] = set(t0s)
 

@@ -3,19 +3,24 @@ import plotly.graph_objects as go
 from dataplatform.forecast.constanst import colours
 
 
-def make_time_series_trace(fig, forecaster_df, forecaster_name, scale_factor, i, show_probabilistic=True):
-
+def make_time_series_trace(
+    fig, forecaster_df, forecaster_name, scale_factor, i, show_probabilistic=True,
+):
     fig.add_trace(
-    go.Scatter(
-        x=forecaster_df["target_timestamp_utc"],
-        y=forecaster_df["p50_watts"] / scale_factor,
-        mode="lines",
-        name=forecaster_name,
-        line=dict(color=colours[i % len(colours)]),
-        legendgroup=forecaster_name,
-    ),
+        go.Scatter(
+            x=forecaster_df["target_timestamp_utc"],
+            y=forecaster_df["p50_watts"] / scale_factor,
+            mode="lines",
+            name=forecaster_name,
+            line=dict(color=colours[i % len(colours)]),
+            legendgroup=forecaster_name,
+        ),
     )
-    if show_probabilistic and "p10_watts" in forecaster_df.columns and "p90_watts" in forecaster_df.columns:
+    if (
+        show_probabilistic
+        and "p10_watts" in forecaster_df.columns
+        and "p90_watts" in forecaster_df.columns
+    ):
         fig.add_trace(
             go.Scatter(
                 x=forecaster_df["target_timestamp_utc"],
@@ -40,6 +45,7 @@ def make_time_series_trace(fig, forecaster_df, forecaster_name, scale_factor, i,
         )
 
     return fig
+
 
 def plot_forecast_time_series(
     all_forecast_data_df,
@@ -100,19 +106,26 @@ def plot_forecast_time_series(
             ),
         )
 
-
     for i, forecaster_name in enumerate(forecaster_names):
         forecaster_df = current_forecast_df[
-                current_forecast_df["forecaster_name"] == forecaster_name
-            ]
+            current_forecast_df["forecaster_name"] == forecaster_name
+        ]
         if selected_forecast_type in ["Current", "Horizon"]:
-
-            fig = make_time_series_trace(fig, forecaster_df, forecaster_name, scale_factor, i, show_probabilistic)
+            fig = make_time_series_trace(
+                fig, forecaster_df, forecaster_name, scale_factor, i, show_probabilistic,
+            )
         elif selected_forecast_type == "t0":
             for _, t0 in enumerate(selected_t0s):
                 forecaster_with_t0_df = forecaster_df[forecaster_df["init_timestamp"] == t0]
                 forecaster_name_wth_t0 = f"{forecaster_name} | t0: {t0}"
-                fig = make_time_series_trace(fig, forecaster_with_t0_df, forecaster_name_wth_t0, scale_factor, i, show_probabilistic)
+                fig = make_time_series_trace(
+                    fig,
+                    forecaster_with_t0_df,
+                    forecaster_name_wth_t0,
+                    scale_factor,
+                    i,
+                    show_probabilistic,
+                )
 
     fig.update_layout(
         title="Current Forecast",
@@ -125,7 +138,12 @@ def plot_forecast_time_series(
 
 
 def plot_forecast_metric_vs_horizon_minutes(
-    merged_df, forecaster_names, selected_metric, scale_factor, units, show_sem
+    merged_df,
+    forecaster_names,
+    selected_metric,
+    scale_factor,
+    units,
+    show_sem,
 ):
     # Get the mean observed generation
     mean_observed_generation = merged_df["value_watts"].mean()
@@ -224,7 +242,11 @@ def plot_forecast_metric_vs_horizon_minutes(
 
 
 def plot_forecast_metric_per_day(
-    merged_df, forecaster_names, selected_metric, scale_factor, units
+    merged_df,
+    forecaster_names,
+    selected_metric,
+    scale_factor,
+    units,
 ):
     daily_plots_df = merged_df
     daily_plots_df["date_utc"] = daily_plots_df["timestamp_utc"].dt.date
@@ -264,5 +286,3 @@ def plot_forecast_metric_per_day(
     )
 
     return fig3
-
-

@@ -6,7 +6,7 @@ from dp_sdk.ocf import dp
 from grpclib.client import Channel
 
 from dataplatform.forecast.constanst import metrics
-from dataplatform.forecast.data import get_all_data, align_t0
+from dataplatform.forecast.data import align_t0, get_all_data
 from dataplatform.forecast.plot import (
     plot_forecast_metric_per_day,
     plot_forecast_metric_vs_horizon_minutes,
@@ -90,29 +90,35 @@ async def async_dp_forecast_page():
             selected_forecast_type=selected_forecast_type,
             selected_forecast_horizon=selected_forecast_horizon,
             selected_t0s=selected_t0s,
-            show_probabilistic=show_probabilistic
+            show_probabilistic=show_probabilistic,
         )
         st.plotly_chart(fig)
 
         ### 3. Summary Accuracy Graph. ###
         st.header("Accuracy")
-        
 
         st.write(metrics)
-    
-        align_t0s = st.checkbox("Align t0s (Only common t0s across all forecaster are used)", value=True)
+
+        align_t0s = st.checkbox(
+            "Align t0s (Only common t0s across all forecaster are used)", value=True,
+        )
         if align_t0s:
             merged_df = align_t0(merged_df)
 
         st.subheader("Metric vs Forecast Horizon")
 
-        if selected_metric == 'MAE':
+        if selected_metric == "MAE":
             show_sem = st.checkbox("Show SEM", value=True)
         else:
             show_sem = False
 
         fig2, summary_df = plot_forecast_metric_vs_horizon_minutes(
-            merged_df, forecaster_names, selected_metric, scale_factor, units, show_sem
+            merged_df,
+            forecaster_names,
+            selected_metric,
+            scale_factor,
+            units,
+            show_sem,
         )
 
         st.plotly_chart(fig2)
@@ -161,9 +167,8 @@ async def async_dp_forecast_page():
             forecaster_names=forecaster_names,
             scale_factor=scale_factor,
             units=units,
-            selected_metric=selected_metric
+            selected_metric=selected_metric,
         )
-
 
         st.plotly_chart(fig3)
 
@@ -175,7 +180,7 @@ async def async_dp_forecast_page():
         st.write("speed up read, use async and more caching")
         st.write("Get page working with no observations data")
         st.write("MAE vs horizon plot should start at 0")
-    
+
 
 def make_summary_data(merged_df, min_horizon, max_horizon, scale_factor, units):
     # Reduce my horizon mins

@@ -2,9 +2,40 @@ from datetime import UTC, datetime, timedelta
 
 import pandas as pd
 import streamlit as st
+from aiocache import Cache, cached
 from dp_sdk.ocf import dp
 
+from dataplatform.forecast.cache import key_builder_remove_client
 from dataplatform.forecast.constanst import metrics
+
+
+@cached(ttl=300, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
+async def get_location_names(client, location_type) -> dict:
+    # List Location
+    list_locations_request = dp.ListLocationsRequest(location_type_filter=location_type)
+    list_locations_response = await client.list_locations(list_locations_request)
+    all_locations = list_locations_response.locations
+
+    location_names = {loc.location_name: loc for loc in all_locations}
+    if location_type == dp.LocationType.GSP:
+        location_names = {
+            f"{int(loc.metadata.fields['gsp_id'].number_value)}:{loc.location_name}": loc
+            for loc in all_locations
+        }
+        # sort by gsp id
+        location_names = dict(
+            sorted(location_names.items(), key=lambda item: int(item[0].split(":")[0])),
+        )
+
+    return location_names
+
+
+@cached(ttl=300, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
+async def get_forecasters(client):
+    get_forecasters_request = dp.ListForecastersRequest()
+    get_forecasters_response = await client.list_forecasters(get_forecasters_request)
+    forecasters = get_forecasters_response.forecasters
+    return forecasters
 
 
 async def setup_page(client) -> dict:
@@ -19,25 +50,15 @@ async def setup_page(client) -> dict:
     ]
     location_type = st.sidebar.selectbox("Select a Location Type", location_types, index=0)
 
-    # List Location
-    list_locations_request = dp.ListLocationsRequest(location_type_filter=location_type)
-    list_locations_response = await client.list_locations(list_locations_request)
-    all_locations = list_locations_response.locations
-    
-    location_names = {loc.location_name:loc for loc in all_locations}
-    if location_type == dp.LocationType.GSP:
-        location_names = {f'{int(loc.metadata.fields['gsp_id'].number_value)}:{loc.location_name}': loc for loc in all_locations}
-        # sort by gsp id
-        location_names = dict(sorted(location_names.items(), key=lambda item: int(item[0].split(":")[0])))
-
-    # slect locations
-    selected_location_name = st.sidebar.selectbox("Select a Location", location_names.keys(), index=0)
+    # select locations
+    location_names = await get_location_names(client, location_type)
+    selected_location_name = st.sidebar.selectbox(
+        "Select a Location", location_names.keys(), index=0,
+    )
     selected_location = location_names[selected_location_name]
 
     # get models
-    get_forecasters_request = dp.ListForecastersRequest()
-    get_forecasters_response = await client.list_forecasters(get_forecasters_request)
-    forecasters = get_forecasters_response.forecasters
+    forecasters = await get_forecasters(client)
     forecaster_names = sorted(list(set([forecaster.forecaster_name for forecaster in forecasters])))
     if "pvnet_v2" in forecaster_names:
         default_index = forecaster_names.index("pvnet_v2")
@@ -58,7 +79,9 @@ async def setup_page(client) -> dict:
     start_date = st.sidebar.date_input("Start date:", datetime.now().date() - timedelta(days=7))
     end_date = st.sidebar.date_input("End date:", datetime.now().date() + timedelta(days=3))
     start_date = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=UTC)
-    end_date = datetime.combine(end_date, datetime.min.time()).replace(tzinfo=UTC) - timedelta(seconds=1)
+    end_date = datetime.combine(end_date, datetime.min.time()).replace(tzinfo=UTC) - timedelta(
+        seconds=1,
+    )
 
     # select forecast type
     selected_forecast_type = st.sidebar.selectbox(
@@ -72,18 +95,19 @@ async def setup_page(client) -> dict:
     if selected_forecast_type == "Horizon":
         selected_forecast_horizon = st.sidebar.selectbox(
             "Select a Forecast Horizon",
-            list(range(0, 24*60, 30)),
+            list(range(0, 24 * 60, 30)),
             index=3,
         )
     if selected_forecast_type == "t0":
-
         # make datetimes every 30 minutes from start_date to end_date
-        all_t0s = pd.date_range(start=start_date, end=end_date, freq='30min').to_pydatetime().tolist()
+        all_t0s = (
+            pd.date_range(start=start_date, end=end_date, freq="30min").to_pydatetime().tolist()
+        )
 
         selected_t0s = st.sidebar.multiselect(
             "Select t0s",
             all_t0s,
-            default=all_t0s[:min(5, len(all_t0s))],
+            default=all_t0s[: min(5, len(all_t0s))],
         )
 
     # select units
