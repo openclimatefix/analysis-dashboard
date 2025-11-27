@@ -32,7 +32,8 @@ async def get_forecast_data(
             end_date,
             forecaster,
         )
-        all_data_df.append(forecaster_data_df)
+        if forecaster_data_df is not None:
+            all_data_df.append(forecaster_data_df)
 
     all_data_df = pd.concat(all_data_df, ignore_index=True)
 
@@ -57,7 +58,7 @@ async def get_forecast_data_one_forecaster(
     start_date: datetime,
     end_date: datetime,
     selected_forecaster: dp.Forecaster,
-) -> pd.DataFrame:
+) -> pd.DataFrame | None:
     """Get forecast data for one forecaster for the given location and time window."""
     all_data_df = []
 
@@ -93,6 +94,9 @@ async def get_forecast_data_one_forecaster(
 
         temp_start_date = temp_start_date + timedelta(days=30)
 
+    if len(all_data_df) == 0:
+        return None
+    
     all_data_df = pd.concat(all_data_df, ignore_index=True)
 
     # create column forecaster_name, its forecaster_fullname with version removed
