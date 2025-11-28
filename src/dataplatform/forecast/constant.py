@@ -17,3 +17,5 @@ metrics = {
     "MAE": "MAE is absolute mean error, average(abs(forecast-actual))",
     "ME": "ME is mean (bias) error, average((forecast-actual))",
 }
+
+cache_seconds = 300  # 5 minutes

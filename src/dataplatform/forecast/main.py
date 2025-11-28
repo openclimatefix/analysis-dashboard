@@ -80,7 +80,7 @@ async def async_dp_forecast_page() -> None:
             data=csv,
             file_name=f"site_forecast_{selected_location.location_uuid}_{start_date}_{end_date}.csv",
             mime="text/csv",
-            help='Download the forecast and generation data as a CSV file.'
+            help="Download the forecast and generation data as a CSV file.",
         )
 
         ### 2. Plot of raw forecast data. ###
@@ -117,10 +117,13 @@ async def async_dp_forecast_page() -> None:
         st.subheader("Metric vs Forecast Horizon")
 
         if selected_metric == "MAE":
-            show_sem = st.checkbox("Show Uncertainty", 
-                                   value=True, 
-                                   help='On the plot below show the uncertainty bands associated with the MAE. ' \
-                                   'This is done by looking at Standard Error of the Mean (SEM) of the absolute errors.')
+            show_sem = st.checkbox(
+                "Show Uncertainty",
+                value=True,
+                help="On the plot below show the uncertainty bands associated with the MAE. "
+                "This is done by looking at " \
+                "Standard Error of the Mean (SEM) of the absolute errors.",
+            )
         else:
             show_sem = False
 
@@ -141,7 +144,7 @@ async def async_dp_forecast_page() -> None:
             data=csv,
             file_name=f"summary_accuracy_{selected_location.location_uuid}_{start_date}_{end_date}.csv",
             mime="text/csv",
-            help='Download the summary accuracy data as a CSV file.'
+            help="Download the summary accuracy data as a CSV file.",
         )
 
         ### 4. Summary Accuracy Table, with slider to select min and max horizon mins. ###
@@ -188,7 +191,6 @@ async def async_dp_forecast_page() -> None:
 
         st.header("Known Issues and TODOs")
 
-        st.write("Bug: cache not releasing, the cache should stay for 5 minutes")
         st.write("Add more metrics")
         st.write("Group adjust and non-adjust")
         st.write("speed up read, use async and more caching")

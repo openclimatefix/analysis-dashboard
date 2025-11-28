@@ -8,10 +8,10 @@ from aiocache import Cache, cached
 from dp_sdk.ocf import dp
 
 from dataplatform.forecast.cache import key_builder_remove_client
-from dataplatform.forecast.constant import metrics
+from dataplatform.forecast.constant import cache_seconds, metrics
 
 
-@cached(ttl=300, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
+@cached(ttl=cache_seconds, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
 async def get_location_names(
     client: dp.DataPlatformDataServiceStub,
     location_type: dp.LocationType,
@@ -36,7 +36,7 @@ async def get_location_names(
     return location_names
 
 
-@cached(ttl=300, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
+@cached(ttl=cache_seconds, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
 async def get_forecasters(client: dp.DataPlatformDataServiceStub) -> list[dp.Forecaster]:
     """Get all forecasters."""
     get_forecasters_request = dp.ListForecastersRequest()

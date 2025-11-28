@@ -9,6 +9,7 @@ from aiocache import Cache, cached
 from dp_sdk.ocf import dp
 
 from dataplatform.forecast.cache import key_builder_remove_client
+from dataplatform.forecast.constant import cache_seconds
 
 # TODO make this dynamic
 observer_names = ["pvlive_in_day", "pvlive_day_after"]
@@ -51,7 +52,7 @@ async def get_forecast_data(
     return all_data_df
 
 
-@cached(ttl=300, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
+@cached(ttl=cache_seconds, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
 async def get_forecast_data_one_forecaster(
     client: dp,
     location: dp.ListLocationsResponseLocationSummary,
@@ -96,7 +97,7 @@ async def get_forecast_data_one_forecaster(
 
     if len(all_data_df) == 0:
         return None
-    
+
     all_data_df = pd.concat(all_data_df, ignore_index=True)
 
     # create column forecaster_name, its forecaster_fullname with version removed
@@ -107,7 +108,7 @@ async def get_forecast_data_one_forecaster(
     return all_data_df
 
 
-@cached(ttl=300, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
+@cached(ttl=cache_seconds, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
 async def get_all_observations(
     client: dp.DataPlatformDataServiceStub,
     location: dp.ListLocationsResponseLocationSummary,
