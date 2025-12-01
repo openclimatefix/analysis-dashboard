@@ -89,10 +89,14 @@ async def get_forecast_data_one_forecaster(
     if len(all_data_df) == 0:
         return None
 
-    # get plevels into columns
+    # get plevels into columns and rename them 'fraction
+    columns_before_expand = set(all_data_df.columns)
     all_data_df = all_data_df.pipe(
         lambda df: df.join(pd.json_normalize(df["other_statistics_fractions"])),
     ).drop("other_statistics_fractions", axis=1)
+    new_columns = set(all_data_df.columns) - columns_before_expand
+    if len(new_columns) > 0:
+        all_data_df = all_data_df.rename(columns={col: f"{col}_fraction" for col in new_columns})
 
     # create column forecaster_name, its forecaster_fullname with version removed
     all_data_df["forecaster_name"] = all_data_df["forecaster_fullname"].apply(
