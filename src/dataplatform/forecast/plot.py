@@ -72,6 +72,7 @@ def plot_forecast_time_series(
     selected_forecast_horizon: int,
     selected_t0s: list[datetime],
     show_probabilistic: bool = True,
+    strict_horizon_filtering: bool = False,
 ) -> go.Figure:
     """Plot forecast time series.
 
@@ -88,9 +89,14 @@ def plot_forecast_time_series(
         ]
     elif selected_forecast_type == "Horizon":
         # Choose horizon forecast
-        current_forecast_df = all_forecast_data_df[
-            all_forecast_data_df["horizon_mins"] >= selected_forecast_horizon
-        ]
+        if strict_horizon_filtering:
+            current_forecast_df = all_forecast_data_df[
+                all_forecast_data_df["horizon_mins"] == selected_forecast_horizon
+            ]
+        else:
+            current_forecast_df = all_forecast_data_df[
+                all_forecast_data_df["horizon_mins"] >= selected_forecast_horizon
+            ]
         current_forecast_df = current_forecast_df.loc[
             current_forecast_df.groupby(["target_timestamp_utc", "forecaster_name"])[
                 "horizon_mins"

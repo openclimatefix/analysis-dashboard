@@ -101,12 +101,19 @@ async def setup_page(client: dp.DataPlatformDataServiceStub) -> dict:
     )
 
     selected_forecast_horizon = None
+    strict_horizon_filtering = False
     selected_t0s = None
     if selected_forecast_type == "Horizon":
         selected_forecast_horizon = st.sidebar.selectbox(
             "Select a Forecast Horizon",
             list(range(0, 36 * 60, 30)),
             index=3,
+        )
+        strict_horizon_filtering = st.sidebar.checkbox(
+            "Strict Horizon Filtering",
+            value=False,
+            help="Only show forecasts that exactly match the selected horizon, "
+            "if not, we use any forecast horizon greater or equal than",
         )
     if selected_forecast_type == "t0":
         # make datetimes every 30 minutes from start_date to end_date
@@ -140,4 +147,5 @@ async def setup_page(client: dp.DataPlatformDataServiceStub) -> dict:
         "selected_forecast_horizon": selected_forecast_horizon,
         "selected_t0s": selected_t0s,
         "units": units,
+        "strict_horizon_filtering": strict_horizon_filtering,
     }

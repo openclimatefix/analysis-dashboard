@@ -46,6 +46,7 @@ async def async_dp_forecast_page() -> None:
         selected_forecast_horizon = setup_page_dict["selected_forecast_horizon"]
         selected_t0s = setup_page_dict["selected_t0s"]
         units = setup_page_dict["units"]
+        strict_horizon_filtering = setup_page_dict["strict_horizon_filtering"]
 
         ### 1. Get all the data ###
         all_data_dict = await get_all_data(
@@ -96,6 +97,7 @@ async def async_dp_forecast_page() -> None:
             selected_forecast_horizon=selected_forecast_horizon,
             selected_t0s=selected_t0s,
             show_probabilistic=show_probabilistic,
+            strict_horizon_filtering=strict_horizon_filtering,
         )
         st.plotly_chart(fig)
 
