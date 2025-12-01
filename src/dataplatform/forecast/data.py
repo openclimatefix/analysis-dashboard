@@ -43,7 +43,9 @@ async def get_forecast_data(
     for col in ["p10", "p25", "p75", "p90"]:
         col_fraction = f"{col}_fraction"
         if col_fraction in all_data_df.columns:
-            all_data_df[f"{col}_watts"] = all_data_df[col_fraction] * all_data_df["effective_capacity_watts"]
+            all_data_df[f"{col}_watts"] = (
+                all_data_df[col_fraction] * all_data_df["effective_capacity_watts"]
+            )
 
     return all_data_df
 
