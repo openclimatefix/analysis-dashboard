@@ -241,15 +241,11 @@ def plot_forecast_metric_per_day(
     # group by forecaster name and date
     daily_metrics_df = (
         daily_plots_df.groupby(["date_utc", "forecaster_name"])
-        .agg({"absolute_error": "mean"})
+        .agg({"absolute_error": "mean", "error": "mean"})
         .reset_index()
-    ).rename(columns={"absolute_error": "MAE"})
-    # ME
-    daily_metrics_df["ME"] = (
-        daily_plots_df.groupby(["date_utc", "forecaster_name"])
-        .agg({"error": "mean"})
-        .reset_index()["error"]
     )
+
+    daily_metrics_df = daily_metrics_df.rename(columns={"absolute_error": "MAE", "error": "ME"})
 
     fig3 = go.Figure()
     for i, forecaster_name in enumerate(forecaster_names):

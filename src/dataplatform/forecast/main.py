@@ -263,26 +263,21 @@ def make_summary_data_metric_vs_horizon_minutes(
     # mean absolute error by horizonMins and forecasterFullName
     summary_df = (
         merged_df.groupby(["horizon_mins", "forecaster_name"])
-        .agg({"absolute_error": "mean"})
+        .agg(
+            {
+                "absolute_error": ["mean", "std", "count"],
+                "error": "mean",
+            },
+        )
         .reset_index()
     )
-    summary_df["std"] = (
-        merged_df.groupby(["horizon_mins", "forecaster_name"])
-        .agg({"absolute_error": "std"})
-        .reset_index()["absolute_error"]
-    )
-    summary_df["count"] = (
-        merged_df.groupby(["horizon_mins", "forecaster_name"])
-        .agg({"absolute_error": "count"})
-        .reset_index()["absolute_error"]
-    )
-    summary_df["sem"] = summary_df["std"] / (summary_df["count"] ** 0.5)
 
-    # ME
-    summary_df["ME"] = (
-        merged_df.groupby(["horizon_mins", "forecaster_name"])
-        .agg({"error": "mean"})
-        .reset_index()["error"]
+    summary_df.columns = ["_".join(col).strip() for col in summary_df.columns.values]
+    summary_df.columns = [col[:-1] if col.endswith("_") else col for col in summary_df.columns]
+
+    # calculate sem of MAE
+    summary_df["sem"] = summary_df["absolute_error_std"] / (
+        summary_df["absolute_error_count"] ** 0.5
     )
 
     # TODO more metrics
@@ -294,7 +289,7 @@ def make_summary_data_metric_vs_horizon_minutes(
     )
 
     # rename absolute_error to MAE
-    summary_df = summary_df.rename(columns={"absolute_error": "MAE"})
+    summary_df = summary_df.rename(columns={"absolute_error_mean": "MAE", "error_mean": "ME"})
     summary_df["NMAE (by capacity)"] = (
         summary_df["MAE"] / summary_df["effective_capacity_watts_observation"]
     )
