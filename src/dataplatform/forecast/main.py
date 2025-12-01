@@ -8,7 +8,7 @@ import streamlit as st
 from dp_sdk.ocf import dp
 from grpclib.client import Channel
 
-from dataplatform.forecast.constant import metrics
+from dataplatform.forecast.constant import metrics, observer_names
 from dataplatform.forecast.data import align_t0, get_all_data
 from dataplatform.forecast.plot import (
     plot_forecast_metric_per_day,
@@ -19,9 +19,6 @@ from dataplatform.forecast.setup import setup_page
 
 data_platform_host = os.getenv("DATA_PLATFORM_HOST", "localhost")
 data_platform_port = int(os.getenv("DATA_PLATFORM_PORT", "50051"))
-
-# TODO make this dynamic
-observer_names = ["pvlive_in_day", "pvlive_day_after"]
 
 
 def dp_forecast_page() -> None:
@@ -121,14 +118,17 @@ async def async_dp_forecast_page() -> None:
                 "Show Uncertainty",
                 value=True,
                 help="On the plot below show the uncertainty bands associated with the MAE. "
-                "This is done by looking at " \
-                "Standard Error of the Mean (SEM) of the absolute errors.",
+                "This is done by looking at the "
+                "Standard Error of the Mean (SEM) of the absolute errors. "
+                "We plot the 5 to 95 percentile range around the MAE.",
             )
         else:
             show_sem = False
 
-        fig2, summary_df = plot_forecast_metric_vs_horizon_minutes(
-            merged_df,
+        summary_df = make_summary_data_metric_vs_horizon_minutes(merged_df)
+
+        fig2 = plot_forecast_metric_vs_horizon_minutes(
+            summary_df,
             forecaster_names,
             selected_metric,
             scale_factor,
@@ -151,13 +151,15 @@ async def async_dp_forecast_page() -> None:
         st.subheader("Summary Accuracy Table")
 
         # add slider to select min and max horizon mins
+        default_min_horizon = int(summary_df["horizon_mins"].min())
+        default_max_horizon = int(summary_df["horizon_mins"].max())
         min_horizon, max_horizon = st.slider(
             "Select Horizon Mins Range",
-            int(summary_df["horizon_mins"].min()),
-            int(summary_df["horizon_mins"].max()),
+            default_min_horizon,
+            default_max_horizon,
             (
-                int(summary_df["horizon_mins"].min()),
-                int(summary_df["horizon_mins"].max()),
+                default_min_horizon,
+                default_max_horizon,
             ),
             step=30,
         )
@@ -210,38 +212,18 @@ def make_summary_data(
         (merged_df["horizon_mins"] >= min_horizon) & (merged_df["horizon_mins"] <= max_horizon)
     ]
 
-    summary_table_df = summary_table_df.rename(
-        columns={
-            "effective_capacity_watts_observation": "Capacity_watts",
-            "value_watts": "Mean_Observed_Generation_watts",
-        },
-    )
+    capacity_watts_col = "effective_capacity_watts_observation"
 
     value_columns = [
         "error",
         "absolute_error",
-        #  'absolute_error_normalized_by_generation',
-        "Mean_Observed_Generation_watts",
-        "Capacity_watts",
+        "value_watts",
+        capacity_watts_col,
     ]
-
     summary_table_df = summary_table_df[["forecaster_name", *value_columns]]
-
-    summary_table_df["Capacity_watts"] = summary_table_df["Capacity_watts"].astype(float)
 
     # group by forecaster full name a
     summary_table_df = summary_table_df.groupby("forecaster_name").mean()
-
-    # rename
-    summary_table_df = summary_table_df.rename(
-        columns={
-            "error": "ME",
-            "absolute_error": "MAE",
-            # 'absolute_error_normalized_by_generation': 'NMAE (by observed generation)',
-            "Capacity_watts": "Mean Capacity",
-            "Mean_Observed_Generation_watts": "Mean Observed Generation",
-        },
-    )
 
     # scale by units
     summary_table_df = summary_table_df / scale_factor
@@ -256,4 +238,64 @@ def make_summary_data(
         values=summary_table_df.columns.tolist(),
     )
 
+    # rename
+    summary_table_df = summary_table_df.rename(
+        columns={
+            "error": "ME",
+            "absolute_error": "MAE",
+            capacity_watts_col: "Mean Capacity",
+            "value_watts": "Mean Observed Generation",
+        },
+    )
+
     return summary_table_df
+
+
+def make_summary_data_metric_vs_horizon_minutes(
+    merged_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """Make summary data for forecast metric vs horizon minutes."""
+    # Get the mean observed generation
+    mean_observed_generation = merged_df["value_watts"].mean()
+
+    # mean absolute error by horizonMins and forecasterFullName
+    summary_df = (
+        merged_df.groupby(["horizon_mins", "forecaster_name"])
+        .agg({"absolute_error": "mean"})
+        .reset_index()
+    )
+    summary_df["std"] = (
+        merged_df.groupby(["horizon_mins", "forecaster_name"])
+        .agg({"absolute_error": "std"})
+        .reset_index()["absolute_error"]
+    )
+    summary_df["count"] = (
+        merged_df.groupby(["horizon_mins", "forecaster_name"])
+        .agg({"absolute_error": "count"})
+        .reset_index()["absolute_error"]
+    )
+    summary_df["sem"] = summary_df["std"] / (summary_df["count"] ** 0.5)
+
+    # ME
+    summary_df["ME"] = (
+        merged_df.groupby(["horizon_mins", "forecaster_name"])
+        .agg({"error": "mean"})
+        .reset_index()["error"]
+    )
+
+    # TODO more metrics
+
+    summary_df["effective_capacity_watts_observation"] = (
+        merged_df.groupby(["horizon_mins", "forecaster_name"])
+        .agg({"effective_capacity_watts_observation": "mean"})
+        .reset_index()["effective_capacity_watts_observation"]
+    )
+
+    # rename absolute_error to MAE
+    summary_df = summary_df.rename(columns={"absolute_error": "MAE"})
+    summary_df["NMAE (by capacity)"] = (
+        summary_df["MAE"] / summary_df["effective_capacity_watts_observation"]
+    )
+    summary_df["NMAE (by mean observed generation)"] = summary_df["MAE"] / mean_observed_generation
+
+    return summary_df

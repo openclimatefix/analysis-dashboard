@@ -161,7 +161,7 @@ def plot_forecast_time_series(
 
 
 def plot_forecast_metric_vs_horizon_minutes(
-    merged_df: pd.DataFrame,
+    summary_df: pd.DataFrame,
     forecaster_names: list[str],
     selected_metric: str,
     scale_factor: float,
@@ -169,50 +169,6 @@ def plot_forecast_metric_vs_horizon_minutes(
     show_sem: bool,
 ) -> go.Figure:
     """Plot forecast metric vs horizon minutes."""
-    # Get the mean observed generation
-    mean_observed_generation = merged_df["value_watts"].mean()
-
-    # mean absolute error by horizonMins and forecasterFullName
-    summary_df = (
-        merged_df.groupby(["horizon_mins", "forecaster_name"])
-        .agg({"absolute_error": "mean"})
-        .reset_index()
-    )
-    summary_df["std"] = (
-        merged_df.groupby(["horizon_mins", "forecaster_name"])
-        .agg({"absolute_error": "std"})
-        .reset_index()["absolute_error"]
-    )
-    summary_df["count"] = (
-        merged_df.groupby(["horizon_mins", "forecaster_name"])
-        .agg({"absolute_error": "count"})
-        .reset_index()["absolute_error"]
-    )
-    summary_df["sem"] = summary_df["std"] / (summary_df["count"] ** 0.5)
-
-    # ME
-    summary_df["ME"] = (
-        merged_df.groupby(["horizon_mins", "forecaster_name"])
-        .agg({"error": "mean"})
-        .reset_index()["error"]
-    )
-
-    # TODO more metrics
-
-    summary_df["effective_capacity_watts_observation"] = (
-        merged_df.groupby(["horizon_mins", "forecaster_name"])
-        .agg({"effective_capacity_watts_observation": "mean"})
-        .reset_index()["effective_capacity_watts_observation"]
-    )
-
-    # rename absolute_error to MAE
-    summary_df = summary_df.rename(columns={"absolute_error": "MAE"})
-    summary_df["NMAE (by capacity)"] = (
-        summary_df["MAE"] / summary_df["effective_capacity_watts_observation"]
-    )
-    summary_df["NMAE (by mean observed generation)"] = summary_df["MAE"] / mean_observed_generation
-    # summary_df["NMAE (by observed generation)"] = summary_df["absolute_error_divided_by_observed"]
-
     fig2 = go.Figure()
 
     for i, forecaster_name in enumerate(forecaster_names):
@@ -262,7 +218,7 @@ def plot_forecast_metric_vs_horizon_minutes(
     if selected_metric == "MAE":
         fig2.update_yaxes(range=[0, None])
 
-    return fig2, summary_df
+    return fig2
 
 
 def plot_forecast_metric_per_day(
@@ -297,7 +253,6 @@ def plot_forecast_metric_per_day(
             go.Scatter(
                 x=forecaster_df["date_utc"],
                 y=forecaster_df[selected_metric] / scale_factor,
-                # mode="lines+markers",
                 name=forecaster_name,
                 line={"color": colours[i % len(colours)]},
             ),

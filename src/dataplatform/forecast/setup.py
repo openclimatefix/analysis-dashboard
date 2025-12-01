@@ -105,7 +105,7 @@ async def setup_page(client: dp.DataPlatformDataServiceStub) -> dict:
     if selected_forecast_type == "Horizon":
         selected_forecast_horizon = st.sidebar.selectbox(
             "Select a Forecast Horizon",
-            list(range(0, 24 * 60, 30)),
+            list(range(0, 36 * 60, 30)),
             index=3,
         )
     if selected_forecast_type == "t0":

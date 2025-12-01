@@ -19,3 +19,6 @@ metrics = {
 }
 
 cache_seconds = 300  # 5 minutes
+
+# This is used for a specific case for the UK National and GSP
+observer_names = ["pvlive_in_day", "pvlive_day_after"]

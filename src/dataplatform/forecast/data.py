@@ -9,10 +9,7 @@ from aiocache import Cache, cached
 from dp_sdk.ocf import dp
 
 from dataplatform.forecast.cache import key_builder_remove_client
-from dataplatform.forecast.constant import cache_seconds
-
-# TODO make this dynamic
-observer_names = ["pvlive_in_day", "pvlive_day_after"]
+from dataplatform.forecast.constant import cache_seconds, observer_names
 
 
 async def get_forecast_data(
@@ -38,16 +35,14 @@ async def get_forecast_data(
 
     all_data_df = pd.concat(all_data_df, ignore_index=True)
 
+    all_data_df["effective_capacity_watts"] = all_data_df["effective_capacity_watts"].astype(float)
+
     # get watt value
-    all_data_df["p50_watts"] = all_data_df["p50_fraction"].astype(float) * all_data_df[
-        "effective_capacity_watts"
-    ].astype(float)
+    all_data_df["p50_watts"] = all_data_df["p50_fraction"] * all_data_df["effective_capacity_watts"]
 
     for col in ["p10", "p25", "p75", "p90"]:
         if col in all_data_df.columns:
-            all_data_df[f"{col}_watts"] = all_data_df[col].astype(float) * all_data_df[
-                "effective_capacity_watts"
-            ].astype(float)
+            all_data_df[f"{col}_watts"] = all_data_df[col] * all_data_df["effective_capacity_watts"]
 
     return all_data_df
 
@@ -61,14 +56,12 @@ async def get_forecast_data_one_forecaster(
     selected_forecaster: dp.Forecaster,
 ) -> pd.DataFrame | None:
     """Get forecast data for one forecaster for the given location and time window."""
-    all_data_df = []
+    all_data_list_dict = []
 
-    # loop over 30 days of data
+    # Grab all the data, in chunks of 30 days to avoid too large requests
     temp_start_date = start_date
     while temp_start_date <= end_date:
-        temp_end_date = temp_start_date + timedelta(days=30)
-        if temp_end_date > end_date:
-            temp_end_date = end_date
+        temp_end_date = min(temp_start_date + timedelta(days=30), end_date)
 
         # fetch data
         stream_forecast_data_request = dp.StreamForecastDataRequest(
@@ -87,18 +80,18 @@ async def get_forecast_data_one_forecaster(
             )
 
         if len(forecasts) > 0:
-            all_data_df.append(
-                pd.DataFrame.from_dict(forecasts)
-                .pipe(lambda df: df.join(pd.json_normalize(df["other_statistics_fractions"])))
-                .drop("other_statistics_fractions", axis=1),
-            )
+            all_data_list_dict.extend(forecasts)
 
         temp_start_date = temp_start_date + timedelta(days=30)
 
+    all_data_df = pd.DataFrame.from_dict(all_data_list_dict)
     if len(all_data_df) == 0:
         return None
 
-    all_data_df = pd.concat(all_data_df, ignore_index=True)
+    # get plevels into columns
+    all_data_df = all_data_df.pipe(
+        lambda df: df.join(pd.json_normalize(df["other_statistics_fractions"])),
+    ).drop("other_statistics_fractions", axis=1)
 
     # create column forecaster_name, its forecaster_fullname with version removed
     all_data_df["forecaster_name"] = all_data_df["forecaster_fullname"].apply(
@@ -119,13 +112,11 @@ async def get_all_observations(
     all_observations_df = []
 
     for observer_name in observer_names:
-        # loop over 7 days of data
+        # Get all the observations for this observer_name, in chunks of 7 days
         observation_one_df = []
         temp_start_date = start_date
         while temp_start_date <= end_date:
-            temp_end_date = temp_start_date + timedelta(days=7)
-            if temp_end_date > end_date:
-                temp_end_date = end_date
+            temp_end_date = min(temp_start_date + timedelta(days=7), end_date)
 
             get_observations_request = dp.GetObservationsAsTimeseriesRequest(
                 observer_name=observer_name,
@@ -155,9 +146,13 @@ async def get_all_observations(
 
     all_observations_df = pd.concat(all_observations_df, ignore_index=True)
 
-    all_observations_df["value_watts"] = all_observations_df["value_fraction"].astype(
-        float,
-    ) * all_observations_df["effective_capacity_watts"].astype(float)
+    all_observations_df["effective_capacity_watts"] = all_observations_df[
+        "effective_capacity_watts"
+    ].astype(float)
+
+    all_observations_df["value_watts"] = (
+        all_observations_df["value_fraction"] * all_observations_df["effective_capacity_watts"]
+    )
     all_observations_df["timestamp_utc"] = pd.to_datetime(all_observations_df["timestamp_utc"])
 
     return all_observations_df
@@ -202,9 +197,9 @@ async def get_all_data(
 
     # make target_timestamp_utc
     all_forecast_data_df["init_timestamp"] = pd.to_datetime(all_forecast_data_df["init_timestamp"])
-    all_forecast_data_df["target_timestamp_utc"] = pd.to_datetime(
-        all_forecast_data_df["init_timestamp"],
-    ) + pd.to_timedelta(all_forecast_data_df["horizon_mins"], unit="m")
+    all_forecast_data_df["target_timestamp_utc"] = all_forecast_data_df[
+        "init_timestamp"
+    ] + pd.to_timedelta(all_forecast_data_df["horizon_mins"], unit="m")
 
     # take the foecast data, and group by horizonMins, forecasterFullName
     # calculate mean absolute error between p50Fraction and observations valueFraction
@@ -218,7 +213,7 @@ async def get_all_data(
     )
     merged_df["effective_capacity_watts_observation"] = merged_df[
         "effective_capacity_watts_observation"
-    ].astype(float)
+    ]
 
     # error and absolute error
     merged_df["error"] = merged_df["p50_watts"] - merged_df["value_watts"]
@@ -235,21 +230,10 @@ async def get_all_data(
 
 def align_t0(merged_df: pd.DataFrame) -> pd.DataFrame:
     """Align t0 forecasts for different forecasters."""
-    # get all forecaster names
-    forecaster_names = merged_df["forecaster_name"].unique()
-
-    # align t0 for each forecaster
-    t0s_per_forecaster = {}
-    for forecaster_name in forecaster_names:
-        forecaster_df = merged_df[merged_df["forecaster_name"] == forecaster_name]
-
-        t0s = forecaster_df["init_timestamp"].unique()
-        t0s_per_forecaster[forecaster_name] = set(t0s)
-
-    # find common t0s
-    common_t0s = set.intersection(*t0s_per_forecaster.values())
-
-    # align common t0s in merged_df
-    merged_df = merged_df[merged_df["init_timestamp"].isin(common_t0s)]
-
-    return merged_df
+    # number of unique forecasters
+    num_forecasters = merged_df["forecaster_name"].nunique()
+    # Count number of forecasters that have each t0 time
+    counts = merged_df.groupby("init_timestamp")["forecaster_name"].nunique()
+    # Filter to just those t0s that all forecasters have
+    common_t0s = counts[counts == num_forecasters].index
+    return merged_df[merged_df["init_timestamp"].isin(common_t0s)]
