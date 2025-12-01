@@ -211,9 +211,6 @@ async def get_all_data(
         how="inner",
         suffixes=("_forecast", "_observation"),
     )
-    merged_df["effective_capacity_watts_observation"] = merged_df[
-        "effective_capacity_watts_observation"
-    ]
 
     # error and absolute error
     merged_df["error"] = merged_df["p50_watts"] - merged_df["value_watts"]
