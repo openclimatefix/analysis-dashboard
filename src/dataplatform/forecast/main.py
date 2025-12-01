@@ -68,7 +68,7 @@ async def async_dp_forecast_page() -> None:
             in `{forecast_seconds:.2f}` seconds. \
             Fetched `{len(all_observations_df)}` rows of observation data \
             in `{observation_seconds:.2f}` seconds. \
-            We cache data for 5 minutses to speed up repeated requests.",
+            We cache data for 5 minutes to speed up repeated requests.",
         )
 
         # add download button
