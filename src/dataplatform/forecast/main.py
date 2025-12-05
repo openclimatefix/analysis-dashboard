@@ -56,149 +56,150 @@ async def async_dp_forecast_page() -> None:
             selected_forecasters=selected_forecasters,
             selected_location=selected_location,
         )
-        merged_df = all_data_dict["merged_df"]
-        all_forecast_data_df = all_data_dict["all_forecast_data_df"]
-        all_observations_df = all_data_dict["all_observations_df"]
-        forecast_seconds = all_data_dict["forecast_seconds"]
-        observation_seconds = all_data_dict["observation_seconds"]
+    
+    merged_df = all_data_dict["merged_df"]
+    all_forecast_data_df = all_data_dict["all_forecast_data_df"]
+    all_observations_df = all_data_dict["all_observations_df"]
+    forecast_seconds = all_data_dict["forecast_seconds"]
+    observation_seconds = all_data_dict["observation_seconds"]
 
-        st.write(f"Selected Location uuid: `{selected_location.location_uuid}`.")
-        st.write(
-            f"Fetched `{len(all_forecast_data_df)}` rows of forecast data \
-            in `{forecast_seconds:.2f}` seconds. \
-            Fetched `{len(all_observations_df)}` rows of observation data \
-            in `{observation_seconds:.2f}` seconds. \
-            We cache data for 5 minutes to speed up repeated requests.",
-        )
+    st.write(f"Selected Location uuid: `{selected_location.location_uuid}`.")
+    st.write(
+        f"Fetched `{len(all_forecast_data_df)}` rows of forecast data \
+        in `{forecast_seconds:.2f}` seconds. \
+        Fetched `{len(all_observations_df)}` rows of observation data \
+        in `{observation_seconds:.2f}` seconds. \
+        We cache data for 5 minutes to speed up repeated requests.",
+    )
 
-        # add download button
-        csv = merged_df.to_csv().encode("utf-8")
-        st.download_button(
-            label="⬇️ Download data",
-            data=csv,
-            file_name=f"site_forecast_{selected_location.location_uuid}_{start_date}_{end_date}.csv",
-            mime="text/csv",
-            help="Download the forecast and generation data as a CSV file.",
-        )
+    # add download button
+    csv = merged_df.to_csv().encode("utf-8")
+    st.download_button(
+        label="⬇️ Download data",
+        data=csv,
+        file_name=f"site_forecast_{selected_location.location_uuid}_{start_date}_{end_date}.csv",
+        mime="text/csv",
+        help="Download the forecast and generation data as a CSV file.",
+    )
 
-        ### 2. Plot of raw forecast data. ###
-        st.header("Time Series Plot")
+    ### 2. Plot of raw forecast data. ###
+    st.header("Time Series Plot")
 
-        show_probabilistic = st.checkbox("Show Probabilistic Forecasts", value=True)
+    show_probabilistic = st.checkbox("Show Probabilistic Forecasts", value=True)
 
-        fig = plot_forecast_time_series(
-            all_forecast_data_df=all_forecast_data_df,
-            all_observations_df=all_observations_df,
-            forecaster_names=forecaster_names,
-            observer_names=observer_names,
-            scale_factor=scale_factor,
-            units=units,
-            selected_forecast_type=selected_forecast_type,
-            selected_forecast_horizon=selected_forecast_horizon,
-            selected_t0s=selected_t0s,
-            show_probabilistic=show_probabilistic,
-            strict_horizon_filtering=strict_horizon_filtering,
-        )
-        st.plotly_chart(fig)
+    fig = plot_forecast_time_series(
+        all_forecast_data_df=all_forecast_data_df,
+        all_observations_df=all_observations_df,
+        forecaster_names=forecaster_names,
+        observer_names=observer_names,
+        scale_factor=scale_factor,
+        units=units,
+        selected_forecast_type=selected_forecast_type,
+        selected_forecast_horizon=selected_forecast_horizon,
+        selected_t0s=selected_t0s,
+        show_probabilistic=show_probabilistic,
+        strict_horizon_filtering=strict_horizon_filtering,
+    )
+    st.plotly_chart(fig)
 
-        ### 3. Summary Accuracy Graph. ###
-        st.header("Accuracy")
+    ### 3. Summary Accuracy Graph. ###
+    st.header("Accuracy")
 
-        st.write(metrics)
+    st.write(metrics)
 
-        align_t0s = st.checkbox(
-            "Align t0s (Only common t0s across all forecaster are used)",
+    align_t0s = st.checkbox(
+        "Align t0s (Only common t0s across all forecaster are used)",
+        value=True,
+    )
+    if align_t0s:
+        merged_df = align_t0(merged_df)
+
+    st.subheader("Metric vs Forecast Horizon")
+
+    if selected_metric == "MAE":
+        show_sem = st.checkbox(
+            "Show Uncertainty",
             value=True,
+            help="On the plot below show the uncertainty bands associated with the MAE. "
+            "This is done by looking at the "
+            "Standard Error of the Mean (SEM) of the absolute errors. "
+            "We plot the 5 to 95 percentile range around the MAE.",
         )
-        if align_t0s:
-            merged_df = align_t0(merged_df)
+    else:
+        show_sem = False
 
-        st.subheader("Metric vs Forecast Horizon")
+    summary_df = make_summary_data_metric_vs_horizon_minutes(merged_df)
 
-        if selected_metric == "MAE":
-            show_sem = st.checkbox(
-                "Show Uncertainty",
-                value=True,
-                help="On the plot below show the uncertainty bands associated with the MAE. "
-                "This is done by looking at the "
-                "Standard Error of the Mean (SEM) of the absolute errors. "
-                "We plot the 5 to 95 percentile range around the MAE.",
-            )
-        else:
-            show_sem = False
+    fig2 = plot_forecast_metric_vs_horizon_minutes(
+        summary_df,
+        forecaster_names,
+        selected_metric,
+        scale_factor,
+        units,
+        show_sem,
+    )
 
-        summary_df = make_summary_data_metric_vs_horizon_minutes(merged_df)
+    st.plotly_chart(fig2)
 
-        fig2 = plot_forecast_metric_vs_horizon_minutes(
-            summary_df,
-            forecaster_names,
-            selected_metric,
-            scale_factor,
-            units,
-            show_sem,
-        )
+    csv = summary_df.to_csv().encode("utf-8")
+    st.download_button(
+        label="⬇️ Download summary",
+        data=csv,
+        file_name=f"summary_accuracy_{selected_location.location_uuid}_{start_date}_{end_date}.csv",
+        mime="text/csv",
+        help="Download the summary accuracy data as a CSV file.",
+    )
 
-        st.plotly_chart(fig2)
+    ### 4. Summary Accuracy Table, with slider to select min and max horizon mins. ###
+    st.subheader("Summary Accuracy Table")
 
-        csv = summary_df.to_csv().encode("utf-8")
-        st.download_button(
-            label="⬇️ Download summary",
-            data=csv,
-            file_name=f"summary_accuracy_{selected_location.location_uuid}_{start_date}_{end_date}.csv",
-            mime="text/csv",
-            help="Download the summary accuracy data as a CSV file.",
-        )
-
-        ### 4. Summary Accuracy Table, with slider to select min and max horizon mins. ###
-        st.subheader("Summary Accuracy Table")
-
-        # add slider to select min and max horizon mins
-        default_min_horizon = int(summary_df["horizon_mins"].min())
-        default_max_horizon = int(summary_df["horizon_mins"].max())
-        min_horizon, max_horizon = st.slider(
-            "Select Horizon Mins Range",
+    # add slider to select min and max horizon mins
+    default_min_horizon = int(summary_df["horizon_mins"].min())
+    default_max_horizon = int(summary_df["horizon_mins"].max())
+    min_horizon, max_horizon = st.slider(
+        "Select Horizon Mins Range",
+        default_min_horizon,
+        default_max_horizon,
+        (
             default_min_horizon,
             default_max_horizon,
-            (
-                default_min_horizon,
-                default_max_horizon,
-            ),
-            step=30,
-        )
+        ),
+        step=30,
+    )
 
-        summary_table_df = make_summary_data(
-            merged_df=merged_df,
-            min_horizon=min_horizon,
-            max_horizon=max_horizon,
-            scale_factor=scale_factor,
-            units=units,
-        )
+    summary_table_df = make_summary_data(
+        merged_df=merged_df,
+        min_horizon=min_horizon,
+        max_horizon=max_horizon,
+        scale_factor=scale_factor,
+        units=units,
+    )
 
-        st.dataframe(summary_table_df)
+    st.dataframe(summary_table_df)
 
-        ### 4. Daily metric plots. ###
-        st.subheader("Daily Metrics Plots")
-        st.write(
-            "Plotted below are the daily MAE for each forecaster. "
-            "This is for all forecast horizons.",
-        )
+    ### 4. Daily metric plots. ###
+    st.subheader("Daily Metrics Plots")
+    st.write(
+        "Plotted below are the daily MAE for each forecaster. "
+        "This is for all forecast horizons.",
+    )
 
-        fig3 = plot_forecast_metric_per_day(
-            merged_df=merged_df,
-            forecaster_names=forecaster_names,
-            scale_factor=scale_factor,
-            units=units,
-            selected_metric=selected_metric,
-        )
+    fig3 = plot_forecast_metric_per_day(
+        merged_df=merged_df,
+        forecaster_names=forecaster_names,
+        scale_factor=scale_factor,
+        units=units,
+        selected_metric=selected_metric,
+    )
 
-        st.plotly_chart(fig3)
+    st.plotly_chart(fig3)
 
-        st.header("Known Issues and TODOs")
+    st.header("Known Issues and TODOs")
 
-        st.write("Add more metrics")
-        st.write("Group adjust and non-adjust")
-        st.write("speed up read, use async and more caching")
-        st.write("Get page working with no observations data")
+    st.write("Add more metrics")
+    st.write("Group adjust and non-adjust")
+    st.write("speed up read, use async and more caching")
+    st.write("Get page working with no observations data")
 
 
 def make_summary_data(
