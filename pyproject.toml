@@ -33,6 +33,7 @@ dependencies = [
     "herbie-data",
     "numcodecs>=0.12,<1.0",
     "torch @ https://download.pytorch.org/whl/cpu/torch-2.3.1%2Bcpu-cp312-cp312-linux_x86_64.whl ; platform_system == 'Linux' and platform_machine == 'x86_64'",
+    "torch @ https://download.pytorch.org/whl/cpu/torch-2.3.1%2Bcpu-cp312-cp312-win_amd64.whl ; platform_system == 'Windows' and platform_machine == 'AMD64'",
     "torch @ https://download.pytorch.org/whl/cpu/torch-2.3.1-cp312-none-macosx_11_0_arm64.whl ; platform_system == 'Darwin' and platform_machine == 'arm64'",
     "matplotlib>=3.8,<4.0",
 ]
