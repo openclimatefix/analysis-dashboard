@@ -8,6 +8,9 @@ src/.streamlit/secrets.toml
 # uv
 .venv/
 .python-version
+
+# setuptools
+*.egg-info/
 __pycache__/
 *.py[cod]
 *$py.class

@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=61", "setuptools-scm>=8.0"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "analysis-dashboard"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Analysis dashboard for OCF forecasting systems"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.12.0,<3.13"
@@ -78,3 +78,6 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 pythonpath = ["src"]
+
+[tool.setuptools_scm]
+local_scheme = "no-local-version"
