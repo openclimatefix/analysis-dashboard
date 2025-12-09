@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61", "setuptools-scm>=8.0"]
+requires = ["setuptools>=61", "setuptools-git-versioning>=2.0,<3"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -79,5 +79,6 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 pythonpath = ["src"]
 
-[tool.setuptools_scm]
-local_scheme = "no-local-version"
+[tool.setuptools-git-versioning]
+enabled = true
+dirty_template = "{tag}"
