@@ -46,7 +46,7 @@ uv sync
 3. Create a login secret:
 
 ```shell
-echo "password = example" > src/.streamlit/secrets.toml
+echo 'password = "example"' > src/.streamlit/secrets.toml
 ```
 
 4. Run the app:
@@ -68,7 +68,7 @@ pip install -e .
 Create a login secret:
 
 ```shell
-echo "password = example" > src/.streamlit/secrets.toml
+echo 'password = "example"' > src/.streamlit/secrets.toml
 ```
 
 Run app:
@@ -122,7 +122,7 @@ SHOW_PVNET_GSP_SUM=0          # Set this to 1 if you want to show pvnet_gsp_sum 
 3. Create a `secrets.toml` file in the `src/.streamlit` directory and add the following line:
 
 ```shell
-echo "password = example" > src/.streamlit/secrets.toml
+echo 'password = "example"' > src/.streamlit/secrets.toml
 ```
 
 4. Build the Docker image and start the app:
