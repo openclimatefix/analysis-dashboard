@@ -1,7 +1,7 @@
 import pandas as pd
 from plotly import graph_objects as go
 
-from plots.utils import line_color, get_x_y, MAE_LIMIT_DEFAULT
+from plots.utils import get_x_y, MAE_LIMIT_DEFAULT, get_colour_from_model_name
 
 
 def make_mae_by_forecast_horizon(
@@ -19,6 +19,7 @@ def make_mae_by_forecast_horizon(
             legend=go.layout.Legend(title=go.layout.legend.Title(text="Chart Legend")),
         )
     )
+
     fig2.add_trace(
         go.Scatter(
             x=df_mae["datetime_utc"],
@@ -39,6 +40,8 @@ def make_mae_by_forecast_horizon(
             }
         )
 
+        color = get_colour_from_model_name(f"forecast_horizon_{i}")
+
         fig2.add_traces(
             [
                 go.Scatter(
@@ -46,7 +49,7 @@ def make_mae_by_forecast_horizon(
                     y=df["MAE"],
                     name=f"{forecast_horizon}-minute horizon",
                     mode="lines",
-                    line=dict(color=line_color[i%len(line_color)]),
+                    line=dict(color=color),
                 )
             ]
         )
@@ -80,6 +83,8 @@ def make_mae_forecast_horizon_group_by_forecast_horizon(
             }
         )
 
+        color = get_colour_from_model_name(f"forecast_horizon_{i}")
+
         fig.add_traces(
             [
                 go.Scatter(
@@ -87,7 +92,7 @@ def make_mae_forecast_horizon_group_by_forecast_horizon(
                     y=df_mae_horizon["forecast_horizon"],
                     name=f"{forecast_horizon}-minute horizon",
                     mode="markers",
-                    line=dict(color=line_color[i%len(line_color)]),
+                    line=dict(color=color),
                 ),
             ]
         )
@@ -149,13 +154,16 @@ def make_mae_vs_forecast_horizon_group_by_date(
         # sort results by day
         results_for_day = result[i]
         results_for_day = results_for_day.sort_values(by=["forecast_horizon"], ascending=True)
+
+        color = get_colour_from_model_name(f"forecast_date_{i}")
+
         traces.append(
             go.Scatter(
                 x=results_for_day["forecast_horizon"].sort_values(ascending=True),
                 y=results_for_day["MAE"],
                 name=results_for_day["datetime_utc"].iloc[0].strftime("%Y-%m-%d"),
                 mode="lines+markers",
-                line=dict(color=line_color[i % len(line_color)]),
+                line=dict(color=color),
             )
         )
     fig.add_traces(traces)
