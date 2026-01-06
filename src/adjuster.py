@@ -52,18 +52,13 @@ def adjuster_page():
         index="time_of_day", columns="forecast_horizon_minutes", values="value"
     )
 
-    # Define OCF colorscale
+    # Define OCF colorscale using only bold colors for full range
     colorscale = [
-        [0, '#4675c1'],
-        [0.111, '#65b0c9'],
-        [0.222, '#58b0a9'],
-        [0.333, '#ffd480'],
-        [0.444, '#faa056'],
-        [0.555, '#9cb6e1'],
-        [0.666, '#a3d6e0'],
-        [0.777, '#9ed1cd'],
-        [0.888, '#ffe9bc'],
-        [1, '#ffdabc']
+        [0, '#4675c1'],      # Bold blue (negative values)
+        [0.25, '#65b0c9'],   # Bold cyan
+        [0.5, '#58b0a9'],    # Bold teal (around zero)
+        [0.75, '#ffd480'],   # Bold yellow-orange
+        [1, '#faa056']       # Bold orange (positive values)
     ]
 
     fig = go.Figure(
