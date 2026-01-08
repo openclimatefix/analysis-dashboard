@@ -16,11 +16,17 @@ from mlmodel import mlmodel_page
 from weather_graph import weather_graph_page
 from batch_page import batch_page
 
-st.get_option("theme.primaryColor")
-st.set_page_config(layout="wide", page_title="OCF Dashboard")
+from version import get_version
+
+__version__ = get_version()
+
 
 def main_page():
-    st.text('This is the Analysis Dashboard India. Please select the page you want on the left hand side')
+    st.markdown("## OCF Dashboard")
+    st.text(
+        f"This is the Analysis Dashboard India v{__version__}. "
+        "Please select the page you want from the menu at the top of this page"
+    )
 
 
 if check_password():

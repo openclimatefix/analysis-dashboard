@@ -38,11 +38,16 @@ from cloudcasting_page import cloudcasting_page
 from adjuster import adjuster_page
 from batch_page import batch_page
 
-st.get_option("theme.primaryColor")
-st.set_page_config(layout="wide", page_title="OCF Dashboard")
+from version import get_version
+
+__version__ = get_version()
 
 
 def metric_page():
+    st.text(
+        "This is the Analysis Dashboard UK. "
+        "Please select the page you want from the menu at the top of this page"
+    )
     # Set up sidebar
     
     # Select start and end date
@@ -253,10 +258,14 @@ def metric_page():
 
 
 def main_page():
-    st.text('This is the Analysis Dashboard UK. Please select the page you want from the menu at the top of this page')
+    st.markdown("## OCF Dashboard")
+    st.text(
+        f"This is the Analysis Dashboard UK v{__version__}. "
+        "Please select the page you want from the menu at the top of this page"
+    )
 
 
-if check_password():
+if check_password():    
     pg = st.navigation([
         st.Page(main_page, title="🏠 Home", default=True),
         st.Page(metric_page, title="🔢 Metrics"),
