@@ -1,15 +1,19 @@
-.env
-myenv
-src/venv.
-shsohos
-*.pyc
-src/.streamlit/secrets.toml
+# setuptools / packaging
+*.egg-info/
 
 # uv
 .venv/
 .python-version
+uv.lock
+uv.lock.bak
+
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-uv.lock.bak
-uv.lock
+
+# Secrets
+.env
+src/.streamlit/secrets.toml
+
+*.egg-info/

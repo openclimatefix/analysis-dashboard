@@ -1,13 +1,18 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = [
+    "setuptools>=61",
+    "setuptools-git-versioning>=2.0,<3",
+]
+build-backend = "setuptools.build_meta"
+
 
 [project]
 name = "analysis-dashboard"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Analysis dashboard for OCF forecasting systems"
-readme = {file = "README.md", content-type = "text/markdown"}
-requires-python = ">=3.12.0,<3.13"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.12,<3.13"
+
 dependencies = [
     "altair==5.5.0",
     "requests==2.32.3",
@@ -18,6 +23,7 @@ dependencies = [
     "plotly==5.24.1",
     "psycopg2-binary==2.9.10",
     "SQLAlchemy==2.0.36",
+    "torch==2.3.1",
     "streamlit==1.51.0",
     "testcontainers==4.9.0",
     "uvicorn==0.34.0",
@@ -32,9 +38,6 @@ dependencies = [
     "fiona>=1.9,<2.0",
     "herbie-data",
     "numcodecs>=0.12,<1.0",
-    "torch @ https://download.pytorch.org/whl/cpu/torch-2.3.1%2Bcpu-cp312-cp312-linux_x86_64.whl ; platform_system == 'Linux' and platform_machine == 'x86_64'",
-    "torch @ https://download.pytorch.org/whl/cpu/torch-2.3.1%2Bcpu-cp312-cp312-win_amd64.whl ; platform_system == 'Windows' and platform_machine == 'AMD64'",
-    "torch @ https://download.pytorch.org/whl/cpu/torch-2.3.1-cp312-none-macosx_11_0_arm64.whl ; platform_system == 'Darwin' and platform_machine == 'arm64'",
     "matplotlib>=3.8,<4.0",
     "dp-sdk",
     "aiocache",
@@ -47,30 +50,30 @@ dev = [
     "ruff",
 ]
 
-[tool.hatch.metadata]
-allow-direct-references = true
-
-[tool.hatch.build.targets.wheel]
-packages = ["src"]
-
-[tool.hatch.build.targets.sdist]
-include = [
-    "src/",
-    "pyproject.toml",
-    "README.md",
+torch = [
+    "torch==2.3.1",
 ]
+
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+
+[tool.setuptools-git-versioning]
+enabled = true
+dirty_template = "{tag}"
+
 
 [tool.uv]
-dev-dependencies = [
-    "pytest",
-    "pytest-cov",
-    "ruff",
-]
 index-url = "https://download.pytorch.org/whl/cpu"
 extra-index-url = ["https://pypi.org/simple"]
 
 [tool.uv.sources]
 dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.13.2/dp_sdk-0.13.2-py3-none-any.whl" }
+
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

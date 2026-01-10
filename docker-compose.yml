@@ -1,29 +1,14 @@
-version: "3.8"
-
 services:
   analysis-dashboard:
     build: .
     ports:
-      - "8501:8501" # Mapping the Streamlit port
-      - "5433:5433" # Database port (if necessary)
+      - "8501:8501"
+      - "5433:5433"
     environment:
-      DB_URL: ${DB_URL:-} # If DB_URL is not provided, it will be an empty string
-      password: ${PASSWORD:-example} # Default password if not set
-      SHOW_PVNET_GSP_SUM: "0" # Change this if necessary based on your app settings
-      REGION: "india" # Can be "uk" or "india", change as needed
-      ENVIRONMENT: "development" # Can be "development" or "production"
-    volumes:
-      - ./src:/app/src # Mounting the src directory inside the container
-    command:
-      [
-        "streamlit",
-        "run",
-        "src/main.py",
-        "--server.port=8501",
-        "--browser.serverAddress=0.0.0.0",
-        "--server.address=0.0.0.0",
-        "--server.enableCORS=False"
-      ]
+      DB_URL: ${DB_URL:-}
+      PASSWORD: ${PASSWORD:-example}
+      AUTH0_CLIENT_ID: ${AUTH0_CLIENT_ID:-}
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN:-}
     networks:
       - analysis-net
 

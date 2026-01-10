@@ -16,10 +16,7 @@ from mlmodel import mlmodel_page
 from weather_graph import weather_graph_page
 from batch_page import batch_page
 
-from version import get_version
-
-__version__ = get_version()
-
+from analysis_dashboard import __version__
 
 def main_page():
     st.markdown("## OCF Dashboard")

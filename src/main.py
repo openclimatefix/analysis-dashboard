@@ -38,9 +38,7 @@ from cloudcasting_page import cloudcasting_page
 from adjuster import adjuster_page
 from batch_page import batch_page
 
-from version import get_version
-
-__version__ = get_version()
+from analysis_dashboard import __version__
 
 
 def metric_page():
@@ -257,12 +255,15 @@ def metric_page():
     make_raw_table(df_mae, df_rmse)
 
 
+from analysis_dashboard import __version__
+
 def main_page():
     st.markdown("## OCF Dashboard")
     st.text(
         f"This is the Analysis Dashboard UK v{__version__}. "
         "Please select the page you want from the menu at the top of this page"
     )
+
 
 
 if check_password():    
