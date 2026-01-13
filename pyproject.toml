@@ -38,6 +38,10 @@ dependencies = [
     "matplotlib>=3.8,<4.0",
     "dp-sdk",
     "aiocache",
+    "grpcio>=1.50.0",
+    "grpcio-tools>=1.50.0", 
+    "grpc-requests>=0.1.17",
+    "betterproto>=2.0.0b7",
 ]
 
 [project.optional-dependencies]
