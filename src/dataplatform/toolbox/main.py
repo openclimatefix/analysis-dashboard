@@ -19,8 +19,13 @@ from grpc_requests import Client
 
 
 def get_data_platform_url():
-    """Get the data platform URL from environment."""
-    return os.environ.get("DATA_PLATFORM_URL", "localhost:50051")
+    """
+    Get the gRPC endpoint for the Data Platform server from
+    environment variables DATA_PLATFORM_HOST and DATA_PLATFORM_PORT.
+    """
+    host = os.environ.get("DATA_PLATFORM_HOST", "localhost")
+    port = os.environ.get("DATA_PLATFORM_PORT", "50051")
+    return f"{host}:{port}"
 
 
 def get_admin_client():
