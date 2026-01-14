@@ -37,6 +37,7 @@ from satellite_page import satellite_page
 from cloudcasting_page import cloudcasting_page
 from adjuster import adjuster_page
 from batch_page import batch_page
+from dataplatform.toolbox.main import dataplatform_toolbox_page
 
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
@@ -270,5 +271,6 @@ if check_password():
         st.Page(satellite_page, title="🛰️ Satellite"),
         st.Page(cloudcasting_page, title="☁️ Cloudcasting"),
         st.Page(adjuster_page, title="🔧 Adjuster"),
-        st.Page(batch_page, title="👀 Batch Visualisation Page")], position="top")
+        st.Page(batch_page, title="👀 Batch Visualisation Page"),
+        st.Page(dataplatform_toolbox_page, title="🛠️ Data Platform Toolbox")], position="top")
     pg.run()
