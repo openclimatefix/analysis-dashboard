@@ -1,7 +1,7 @@
 """User-Organisation relationship management section for the Data Platform Toolbox."""
 
 import streamlit as st
-from .clients import get_admin_client
+from dataplatform.toolbox.clients import get_admin_client
 
 import grpc
 

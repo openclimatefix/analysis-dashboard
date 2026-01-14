@@ -2,7 +2,7 @@
 
 import streamlit as st
 import json
-from .clients import get_admin_client
+from dataplatform.toolbox.clients import get_admin_client
 
 import grpc
 

@@ -3,7 +3,7 @@
 import streamlit as st
 import pandas as pd
 import json
-from .clients import get_data_client
+from dataplatform.toolbox.clients import get_data_client
 import grpc
 
 def locations_section():

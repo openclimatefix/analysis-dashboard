@@ -1,10 +1,10 @@
 """This module contains the data platform toolbox for the OCF dashboard"""
 import streamlit as st
-from .organisation import organisation_section
-from .users import users_section
-from .user_organisation import user_organisation_section
-from .location import locations_section
-from .policy import policies_section
+from dataplatform.toolbox.organisation import organisation_section
+from dataplatform.toolbox.users import users_section
+from dataplatform.toolbox.user_organisation import user_organisation_section
+from dataplatform.toolbox.location import locations_section
+from dataplatform.toolbox.policy import policies_section
 
 # Color scheme (matching existing toolbox)
 # teal:  #63BCAF (Get operations)
@@ -43,3 +43,5 @@ def dataplatform_toolbox_page():
     
     with tab5:
         policies_section()
+
+dataplatform_toolbox_page()
