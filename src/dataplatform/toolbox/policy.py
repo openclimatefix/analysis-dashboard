@@ -1,0 +1,188 @@
+"""Policy management section for the Data Platform Toolbox."""
+
+import streamlit as st
+from .clients import get_admin_client
+
+import grpc
+
+def policies_section():
+    """Policy management section."""
+    
+    admin_client = get_admin_client()
+    
+    # Permission mappings
+    PERMISSIONS = {
+        "READ": 1,   # PERMISSION_READ
+        "WRITE": 2,  # PERMISSION_WRITE
+    }
+    
+    ENERGY_SOURCES = {
+        "SOLAR": 1,  # ENERGY_SOURCE_SOLAR
+        "WIND": 2,   # ENERGY_SOURCE_WIND
+    }
+    
+    # Create Location Policy Group
+    st.markdown(
+        '<h2 style="color:#7bcdf3;font-size: 32px;">Create Location Policy Group</h2>',
+        unsafe_allow_html=True,
+    )
+    with st.expander("Create new policy group"):
+        new_policy_group_name = st.text_input("Policy Group Name", key="create_policy_group_name")
+        if st.button("Create Policy Group"):
+            if not admin_client:
+                st.error("❌ Could not connect to Data Platform")
+            elif not new_policy_group_name.strip():
+                st.warning("⚠️ Please enter a policy group name")
+            else:
+                try:
+                    response = admin_client.CreateLocationPolicyGroup({
+                        "name": new_policy_group_name
+                    })
+                    st.success(f"✅ Policy Group '{new_policy_group_name}' created!")
+                    st.write(response)
+                except grpc.RpcError as e:
+                    st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
+                except Exception as e:
+                    st.error(f"❌ Error creating policy group: {str(e)}")
+
+    
+    # Get Location Policy Group Details
+    st.markdown(
+        '<h2 style="color:#63BCAF;font-size: 32px;">Get Policy Group Details</h2>',
+        unsafe_allow_html=True,
+    )
+    policy_group_name = st.text_input("Policy Group Name", key="get_policy_group_name")
+    if st.button("Get Policy Group Details"):
+        if not admin_client:
+            st.error("❌ Could not connect to Data Platform")
+        elif not policy_group_name.strip():
+            st.warning("⚠️ Please enter a policy group name")
+        else:
+            try:
+                response = admin_client.GetLocationPolicyGroup({
+                    "location_policy_group_name": policy_group_name
+                })
+                st.success(f"✅ Found policy group: {policy_group_name}")
+                st.write(response)
+                    
+            except grpc.RpcError as e:
+                st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
+            except Exception as e:
+                st.error(f"❌ Error fetching policy group: {str(e)}")
+            
+    
+    # Add Location Policies to Group
+    st.markdown(
+        '<h2 style="color:#ffd053;font-size:32px;">Add Location Policies to Group</h2>',
+        unsafe_allow_html=True,
+    )
+    with st.expander("Add policies to group"):
+        add_policy_group = st.text_input("Policy Group Name", key="add_policy_group")
+        add_location_id = st.text_input("Location UUID", key="add_policy_location")
+        add_energy_source = st.selectbox("Energy Source", ["SOLAR", "WIND"], key="add_policy_energy")
+        add_permission = st.selectbox("Permission", ["READ", "WRITE"], key="add_policy_permission")
+        
+        if st.button("Add Policy to Group"):
+            if not admin_client:
+                st.error("❌ Could not connect to Data Platform")
+            elif not add_policy_group.strip() or not add_location_id.strip():
+                st.warning("⚠️ Please fill in all required fields")
+            else:
+                try:
+                    admin_client.AddLocationPoliciesToGroup({
+                        "location_policy_group_name": add_policy_group,
+                        "location_policies": [{
+                            "location_id": add_location_id,
+                            "energy_source": ENERGY_SOURCES[add_energy_source],
+                            "permission": PERMISSIONS[add_permission]
+                        }]
+                    })
+                    st.success(f"✅ Policy added to group '{add_policy_group}'!")
+                except grpc.RpcError as e:
+                    st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
+                except Exception as e:
+                    st.error(f"❌ Error adding policy: {str(e)}")
+        
+    
+    # Remove Location Policies from Group
+    st.markdown(
+        '<h2 style="color:#E63946;font-size:32px;">Remove Location Policies from Group</h2>',
+        unsafe_allow_html=True,
+    )
+    with st.expander("Remove policies from group"):
+        rem_policy_group = st.text_input("Policy Group Name", key="rem_policy_group")
+        rem_location_id = st.text_input("Location UUID", key="rem_policy_location")
+        rem_energy_source = st.selectbox("Energy Source", ["SOLAR", "WIND"], key="rem_policy_energy")
+        rem_permission = st.selectbox("Permission", ["READ", "WRITE"], key="rem_policy_permission")
+        
+        if st.button("Remove Policy from Group"):
+            if not admin_client:
+                st.error("❌ Could not connect to Data Platform")
+            elif not rem_policy_group.strip() or not rem_location_id.strip():
+                st.warning("⚠️ Please fill in all required fields")
+            else:
+                try:
+                    admin_client.RemoveLocationPoliciesFromGroup({
+                        "location_policy_group_name": rem_policy_group,
+                        "location_policies": [{
+                            "location_id": rem_location_id,
+                            "energy_source": ENERGY_SOURCES[rem_energy_source],
+                            "permission": PERMISSIONS[rem_permission]
+                        }]
+                    })
+                    st.success(f"✅ Policy removed from group '{rem_policy_group}'!")
+                except grpc.RpcError as e:
+                    st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
+                except Exception as e:
+                    st.error(f"❌ Error removing policy: {str(e)}")
+
+                
+    
+    # Add Policy Group to Organisation
+    st.markdown(
+        '<h2 style="color:#ffd053;font-size:32px;">Add Policy Group to Organisation</h2>',
+        unsafe_allow_html=True,
+    )
+    add_pg_org = st.text_input("Organisation Name", key="add_pg_org")
+    add_pg_name = st.text_input("Policy Group Name", key="add_pg_name")
+    if st.button("Add Policy Group to Organisation"):
+        if not admin_client:
+            st.error("❌ Could not connect to Data Platform")
+        elif not add_pg_org.strip() or not add_pg_name.strip():
+            st.warning("⚠️ Please fill in all fields")
+        else:
+            try:
+                admin_client.AddLocationPolicyGroupToOrganisation({
+                    "org_name": add_pg_org,
+                    "location_policy_group_name": add_pg_name
+                })
+                st.success(f"✅ Policy group '{add_pg_name}' added to organisation '{add_pg_org}'!")
+            except grpc.RpcError as e:
+                st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
+            except Exception as e:
+                st.error(f"❌ Error adding policy group to organisation: {str(e)}")
+
+    
+    # Remove Policy Group from Organisation
+    st.markdown(
+        '<h2 style="color:#E63946;font-size:32px;">Remove Policy Group from Organisation</h2>',
+        unsafe_allow_html=True,
+    )
+    rem_pg_org = st.text_input("Organisation Name", key="rem_pg_org")
+    rem_pg_name = st.text_input("Policy Group Name", key="rem_pg_name")
+    if st.button("Remove Policy Group from Organisation"):
+        if not rem_pg_org.strip() or not rem_pg_name.strip():
+            st.warning("⚠️ Please fill in all fields")
+        elif not admin_client:
+            st.error("❌ Could not connect to Data Platform")
+        else:
+            try:
+                admin_client.RemoveLocationPolicyGroupFromOrganisation({
+                    "org_name": rem_pg_org,
+                    "location_policy_group_name": rem_pg_name
+                })
+                st.success(f"✅ Policy group '{rem_pg_name}' removed from organisation '{rem_pg_org}'!")
+            except grpc.RpcError as e:
+                st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
+            except Exception as e:
+                st.error(f"❌ Error removing policy group from organisation: {str(e)}")
