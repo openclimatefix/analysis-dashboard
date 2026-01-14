@@ -127,8 +127,6 @@ def organisation_section():
             help="Enter valid JSON for organisation metadata"
         )
 
-        # lot of if statements earlier
-
         if st.button("Create Organisation") and admin_client:
             if not admin_client:
                 st.error("❌ Could not connect to Data Platform")
@@ -138,9 +136,6 @@ def organisation_section():
                 try:
                     # Parse metadata JSON
                     metadata = json.loads(metadata_json) if metadata_json.strip() else {}
-                    # s = Struct()
-                    # s.update({"key": "value"})
-
                     # s.update(metadata)
                     # metadata=Struct().from_pydict(metadata),
                     
@@ -162,9 +157,6 @@ def organisation_section():
                     })
 
                     st.success(f"✅ Organisation '{new_org_name}' created successfully!")
-                    st.write("**Organisation ID:**", response.get("org_id", "N/A"))
-                    st.write("**Organisation Name:**", response.get("org_name", "N/A"))
-
                     st.write(response)
                     
                 except json.JSONDecodeError:
@@ -226,36 +218,7 @@ def users_section():
             try:
                 response = admin_client.GetUser({"oauth_id": oauth_id})
                 st.success(f"✅ Found user: {oauth_id}")
-                
-                # Display user details
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.write("**User ID:**", response.get("user_id", "N/A"))
-                    st.write("**OAuth ID:**", response.get("oauth_id", "N/A"))
-                    st.write("**Organisation:**", response.get("organisation", "N/A"))
-                    created_at = response.get("created_at", {})
-                    if created_at:
-                        # Handle both ISO string and dict with seconds
-                        if isinstance(created_at, str):
-                            st.write("**Created At:**", created_at)
-                        elif isinstance(created_at, dict):
-                            st.write("**Created At:**", datetime.fromtimestamp(
-                                created_at.get("seconds", 0)
-                            ).strftime("%Y-%m-%d %H:%M:%S"))
-                with col2:
-                    st.write("**Location Policy Groups:**")
-                    policy_groups = response.get("location_policy_groups", [])
-                    if policy_groups:
-                        for pg in policy_groups:
-                            st.write(f"  - {pg}")
-                    else:
-                        st.write("  None")
-                
-                # Display metadata
-                metadata = response.get("metadata", {})
-                if metadata:
-                    st.write("**Metadata:**")
-                    st.json(metadata)
+                st.write(response)
                     
             except grpc.RpcError as e:
                 st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
@@ -295,8 +258,6 @@ def users_section():
                     })
                     
                     st.success(f"✅ User '{new_oauth_id}' created in organisation '{user_org}'!")
-                    st.write("**User ID:**", response.get("user_id", "N/A"))
-                    st.write("**OAuth ID:**", response.get("oauth_id", "N/A"))
                     st.write(response)
                     
                 except json.JSONDecodeError:
@@ -518,41 +479,7 @@ def locations_section():
                     "include_geometry": include_geometry
                 })
                 st.success(f"✅ Found location: {loc_uuid}")
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.write("**Location UUID:**", response.get("location_uuid", "N/A"))
-                    st.write("**Location Name:**", response.get("location_name", "N/A"))
-                    energy = response.get("energy_source", 0)
-                    st.write("**Energy Source:**", "SOLAR" if energy == 1 else "WIND" if energy == 2 else "Unknown")
-                    loc_type = response.get("location_type", 0)
-                    st.write("**Location Type:**", ["Unknown", "SITE", "GSP", "REGION", "COUNTRY"][loc_type])
-                
-                with col2:
-                    capacity = response.get('effective_capacity_watts', 0)
-                    # Handle case where capacity might be a string
-                    if isinstance(capacity, str):
-                        try:
-                            capacity = int(capacity)
-                        except ValueError:
-                            capacity = 0
-                    st.write("**Effective Capacity:**", f"{capacity:,} W")
-                    latlng = response.get("latlng", {})
-                    st.write("**Latitude:**", latlng.get("latitude", "N/A"))
-                    st.write("**Longitude:**", latlng.get("longitude", "N/A"))
-                
-                if include_geometry:
-                    geometry = response.get("geometry_wkt", "")
-                    if geometry:
-                        st.write("**Geometry (WKT):**")
-                        st.code(geometry)
-                
-                # Display metadata
-                metadata = response.get("metadata", {})
-                if metadata:
-                    st.write("**Metadata:**")
-                    st.json(metadata)
-                    
+                st.write(response)
             except grpc.RpcError as e:
                 st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
             except Exception as e:
@@ -606,7 +533,6 @@ def locations_section():
                         "metadata": metadata
                     })
                     st.success(f"✅ Location '{loc_name}' created successfully!")
-                    st.write("**Location UUID:**", response.get("location_uuid", "N/A"))
                     st.write(response)
                     
                 except json.JSONDecodeError:
@@ -652,8 +578,7 @@ def policies_section():
                         "name": new_policy_group_name
                     })
                     st.success(f"✅ Policy Group '{new_policy_group_name}' created!")
-                    st.write("**Policy Group ID:**", response.get("location_policy_group_id", "N/A"))
-                    st.write("**Name:**", response.get("name", "N/A"))
+                    st.write(response)
                 except grpc.RpcError as e:
                     st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
                 except Exception as e:
@@ -677,25 +602,7 @@ def policies_section():
                     "location_policy_group_name": policy_group_name
                 })
                 st.success(f"✅ Found policy group: {policy_group_name}")
-                
-                st.write("**Policy Group ID:**", response.get("location_policy_group_id", "N/A"))
-                st.write("**Name:**", response.get("name", "N/A"))
-                
-                # Display location policies
-                policies = response.get("location_policies", [])
-                if policies:
-                    st.write("**Location Policies:**")
-                    policy_data = []
-                    for policy in policies:
-                        policy_data.append({
-                            "Location ID": policy.get("location_id", "N/A"),
-                            "Energy Source": "SOLAR" if policy.get("energy_source") == 1 else "WIND",
-                            "Permission": "READ" if policy.get("permission") == 1 else "WRITE",
-                        })
-                    df = pd.DataFrame(policy_data)
-                    st.dataframe(df, use_container_width=True)
-                else:
-                    st.write("**Location Policies:** None")
+                st.write(response)
                     
             except grpc.RpcError as e:
                 st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
