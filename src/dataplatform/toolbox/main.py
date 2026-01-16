@@ -44,4 +44,5 @@ def dataplatform_toolbox_page():
     with tab5:
         policies_section()
 
-dataplatform_toolbox_page()
+if __name__ == "__main__":
+    dataplatform_toolbox_page()

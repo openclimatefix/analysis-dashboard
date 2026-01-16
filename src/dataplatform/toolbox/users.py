@@ -18,7 +18,7 @@ def users_section():
         unsafe_allow_html=True,
     )
     oauth_id = st.text_input("User OAuth ID", key="get_user_oauth")
-    if st.button("Get User Details"):
+    if st.button("Get User Details", key="get_user_button"):
         if not admin_client:
             st.error("❌ Could not connect to Data Platform")
         elif not oauth_id.strip():
@@ -50,7 +50,7 @@ def users_section():
             key="create_user_metadata",
             help="Enter valid JSON for user metadata"
         )
-        if st.button("Create User"):
+        if st.button("Create User", key="create_user_button"):
             if not admin_client:
                 st.error("❌ Could not connect to Data Platform")
             elif not new_oauth_id.strip() or not user_org.strip():
@@ -88,7 +88,7 @@ def users_section():
                                     help="Enter the UUID of the user (not OAuth ID)")
         st.warning("⚠️ This action cannot be undone!")
         confirm_delete_user = st.checkbox("I understand this will permanently delete the user", key="confirm_delete_user")
-        if st.button("Delete User"):
+        if st.button("Delete User", key="delete_user_button"):
             if not admin_client:
                 st.error("❌ Could not connect to Data Platform")
             elif not del_user_id.strip():

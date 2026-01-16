@@ -17,7 +17,7 @@ def user_organisation_section():
     )
     add_org = st.text_input("Organisation Name", key="add_user_org")
     add_user_oauth = st.text_input("User OAuth ID", key="add_user_oauth")
-    if st.button("Add User to Organisation"):
+    if st.button("Add User to Organisation", key="add_user_to_org_button"):
         if not admin_client:
             st.error("❌ Could not connect to Data Platform")
         elif not add_org.strip() or not add_user_oauth.strip():
@@ -43,7 +43,7 @@ def user_organisation_section():
     )
     rem_org = st.text_input("Organisation Name", key="rem_user_org")
     rem_user_oauth = st.text_input("User OAuth ID", key="rem_user_oauth")
-    if st.button("Remove User from Organisation"):
+    if st.button("Remove User from Organisation", key="remove_user_button"):
         if not admin_client:
             st.error("❌ Could not connect to Data Platform")
         elif not rem_org.strip() or not rem_user_oauth.strip():

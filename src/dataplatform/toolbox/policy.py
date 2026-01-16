@@ -28,7 +28,7 @@ def policies_section():
     )
     with st.expander("Create new policy group"):
         new_policy_group_name = st.text_input("Policy Group Name", key="create_policy_group_name")
-        if st.button("Create Policy Group"):
+        if st.button("Create Policy Group", key="create_policy_group_button"):
             if not admin_client:
                 st.error("❌ Could not connect to Data Platform")
             elif not new_policy_group_name.strip():
@@ -52,7 +52,7 @@ def policies_section():
         unsafe_allow_html=True,
     )
     policy_group_name = st.text_input("Policy Group Name", key="get_policy_group_name")
-    if st.button("Get Policy Group Details"):
+    if st.button("Get Policy Group Details", key="get_policy_group_button"):
         if not admin_client:
             st.error("❌ Could not connect to Data Platform")
         elif not policy_group_name.strip():
@@ -82,7 +82,7 @@ def policies_section():
         add_energy_source = st.selectbox("Energy Source", ["SOLAR", "WIND"], key="add_policy_energy")
         add_permission = st.selectbox("Permission", ["READ", "WRITE"], key="add_policy_permission")
         
-        if st.button("Add Policy to Group"):
+        if st.button("Add Policy to Group", key="add_policy_button"):
             if not admin_client:
                 st.error("❌ Could not connect to Data Platform")
             elif not add_policy_group.strip() or not add_location_id.strip():
@@ -115,7 +115,7 @@ def policies_section():
         rem_energy_source = st.selectbox("Energy Source", ["SOLAR", "WIND"], key="rem_policy_energy")
         rem_permission = st.selectbox("Permission", ["READ", "WRITE"], key="rem_policy_permission")
         
-        if st.button("Remove Policy from Group"):
+        if st.button("Remove Policy from Group", key="remove_policy_button"):
             if not admin_client:
                 st.error("❌ Could not connect to Data Platform")
             elif not rem_policy_group.strip() or not rem_location_id.strip():
@@ -145,7 +145,7 @@ def policies_section():
     )
     add_pg_org = st.text_input("Organisation Name", key="add_pg_org")
     add_pg_name = st.text_input("Policy Group Name", key="add_pg_name")
-    if st.button("Add Policy Group to Organisation"):
+    if st.button("Add Policy Group to Organisation", key="add_pg_to_org_button"):
         if not admin_client:
             st.error("❌ Could not connect to Data Platform")
         elif not add_pg_org.strip() or not add_pg_name.strip():
@@ -170,7 +170,7 @@ def policies_section():
     )
     rem_pg_org = st.text_input("Organisation Name", key="rem_pg_org")
     rem_pg_name = st.text_input("Policy Group Name", key="rem_pg_name")
-    if st.button("Remove Policy Group from Organisation"):
+    if st.button("Remove Policy Group from Organisation", key="remove_pg_from_org_button"):
         if not rem_pg_org.strip() or not rem_pg_name.strip():
             st.warning("⚠️ Please fill in all fields")
         elif not admin_client:

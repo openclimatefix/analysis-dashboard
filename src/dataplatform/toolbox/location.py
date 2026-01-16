@@ -47,7 +47,7 @@ def locations_section():
             key="list_loc_user",
             help="Leave empty to show all locations"
         )
-    if st.button("List Locations"):
+    if st.button("List Locations", key="list_locations_button"):
         if not data_client:
             st.error("❌ Could not connect to Data Platform")
         else:
@@ -116,7 +116,7 @@ def locations_section():
     loc_uuid = st.text_input("Location UUID", key="get_loc_uuid")
     loc_energy = st.selectbox("Energy Source", ["SOLAR", "WIND"], key="get_loc_energy")
     include_geometry = st.checkbox("Include Geometry", key="get_loc_geom")
-    if st.button("Get Location Details"):
+    if st.button("Get Location Details", key="get_location_button"):
         if not loc_uuid.strip():
             st.warning("⚠️ Please enter a location UUID")
         elif not data_client:
@@ -164,7 +164,7 @@ def locations_section():
             help="Enter valid JSON for location metadata"
         )
         
-        if st.button("Create Location"):
+        if st.button("Create Location", key="create_location_button"):
             if not data_client:
                 st.error("❌ Could not connect to Data Platform")
             elif not loc_name.strip() or not geometry_wkt.strip() or capacity_watts <= 0:

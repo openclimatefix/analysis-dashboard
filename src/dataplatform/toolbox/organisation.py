@@ -18,7 +18,7 @@ def organisation_section():
         unsafe_allow_html=True,
     )
     org_name = st.text_input("Organisation Name", key="get_org_name")
-    if st.button("Get Organisation Details"):
+    if st.button("Get Organisation Details", key="get_org_button"):
         if not admin_client:
             st.error("❌ Could not connect to Data Platform")
         elif not org_name.strip():
@@ -53,7 +53,7 @@ def organisation_section():
             help="Enter valid JSON for organisation metadata"
         )
 
-        if st.button("Create Organisation") and admin_client:
+        if st.button("Create Organisation", key="create_org_button") and admin_client:
             if not admin_client:
                 st.error("❌ Could not connect to Data Platform")
             elif not new_org_name.strip():
@@ -89,7 +89,7 @@ def organisation_section():
         del_org_name = st.text_input("Organisation Name to Delete", key="delete_org_name")
         st.warning("⚠️ This action cannot be undone!")
         confirm_delete = st.checkbox("I understand this will permanently delete the organisation", key="confirm_delete_org")
-        if st.button("Delete Organisation"):
+        if st.button("Delete Organisation", key="delete_org_button"):
             if not admin_client:
                 st.error("❌ Could not connect to Data Platform")
             elif not del_org_name.strip():
