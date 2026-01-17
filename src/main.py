@@ -38,7 +38,7 @@ from cloudcasting_page import cloudcasting_page
 from adjuster import adjuster_page
 from batch_page import batch_page
 
-from analysis_dashboard import __version__
+from importlib.metadata import version, PackageNotFoundError
 
 
 def metric_page():
@@ -258,9 +258,14 @@ def metric_page():
 from analysis_dashboard import __version__
 
 def main_page():
+    try:
+        app_version = version("analysis-dashboard")
+    except PackageNotFoundError:
+        app_version = "unknown"
+
     st.markdown("## OCF Dashboard")
     st.text(
-        f"This is the Analysis Dashboard UK v{__version__}. "
+        f"This is the Analysis Dashboard UK v{app_version}. "
         "Please select the page you want from the menu at the top of this page"
     )
 
