@@ -41,7 +41,7 @@ from batch_page import batch_page
 # We read the version directly from installed package metadata.
 # This avoids maintaining a separate version file or package and
 # ensures the UI always reflects the current git tag (via dynamic versioning).
-from analysis_dashboard import __version__
+from importlib.metadata import version, PackageNotFoundError
 
 
 def metric_page():
@@ -260,10 +260,14 @@ def metric_page():
 
 
 def main_page():
-     # Fetch version from package metadata so it always matches the git tag
+    try:
+        app_version = version("analysis-dashboard")
+    except PackageNotFoundError:
+        app_version = "unknown"
+
     st.markdown("## OCF Dashboard")
     st.text(
-        f"This is the Analysis Dashboard UK v{__version__}. "
+        f"This is the Analysis Dashboard UK v{app_version}. "
         "Please select the page you want from the menu at the top of this page"
     )
 
