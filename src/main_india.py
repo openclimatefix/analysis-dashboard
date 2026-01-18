@@ -16,17 +16,12 @@ from mlmodel import mlmodel_page
 from weather_graph import weather_graph_page
 from batch_page import batch_page
 
-from importlib.metadata import version, PackageNotFoundError
+from analysis_dashboard import __version__
 
 def main_page():
-    try:
-        app_version = version("analysis-dashboard")
-    except PackageNotFoundError:
-        app_version = "unknown"
-
     st.markdown("## OCF Dashboard")
     st.text(
-        f"This is the Analysis Dashboard India v{app_version}. "
+        f"This is the Analysis Dashboard India v{__version__}. "
         "Please select the page you want from the menu at the top of this page"
     )
 

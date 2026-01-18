@@ -38,7 +38,10 @@ from cloudcasting_page import cloudcasting_page
 from adjuster import adjuster_page
 from batch_page import batch_page
 
-from importlib.metadata import version, PackageNotFoundError
+# We read the version directly from installed package metadata.
+# This avoids maintaining a separate version file or package and
+# ensures the UI always reflects the current git tag (via dynamic versioning).
+from analysis_dashboard import __version__
 
 
 def metric_page():
@@ -255,17 +258,12 @@ def metric_page():
     make_raw_table(df_mae, df_rmse)
 
 
-from analysis_dashboard import __version__
 
 def main_page():
-    try:
-        app_version = version("analysis-dashboard")
-    except PackageNotFoundError:
-        app_version = "unknown"
-
+     # Fetch version from package metadata so it always matches the git tag
     st.markdown("## OCF Dashboard")
     st.text(
-        f"This is the Analysis Dashboard UK v{app_version}. "
+        f"This is the Analysis Dashboard UK v{__version__}. "
         "Please select the page you want from the menu at the top of this page"
     )
 
