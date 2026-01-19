@@ -41,9 +41,9 @@ def user_organisation_section():
         '<h2 style="color:#E63946;font-size:32px;">Remove User from Organisation</h2>',
         unsafe_allow_html=True,
     )
-    rem_org = st.text_input("Organisation Name", key="rem_user_org")
-    rem_user_oauth = st.text_input("User OAuth ID", key="rem_user_oauth")
-    if st.button("Remove User from Organisation", key="remove_user_button"):
+    rem_org = st.text_input("Organisation Name", key="remove_user_org")
+    rem_user_oauth = st.text_input("User OAuth ID", key="remove_user_oauth")
+    if st.button("Remove User from Organisation", key="remove_user_from_org_button"):
         if not admin_client:
             st.error("❌ Could not connect to Data Platform")
         elif not rem_org.strip() or not rem_user_oauth.strip():

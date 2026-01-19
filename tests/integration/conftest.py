@@ -1,7 +1,6 @@
 import time
 from testcontainers.postgres import PostgresContainer
 from testcontainers.core.container import DockerContainer
-import pytest
 import pytest_asyncio
 from importlib.metadata import version
 import os
@@ -10,7 +9,7 @@ from dp_sdk.ocf import dp
 from grpclib.client import Channel
 
 @pytest_asyncio.fixture(scope="session")
-async def client():
+async def dp_channel():
     """
     Fixture to spin up a PostgreSQL container for the entire test session.
     This fixture uses `testcontainers` to start a fresh PostgreSQL container and provides
@@ -51,6 +50,16 @@ async def client():
             os.environ["DATA_PLATFORM_PORT"] = str(port)            
             
             channel = Channel(host=host, port=port)
-            client =  dp.DataPlatformAdministrationServiceStub(channel)
-            yield client
+            # client =  dp.DataPlatformAdministrationServiceStub(channel)
+            # data_client = dp.DataPlatformDataServiceStub(channel)
+            # yield client, data_client
+            yield channel
             channel.close()
+
+@pytest_asyncio.fixture(scope="session")
+async def admin_client(dp_channel):
+    return dp.DataPlatformAdministrationServiceStub(dp_channel)
+
+@pytest_asyncio.fixture(scope="session")
+async def data_client(dp_channel):
+    return dp.DataPlatformDataServiceStub(dp_channel)

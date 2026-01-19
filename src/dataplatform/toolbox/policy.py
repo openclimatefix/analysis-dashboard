@@ -2,13 +2,14 @@
 
 import streamlit as st
 from dataplatform.toolbox.clients import get_admin_client
-
+from dataplatform.toolbox.clients import get_data_client
 import grpc
 
 def policies_section():
     """Policy management section."""
     
     admin_client = get_admin_client()
+    data_client = get_data_client()
     
     # Permission mappings
     PERMISSIONS = {
@@ -72,13 +73,41 @@ def policies_section():
             
     
     # Add Location Policies to Group
+
+    ## Add a feature to display a dropdown with all locations(uuid and name)
     st.markdown(
         '<h2 style="color:#ffd053;font-size:32px;">Add Location Policies to Group</h2>',
         unsafe_allow_html=True,
     )
     with st.expander("Add policies to group"):
         add_policy_group = st.text_input("Policy Group Name", key="add_policy_group")
-        add_location_id = st.text_input("Location UUID", key="add_policy_location")
+
+        data_client = get_data_client()
+        locations = []
+
+        if data_client:
+            try:
+                resp = data_client.ListLocations({})
+                locations = resp.get("locations", [])
+            except Exception as e:
+                st.error(f"❌ Failed to fetch locations: {e}")
+
+        if not locations:
+            st.info("ℹ️ No locations found. Please create a location first.")
+
+        location_options = {
+            f"{loc.get('location_name', 'N/A')} — {loc.get('location_uuid', '')}": loc.get("location_uuid")
+            for loc in locations
+        }
+
+        selected_label = st.selectbox(
+            "Location",
+            options=list(location_options.keys()),
+            key="add_policy_location"
+        )
+
+        add_location_id = location_options.get(selected_label)
+
         add_energy_source = st.selectbox("Energy Source", ["SOLAR", "WIND"], key="add_policy_energy")
         add_permission = st.selectbox("Permission", ["READ", "WRITE"], key="add_policy_permission")
         
@@ -111,7 +140,32 @@ def policies_section():
     )
     with st.expander("Remove policies from group"):
         rem_policy_group = st.text_input("Policy Group Name", key="rem_policy_group")
-        rem_location_id = st.text_input("Location UUID", key="rem_policy_location")
+
+        data_client = get_data_client()
+        locations = []
+
+        if data_client:
+            try:
+                resp = data_client.ListLocations({})
+                locations = resp.get("locations", [])
+            except Exception as e:
+                st.error(f"❌ Failed to fetch locations: {e}")
+
+        if not locations:
+            st.info("ℹ️ No locations found. Please create a location first.")
+
+        location_options = {
+            f"{loc.get('location_name', 'N/A')} — {loc.get('location_uuid', '')}": loc.get("location_uuid")
+            for loc in locations
+        }
+
+        selected_label = st.selectbox(
+            "Location",
+            options=list(location_options.keys()),
+            key="rem_policy_location"
+        )
+
+        rem_location_id = location_options.get(selected_label)
         rem_energy_source = st.selectbox("Energy Source", ["SOLAR", "WIND"], key="rem_policy_energy")
         rem_permission = st.selectbox("Permission", ["READ", "WRITE"], key="rem_policy_permission")
         
