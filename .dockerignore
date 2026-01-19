@@ -1,0 +1,12 @@
+.gitignore
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+.env.*
+.vscode
+.idea
+node_modules
+dist
+build

@@ -15,12 +15,24 @@ from weather_forecast import weather_forecast_page
 from mlmodel import mlmodel_page
 from weather_graph import weather_graph_page
 from batch_page import batch_page
+from importlib.metadata import version, PackageNotFoundError
 
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
 
+
 def main_page():
-    st.text('This is the Analysis Dashboard India. Please select the page you want on the left hand side')
+    try:
+        app_version = version("analysis-dashboard")
+    except PackageNotFoundError:
+        app_version = "unknown"
+
+    st.markdown("## OCF Dashboard")
+    st.text(
+        f"This is the Analysis Dashboard India v{app_version}. "
+        "Please select the page you want from the menu at the top of this page"
+    )
+
 
 
 if check_password():
