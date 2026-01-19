@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 import streamlit as st
-from importlib.metadata import version, PackageNotFoundError
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.metric import MetricValue
 
@@ -42,59 +41,46 @@ from cloudcasting_page import cloudcasting_page
 from adjuster import adjuster_page
 from batch_page import batch_page
 
-# Restore original Streamlit config (as requested by reviewer)
-st.get_option("theme.primaryColor")
+# Keep original page config (rolled back as requested)
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
+
+# Read version from installed package metadata
+from importlib.metadata import version, PackageNotFoundError
 
 
 def metric_page():
-    # Sidebar controls
+    # Sidebar controls only (no intro text here per review)
     st.sidebar.subheader("Select date range for charts")
-    starttime = st.sidebar.date_input(
-        "Start Date", datetime.today() - timedelta(days=30)
-    )
+    starttime = st.sidebar.date_input("Start Date", datetime.today() - timedelta(days=30))
     endtime = st.sidebar.date_input("End Date", datetime.today())
 
     use_adjuster = st.sidebar.radio("Use adjuster", [True, False], index=1)
 
     st.sidebar.subheader("Select Forecast Model")
-
     connection = DatabaseConnection(url=os.environ["DB_URL"], echo=True)
+
     with connection.get_session() as session:
         models = get_recent_available_model_names(session)
 
-    model_name = st.sidebar.selectbox(
-        "Select model", models, index=models.index("pvnet_v2")
-    )
+    model_name = st.sidebar.selectbox("Select model", models, index=models.index("pvnet_v2"))
 
     with connection.get_session() as session:
-        name_mae = "Daily Latest MAE"
-        name_rmse = "Daily Latest RMSE"
-        name_mae_gsp_sum = "Daily Latest MAE All GSPs"
-
-        if use_adjuster:
-            name_mae = "Daily Latest MAE with adjuster"
-            name_rmse = "Daily Latest RMSE with adjuster"
+        name_mae = "Daily Latest MAE with adjuster" if use_adjuster else "Daily Latest MAE"
+        name_rmse = "Daily Latest RMSE with adjuster" if use_adjuster else "Daily Latest RMSE"
 
         metric_values_mae = get_metric_value(
-            session,
+            session=session,
             name=name_mae,
             gsp_id=0,
             start_datetime_utc=starttime,
             end_datetime_utc=endtime,
             model_name=model_name,
         )
+
         metric_values_rmse = get_metric_value(
-            session,
+            session=session,
             name=name_rmse,
             gsp_id=0,
-            start_datetime_utc=starttime,
-            end_datetime_utc=endtime,
-            model_name=model_name,
-        )
-        metric_values_mae_gsp_sum = get_metric_value(
-            session,
-            name=name_mae_gsp_sum,
             start_datetime_utc=starttime,
             end_datetime_utc=endtime,
             model_name=model_name,
@@ -102,25 +88,17 @@ def metric_page():
 
         x_mae, y_mae = get_x_y(metric_values_mae)
         x_rmse, y_rmse = get_x_y(metric_values_rmse)
-        x_mae_all_gsp, y_mae_all_gsp = get_x_y(metric_values_mae_gsp_sum)
 
-    st.markdown(
-        '<h1 style="color:#63BCAF;font-size:48px;">Metrics</h1>',
-        unsafe_allow_html=True,
-    )
+    st.markdown('<h1 style="color:#63BCAF;font-size:48px;">Metrics</h1>', unsafe_allow_html=True)
 
     make_recent_summary_stats(values=y_mae)
     make_recent_summary_stats(values=y_rmse, title="Recent RMSE")
 
-    fig = make_mae_plot(
-        pd.DataFrame({"MAE": y_mae, "datetime_utc": x_mae})
-    )
-    st.plotly_chart(fig, theme="streamlit")
+    df_mae = pd.DataFrame({"MAE": y_mae, "datetime_utc": x_mae})
+    df_rmse = pd.DataFrame({"RMSE": y_rmse, "datetime_utc": x_rmse})
 
-    fig2 = make_all_gsps_plots(x_mae_all_gsp, y_mae_all_gsp)
-    if model_is_gsp_regional(model_name):
-        with st.expander("MAE All GSPs"):
-            st.plotly_chart(fig2, theme="streamlit")
+    st.plotly_chart(make_mae_plot(df_mae), theme="streamlit")
+    make_raw_table(df_mae, df_rmse)
 
 
 def main_page():
