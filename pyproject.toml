@@ -23,7 +23,6 @@ dependencies = [
     "plotly==5.24.1",
     "psycopg2-binary==2.9.10",
     "SQLAlchemy==2.0.36",
-    "torch==2.3.1",
     "streamlit==1.51.0",
     "testcontainers==4.9.0",
     "uvicorn==0.34.0",
@@ -38,10 +37,17 @@ dependencies = [
     "fiona>=1.9,<2.0",
     "herbie-data",
     "numcodecs>=0.12,<1.0",
+
+    # upstream torch handling (ROLLED BACK as requested)
+    "torch @ https://download.pytorch.org/whl/cpu/torch-2.3.1%2Bcpu-cp312-cp312-linux_x86_64.whl ; platform_system == 'Linux' and platform_machine == 'x86_64'",
+    "torch @ https://download.pytorch.org/whl/cpu/torch-2.3.1%2Bcpu-cp312-cp312-win_amd64.whl ; platform_system == 'Windows' and platform_machine == 'AMD64'",
+    "torch @ https://download.pytorch.org/whl/cpu/torch-2.3.1-cp312-none-macosx_11_0_arm64.whl ; platform_system == 'Darwin' and platform_machine == 'arm64'",
+
     "matplotlib>=3.8,<4.0",
     "dp-sdk",
     "aiocache",
 ]
+
 
 [project.optional-dependencies]
 dev = [
@@ -49,7 +55,6 @@ dev = [
     "pytest-cov",
     "ruff",
 ]
-
 
 
 [tool.setuptools]
@@ -61,7 +66,6 @@ where = ["src"]
 
 [tool.setuptools-git-versioning]
 enabled = true
-dirty_template = "{tag}"
 
 
 [tool.uv]
