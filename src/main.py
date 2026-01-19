@@ -41,15 +41,12 @@ from cloudcasting_page import cloudcasting_page
 from adjuster import adjuster_page
 from batch_page import batch_page
 
-# Keep original page config (rolled back as requested)
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
 
-# Read version from installed package metadata
 from importlib.metadata import version, PackageNotFoundError
 
 
 def metric_page():
-    # Sidebar controls only (no intro text here per review)
     st.sidebar.subheader("Select date range for charts")
     starttime = st.sidebar.date_input("Start Date", datetime.today() - timedelta(days=30))
     endtime = st.sidebar.date_input("End Date", datetime.today())
