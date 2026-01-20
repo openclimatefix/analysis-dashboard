@@ -136,13 +136,27 @@ def metric_page():
     make_recent_summary_stats(values=y_mae)
     make_recent_summary_stats(values=y_rmse, title="Recent RMSE")
 
+    def convert_minutes_to_hours(minutes):
+    return round(minutes / 60, 1)
+
+    # Generate forecast horizons in minutes
+    forecast_horizons_in_minutes = list(range(0, 480, 30)) + list(range(480, 36 * 60, 180))
+
+    # Convert them to hours
+    forecast_horizons_in_hours = [convert_minutes_to_hours(minutes) for minutes in forecast_horizons_in_minutes]
+
+    # Default selection also converted to hours
+    default_selection_in_hours = [convert_minutes_to_hours(minutes) for minutes in [60, 120, 240, 420]]
+
     st.sidebar.subheader("Select Forecast Horizon")
     forecast_horizon_selection = st.sidebar.multiselect(
         "Select",
-        # 0-8 hours in 30 mintue chunks, 8-36 hours in 3 hour chunks
-        list(range(0, 480, 30)) + list(range(480, 36 * 60, 180)),
-        [60, 120, 240, 420],
+        forecast_horizons_in_hours,
+        default_selection_in_hours,
     )
+
+    # Convert selected forecast horizons back to minutes for further processing
+    forecast_horizon_selection_in_minutes = [int(hours * 60) for hours in forecast_horizon_selection]
 
     df_mae = pd.DataFrame(
         {
