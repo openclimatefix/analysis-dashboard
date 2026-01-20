@@ -139,7 +139,7 @@ def policies_section():
         unsafe_allow_html=True,
     )
     with st.expander("Remove policies from group"):
-        rem_policy_group = st.text_input("Policy Group Name", key="rem_policy_group")
+        remove_policy_group = st.text_input("Policy Group Name", key="remove_policy_group")
 
         data_client = get_data_client()
         locations = []
@@ -162,29 +162,29 @@ def policies_section():
         selected_label = st.selectbox(
             "Location",
             options=list(location_options.keys()),
-            key="rem_policy_location"
+            key="remove_policy_location"
         )
 
-        rem_location_id = location_options.get(selected_label)
-        rem_energy_source = st.selectbox("Energy Source", ["SOLAR", "WIND"], key="rem_policy_energy")
-        rem_permission = st.selectbox("Permission", ["READ", "WRITE"], key="rem_policy_permission")
+        remove_location_id = location_options.get(selected_label)
+        remove_energy_source = st.selectbox("Energy Source", ["SOLAR", "WIND"], key="remove_policy_energy")
+        remove_permission = st.selectbox("Permission", ["READ", "WRITE"], key="remove_policy_permission")
         
         if st.button("Remove Policy from Group", key="remove_policy_button"):
             if not admin_client:
                 st.error("❌ Could not connect to Data Platform")
-            elif not rem_policy_group.strip() or not rem_location_id.strip():
+            elif not remove_policy_group.strip() or not remove_location_id.strip():
                 st.warning("⚠️ Please fill in all required fields")
             else:
                 try:
                     admin_client.RemoveLocationPoliciesFromGroup({
-                        "location_policy_group_name": rem_policy_group,
+                        "location_policy_group_name": remove_policy_group,
                         "location_policies": [{
-                            "location_id": rem_location_id,
-                            "energy_source": ENERGY_SOURCES[rem_energy_source],
-                            "permission": PERMISSIONS[rem_permission]
+                            "location_id": remove_location_id,
+                            "energy_source": ENERGY_SOURCES[remove_energy_source],
+                            "permission": PERMISSIONS[remove_permission]
                         }]
                     })
-                    st.success(f"✅ Policy removed from group '{rem_policy_group}'!")
+                    st.success(f"✅ Policy removed from group '{remove_policy_group}'!")
                 except grpc.RpcError as e:
                     st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
                 except Exception as e:
@@ -222,20 +222,20 @@ def policies_section():
         '<h2 style="color:#E63946;font-size:32px;">Remove Policy Group from Organisation</h2>',
         unsafe_allow_html=True,
     )
-    rem_pg_org = st.text_input("Organisation Name", key="rem_pg_org")
-    rem_pg_name = st.text_input("Policy Group Name", key="rem_pg_name")
-    if st.button("Remove Policy Group from Organisation", key="remove_pg_from_org_button"):
-        if not rem_pg_org.strip() or not rem_pg_name.strip():
+    remove_policy_group_org = st.text_input("Organisation Name", key="remove_policy_group_org")
+    remove_policy_group_name = st.text_input("Policy Group Name", key="remove_policy_group_name")
+    if st.button("Remove Policy Group from Organisation", key="remove_policy_group_from_org_button"):
+        if not remove_policy_group_org.strip() or not remove_policy_group_name.strip():
             st.warning("⚠️ Please fill in all fields")
         elif not admin_client:
             st.error("❌ Could not connect to Data Platform")
         else:
             try:
                 admin_client.RemoveLocationPolicyGroupFromOrganisation({
-                    "org_name": rem_pg_org,
-                    "location_policy_group_name": rem_pg_name
+                    "org_name": remove_policy_group_org,
+                    "location_policy_group_name": remove_policy_group_name
                 })
-                st.success(f"✅ Policy group '{rem_pg_name}' removed from organisation '{rem_pg_org}'!")
+                st.success(f"✅ Policy group '{remove_policy_group_name}' removed from organisation '{remove_policy_group_org}'!")
             except grpc.RpcError as e:
                 st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
             except Exception as e:

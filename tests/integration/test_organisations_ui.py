@@ -1,15 +1,10 @@
-import uuid
-from streamlit.testing.v1 import AppTest
 import pytest
 from dp_sdk.ocf import dp
-from src.dataplatform.toolbox.main import dataplatform_toolbox_page
 
+from tests.integration.conftest import (
+    create_org_grpc, random_org_name
+)
 
-@pytest.fixture
-def app():
-    test_app = AppTest.from_file("src/dataplatform/toolbox/main.py")
-    test_app.run()
-    return test_app
 
 
 @pytest.mark.integration
@@ -18,7 +13,7 @@ async def test_create_organisation_ui(app, admin_client:dp.DataPlatformAdministr
     # -----------------
     # Create
     # -----------------
-    org_name = "org-test-" + str(uuid.uuid4())
+    org_name = random_org_name()
     app.expander[0].expanded = True
     app.run()
 
@@ -42,12 +37,9 @@ async def test_get_organisation_ui(app, admin_client:dp.DataPlatformAdministrati
     # -----------------
     # GET (UI)
     # -----------------
-    org_name = "org-test-" + str(uuid.uuid4())
-    await admin_client.create_organisation(
-        dp.CreateOrganisationRequest(
-            org_name=org_name,
-            metadata={}
-            ))
+    org_name = random_org_name()
+    await create_org_grpc(admin_client, org_name)
+
     app.text_input("get_org_name").set_value(org_name)
     app.button("get_org_button").click()
     app.run()
@@ -61,13 +53,8 @@ async def test_delete_organisation_ui(app, admin_client:dp.DataPlatformAdministr
     # DELETE (UI)
     # -----------------
 
-    org_name = "org-test-" + str(uuid.uuid4())
-
-    await admin_client.create_organisation(
-        dp.CreateOrganisationRequest(
-            org_name=org_name,
-            metadata={}
-            ))
+    org_name = random_org_name()
+    await create_org_grpc(admin_client, org_name)
 
     app.text_input("delete_org_name").set_value(org_name)
     app.checkbox("confirm_delete_org").set_value(True)

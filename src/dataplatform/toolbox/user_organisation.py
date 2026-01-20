@@ -41,20 +41,20 @@ def user_organisation_section():
         '<h2 style="color:#E63946;font-size:32px;">Remove User from Organisation</h2>',
         unsafe_allow_html=True,
     )
-    rem_org = st.text_input("Organisation Name", key="remove_user_org")
-    rem_user_oauth = st.text_input("User OAuth ID", key="remove_user_oauth")
+    remove_org = st.text_input("Organisation Name", key="remove_user_org")
+    remove_user_oauth = st.text_input("User OAuth ID", key="remove_user_oauth")
     if st.button("Remove User from Organisation", key="remove_user_from_org_button"):
         if not admin_client:
             st.error("❌ Could not connect to Data Platform")
-        elif not rem_org.strip() or not rem_user_oauth.strip():
+        elif not remove_org.strip() or not remove_user_oauth.strip():
             st.warning("⚠️ Please fill in all fields")
         else:
             try:
                 admin_client.RemoveUserFromOrganisation({
-                    "org_name": rem_org,
-                    "user_oauth_id": rem_user_oauth
+                    "org_name": remove_org,
+                    "user_oauth_id": remove_user_oauth
                 })
-                st.success(f"✅ User '{rem_user_oauth}' removed from organisation '{rem_org}'!")
+                st.success(f"✅ User '{remove_user_oauth}' removed from organisation '{remove_org}'!")
                 
             except grpc.RpcError as e:
                 st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")

@@ -1,16 +1,11 @@
 import uuid
 import pytest
-import pytest
-from streamlit.testing.v1 import AppTest
 from dp_sdk.ocf import dp
 import pandas as pd
 
-
-@pytest.fixture
-def app():
-    test_app = AppTest.from_file("src/dataplatform/toolbox/main.py")
-    test_app.run()
-    return test_app
+from tests.integration.conftest import (
+    create_location_grpc, list_locations_grpc, random_location_name
+)
 
 
 @pytest.mark.integration
@@ -22,25 +17,17 @@ async def test_list_locations_ui(app, data_client: dp.DataPlatformDataServiceStu
 
     # Create some locations via gRPC
     location_names = []
-    for i in range(3):
-        location_name = "ui_location_" + str(uuid.uuid4()).replace("-", "_")
-        location_names.append(location_name)
-        await data_client.create_location(
-            dp.CreateLocationRequest(
-                location_name=location_name,
-                energy_source=1,
-                geometry_wkt="Point(0 0)",
-                location_type=1,
-                effective_capacity_watts=100,
-                metadata={}
-            )
-        )
+
+    for _ in range(3):
+        name = random_location_name()
+        location_names.append(name)
+        await create_location_grpc(data_client, name)
+
     app.run()
     # Expand filter options and click list button
     app.selectbox("list_loc_energy").set_value("All")
     app.selectbox("list_loc_type").set_value("All")
     app.text_input("list_loc_user").set_value("")
-    app.run()
     app.button("list_locations_button").click()
     app.run()
 
@@ -57,19 +44,8 @@ async def test_get_location_ui(app, data_client: dp.DataPlatformDataServiceStub)
     # -----------------
     # GET LOCATION (UI)
     # -----------------
-    location_name = "ui_location_" + str(uuid.uuid4()).replace("-", "_")
-
-    # Create location via gRPC
-    response = await data_client.create_location(
-            dp.CreateLocationRequest(
-                location_name=location_name,
-                energy_source=1,
-                geometry_wkt="Point(0 0)",
-                location_type=1,
-                effective_capacity_watts=100,
-                metadata={}
-            )
-        )
+    location_name = random_location_name()
+    response = await create_location_grpc(data_client, location_name)
     location_uuid = response.location_uuid
 
     # Get location via UI
@@ -88,7 +64,7 @@ async def test_create_location_ui(app, data_client: dp.DataPlatformDataServiceSt
     # -----------------
     # CREATE LOCATION (UI)
     # -----------------
-    location_name = "ui_location_" + str(uuid.uuid4()).replace("-", "_")
+    location_name = random_location_name()
 
     # Fill in form and create location via UI
     app.text_input("create_loc_name").set_value(location_name)
@@ -103,9 +79,7 @@ async def test_create_location_ui(app, data_client: dp.DataPlatformDataServiceSt
     # Assert success message in UI
     assert any("created" in s.value.lower() for s in app.success)
 
-    # Verify location was actually created via gRPC
-    response = await data_client.list_locations(
-        dp.ListLocationsRequest()
-    )
+    # Verify creation via gRPC
+    response = await list_locations_grpc(data_client)
     assert any(loc.location_name == location_name for loc in response.locations)
     

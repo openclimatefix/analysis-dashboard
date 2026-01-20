@@ -1,14 +1,11 @@
 import uuid
-from streamlit.testing.v1 import AppTest
 import pytest
 from dp_sdk.ocf import dp
 
+from tests.integration.conftest import (
+    add_user_to_org_grpc, create_org_grpc, create_user_grpc, get_user_grpc, random_org_name, random_user_oauth
+)
 
-@pytest.fixture
-def app():
-    test_app = AppTest.from_file("src/dataplatform/toolbox/main.py")
-    test_app.run()
-    return test_app
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
@@ -17,23 +14,13 @@ async def test_add_user_org_ui(app, admin_client:dp.DataPlatformAdministrationSe
     # ADD USER TO ORG (UI)
     # -----------------
 
-    org_a = "ui-org-a-" + str(uuid.uuid4())
-    org_b = "ui-org-b-" + str(uuid.uuid4())
-    user_id = "ui-user-" + str(uuid.uuid4())
+    org_a = random_org_name()
+    org_b = random_org_name()
+    user_id = random_user_oauth()
 
-    await admin_client.create_organisation(dp.CreateOrganisationRequest(
-        org_name=org_a, metadata={}
-    ))
-
-    await admin_client.create_organisation(dp.CreateOrganisationRequest(
-        org_name=org_b, metadata={}
-    ))
-
-    await admin_client.create_user(dp.CreateUserRequest(
-        oauth_id=user_id,
-        organisation=org_a,   # user initially in org A
-        metadata={}
-    ))
+    await create_org_grpc(admin_client, org_a)
+    await create_org_grpc(admin_client, org_b)
+    await create_user_grpc(admin_client, user_id, org_a)
 
     # Fill inputs
     app.text_input("add_user_org").set_value(org_b)
@@ -46,8 +33,10 @@ async def test_add_user_org_ui(app, admin_client:dp.DataPlatformAdministrationSe
     # Assert success
     assert any("added" in s.value.lower() for s in app.success)
 
-    response = await admin_client.get_user(dp.GetUserRequest(oauth_id=user_id))
-    assert response.oauth_id == user_id
+    user = await get_user_grpc(admin_client, user_id)
+    assert user.oauth_id == user_id
+    assert org_a in user.organisation
+    assert org_b not in user.organisation #not sure that user can be in multiple orgs
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
@@ -55,28 +44,14 @@ async def test_remove_user_org_ui(app, admin_client:dp.DataPlatformAdministratio
     # -----------------
     # REMOVE USER FROM ORG (UI)
     # -----------------
-    org_a = "ui-org-a-" + str(uuid.uuid4())
-    org_b = "ui-org-b-" + str(uuid.uuid4())
-    user_id = "ui-user-" + str(uuid.uuid4())
+    org_a = random_org_name()
+    org_b = random_org_name()
+    user_id = random_user_oauth()
 
-    await admin_client.create_organisation(dp.CreateOrganisationRequest(
-        org_name=org_a, metadata={}
-    ))
-
-    await admin_client.create_organisation(dp.CreateOrganisationRequest(
-        org_name=org_b, metadata={}
-    ))
-
-    await admin_client.create_user(dp.CreateUserRequest(
-        oauth_id=user_id,
-        organisation=org_a,
-        metadata={}
-    ))
-    
-    await admin_client.add_user_to_organisation(dp.AddUserToOrganisationRequest(
-        org_name=org_b,
-        user_oauth_id=user_id
-    ))
+    await create_org_grpc(admin_client, org_a)
+    await create_org_grpc(admin_client, org_b)
+    await create_user_grpc(admin_client, user_id, org_a)
+    await add_user_to_org_grpc(admin_client, user_id, org_b)
 
     app.text_input("remove_user_org").set_value(org_b)
     app.text_input("remove_user_oauth").set_value(user_id)
@@ -86,7 +61,7 @@ async def test_remove_user_org_ui(app, admin_client:dp.DataPlatformAdministratio
     assert any("removed" in s.value.lower() for s in app.success)
 
     # verify deletion via grpc
-    user = await admin_client.get_user(dp.GetUserRequest(oauth_id=user_id))
+    user = await get_user_grpc(admin_client, user_id)
 
     # user still exists
     assert user.oauth_id == user_id

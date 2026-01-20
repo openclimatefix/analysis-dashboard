@@ -1,9 +1,12 @@
 import time
+import uuid
+import pytest
 from testcontainers.postgres import PostgresContainer
 from testcontainers.core.container import DockerContainer
 import pytest_asyncio
 from importlib.metadata import version
 import os
+from streamlit.testing.v1 import AppTest
 
 from dp_sdk.ocf import dp
 from grpclib.client import Channel
@@ -63,3 +66,116 @@ async def admin_client(dp_channel):
 @pytest_asyncio.fixture(scope="session")
 async def data_client(dp_channel):
     return dp.DataPlatformDataServiceStub(dp_channel)
+
+@pytest.fixture
+def app():
+    test_app = AppTest.from_file("src/dataplatform/toolbox/main.py")
+    test_app.run()
+    return test_app
+
+
+def random_org_name():
+    return "org-test-" + str(uuid.uuid4())
+
+def random_org_name():
+    return "org-test-" + str(uuid.uuid4())
+
+def random_user_oauth():
+    return "user-oauth-id-" + str(uuid.uuid4())
+
+def random_location_name():
+    return f"ui_location_{uuid.uuid4().hex}"
+
+def random_policy_name():
+    return f"policy-test-{uuid.uuid4()}"
+
+async def create_org_grpc(admin_client, org_name: str):
+    await admin_client.create_organisation(
+        dp.CreateOrganisationRequest(
+            org_name=org_name,
+            metadata={}
+        )
+    )
+
+async def get_org_grpc(admin_client, org_name: str):
+    return await admin_client.get_organisation(
+        dp.GetOrganisationRequest(org_name=org_name)
+    )
+
+async def create_user_grpc(admin_client, user_oauth_id: str, org_name: str):
+    await admin_client.create_user(
+        dp.CreateUserRequest(
+            oauth_id=user_oauth_id,
+            organisation=org_name,
+            metadata={}
+        )
+    )
+
+async def get_user_grpc(admin_client, user_oauth_id: str):
+    return await admin_client.get_user(
+        dp.GetUserRequest(oauth_id=user_oauth_id)
+    )
+
+async def add_user_to_org_grpc(admin_client, user_oauth_id: str, org_name: str):
+    return await admin_client.add_user_to_organisation(
+        dp.AddUserToOrganisationRequest(
+            org_name=org_name,
+            user_oauth_id=user_oauth_id
+        )
+    )
+async def create_location_grpc(
+    data_client,
+    location_name: str,
+    energy_source=dp.EnergySource.SOLAR,
+    location_type=dp.LocationType.SITE,
+):
+    return await data_client.create_location(
+        dp.CreateLocationRequest(
+            location_name=location_name,
+            energy_source=energy_source,
+            geometry_wkt="POINT(0 0)",
+            location_type=location_type,
+            effective_capacity_watts=100,
+            metadata={}
+        )
+    )
+
+async def list_locations_grpc(data_client):
+    return await data_client.list_locations(dp.ListLocationsRequest())
+
+async def create_policy_group_grpc(admin_client, policy_name: str):
+    await admin_client.create_location_policy_group(
+        dp.CreateLocationPolicyGroupRequest(name=policy_name)
+    )
+
+async def get_policy_group_grpc(admin_client, policy_name: str):
+    return await admin_client.get_location_policy_group(
+        dp.GetLocationPolicyGroupRequest(location_policy_group_name=policy_name)
+    )
+
+
+async def add_policy_to_group_grpc(
+    admin_client,
+    policy_name: str,
+    location_uuid: str,
+    energy_source=dp.EnergySource.WIND,
+    permission=dp.Permission.WRITE,
+):
+    await admin_client.add_location_policies_to_group(
+        dp.AddLocationPoliciesToGroupRequest(
+            location_policy_group_name=policy_name,
+            location_policies=[
+                dp.LocationPolicy(
+                    location_id=location_uuid,
+                    energy_source=energy_source,
+                    permission=permission,
+                )
+            ],
+        )
+    )
+
+async def add_policy_to_org_grpc(admin_client, org_name, policy_name):
+    await admin_client.add_location_policy_group_to_organisation(dp.AddLocationPolicyGroupToOrganisationRequest(
+        org_name=org_name,
+        location_policy_group_name=policy_name,
+    ))
