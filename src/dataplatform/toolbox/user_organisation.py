@@ -1,14 +1,12 @@
 """User-Organisation relationship management section for the Data Platform Toolbox."""
 
 import streamlit as st
-from dataplatform.toolbox.clients import get_admin_client
-
+from dp_sdk.ocf import dp
 import grpc
 
-def user_organisation_section():
+async def user_organisation_section(admin_client):
     """User + Organisation relationship management."""
     
-    admin_client = get_admin_client()
     
     # Add User to Organisation
     st.markdown(
@@ -24,10 +22,10 @@ def user_organisation_section():
             st.warning("⚠️ Please fill in all fields")
         else:
             try:
-                admin_client.AddUserToOrganisation({
-                    "org_name": add_org,
-                    "user_oauth_id": add_user_oauth
-                })
+                await admin_client.add_user_to_organisation(dp.AddUserToOrganisationRequest(
+                    org_name=add_org,
+                    user_oauth_id=add_user_oauth
+                ))
                 st.success(f"✅ User '{add_user_oauth}' added to organisation '{add_org}'!")
                 
             except grpc.RpcError as e:
@@ -50,10 +48,10 @@ def user_organisation_section():
             st.warning("⚠️ Please fill in all fields")
         else:
             try:
-                admin_client.RemoveUserFromOrganisation({
-                    "org_name": remove_org,
-                    "user_oauth_id": remove_user_oauth
-                })
+                await admin_client.remove_user_from_organisation(dp.RemoveUserFromOrganisationRequest(
+                    org_name=remove_org,
+                    user_oauth_id=remove_user_oauth
+                ))
                 st.success(f"✅ User '{remove_user_oauth}' removed from organisation '{remove_org}'!")
                 
             except grpc.RpcError as e:

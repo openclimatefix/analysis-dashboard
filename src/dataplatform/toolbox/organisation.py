@@ -2,15 +2,14 @@
 
 import streamlit as st
 import json
-from dataplatform.toolbox.clients import get_admin_client
+
+from dp_sdk.ocf import dp
 
 import grpc
 
 
-def organisation_section():
+async def organisation_section(admin_client):
     """Organisation management section."""
-    
-    admin_client = get_admin_client()
     
     # Get Organisation Details
     st.markdown(
@@ -25,12 +24,10 @@ def organisation_section():
             st.warning("⚠️ Please enter an organisation name")
         else:
             try:
-                response = admin_client.GetOrganisation({"org_name": org_name})
-                # Handle case where response is a string (JSON) instead of dict
-                if isinstance(response, str):
-                    response = json.loads(response)
+                response = await admin_client.get_organisation(dp.GetOrganisationRequest(org_name=org_name))
+                response_dict = response.to_dict()
                 st.success(f"✅ Found organisation: {org_name}")
-                st.write(response)
+                st.write(response_dict)
                     
             except grpc.RpcError as e:
                 st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
@@ -62,19 +59,20 @@ def organisation_section():
                 try:
                     # Parse metadata JSON
                     metadata = json.loads(metadata_json) if metadata_json.strip() else {}
-                    response = admin_client.CreateOrganisation({
-                        "org_name": new_org_name,
-                        "metadata": metadata
-                    })
-
+                    response = await admin_client.create_organisation(
+                        dp.CreateOrganisationRequest(
+                            org_name=new_org_name,
+                            metadata=metadata
+                        )
+                    )
+                    response_dict = response.to_dict()
                     st.success(f"✅ Organisation '{new_org_name}' created successfully!")
-                    st.write(response)
+                    st.write(response_dict)
                     
                 except json.JSONDecodeError:
                     st.error("❌ Invalid JSON in metadata field")
                 except grpc.RpcError as e:
                     st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
-                    raise e
                 except Exception as e:
                     st.error(f"❌ Error creating organisation: {str(e)}")
 
@@ -98,7 +96,7 @@ def organisation_section():
                 st.warning("⚠️ Please confirm deletion by checking the box above")
             else:
                 try:
-                    admin_client.DeleteOrganisation({"org_name": del_org_name})
+                    await admin_client.delete_organisation(dp.DeleteOrganisationRequest(org_name=del_org_name))
                     st.success(f"✅ Organisation '{del_org_name}' deleted successfully!")
                     
                 except grpc.RpcError as e:

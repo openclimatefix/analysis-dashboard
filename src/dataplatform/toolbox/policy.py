@@ -1,15 +1,12 @@
 """Policy management section for the Data Platform Toolbox."""
 
 import streamlit as st
-from dataplatform.toolbox.clients import get_admin_client
-from dataplatform.toolbox.clients import get_data_client
 import grpc
+from dp_sdk.ocf import dp
 
-def policies_section():
+async def policies_section(admin_client, data_client):
     """Policy management section."""
-    
-    admin_client = get_admin_client()
-    data_client = get_data_client()
+
     
     # Permission mappings
     PERMISSIONS = {
@@ -36,11 +33,12 @@ def policies_section():
                 st.warning("⚠️ Please enter a policy group name")
             else:
                 try:
-                    response = admin_client.CreateLocationPolicyGroup({
-                        "name": new_policy_group_name
-                    })
+                    response = await admin_client.create_location_policy_group(dp.CreateLocationPolicyGroupRequest(
+                        name=new_policy_group_name
+                    ))
+                    response_dict = response.to_dict()
                     st.success(f"✅ Policy Group '{new_policy_group_name}' created!")
-                    st.write(response)
+                    st.write(response_dict)
                 except grpc.RpcError as e:
                     st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
                 except Exception as e:
@@ -60,11 +58,12 @@ def policies_section():
             st.warning("⚠️ Please enter a policy group name")
         else:
             try:
-                response = admin_client.GetLocationPolicyGroup({
-                    "location_policy_group_name": policy_group_name
-                })
+                response = await admin_client.get_location_policy_group(dp.GetLocationPolicyGroupRequest(
+                    location_policy_group_name=policy_group_name
+                ))
+                response_dict = response.to_dict()
                 st.success(f"✅ Found policy group: {policy_group_name}")
-                st.write(response)
+                st.write(response_dict)
                     
             except grpc.RpcError as e:
                 st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
@@ -73,22 +72,19 @@ def policies_section():
             
     
     # Add Location Policies to Group
-
-    ## Add a feature to display a dropdown with all locations(uuid and name)
     st.markdown(
         '<h2 style="color:#ffd053;font-size:32px;">Add Location Policies to Group</h2>',
         unsafe_allow_html=True,
     )
     with st.expander("Add policies to group"):
         add_policy_group = st.text_input("Policy Group Name", key="add_policy_group")
-
-        data_client = get_data_client()
         locations = []
 
         if data_client:
             try:
-                resp = data_client.ListLocations({})
-                locations = resp.get("locations", [])
+                response = await data_client.list_locations(dp.ListLocationsRequest())
+                response_dict = response.to_dict()
+                locations = response_dict.get("locations", [])
             except Exception as e:
                 st.error(f"❌ Failed to fetch locations: {e}")
 
@@ -96,7 +92,7 @@ def policies_section():
             st.info("ℹ️ No locations found. Please create a location first.")
 
         location_options = {
-            f"{loc.get('location_name', 'N/A')} — {loc.get('location_uuid', '')}": loc.get("location_uuid")
+            f"{loc.get('locationName', 'N/A')} — {loc.get('locationUuid', '')}": loc.get("locationUuid")
             for loc in locations
         }
 
@@ -118,14 +114,14 @@ def policies_section():
                 st.warning("⚠️ Please fill in all required fields")
             else:
                 try:
-                    admin_client.AddLocationPoliciesToGroup({
-                        "location_policy_group_name": add_policy_group,
-                        "location_policies": [{
-                            "location_id": add_location_id,
-                            "energy_source": ENERGY_SOURCES[add_energy_source],
-                            "permission": PERMISSIONS[add_permission]
-                        }]
-                    })
+                    await admin_client.add_location_policies_to_group(dp.AddLocationPoliciesToGroupRequest(
+                        location_policy_group_name=add_policy_group,
+                        location_policies=[dp.LocationPolicy(
+                            location_id=add_location_id,
+                            energy_source=ENERGY_SOURCES[add_energy_source],
+                            permission=PERMISSIONS[add_permission]
+                        )]
+                    ))
                     st.success(f"✅ Policy added to group '{add_policy_group}'!")
                 except grpc.RpcError as e:
                     st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
@@ -140,14 +136,13 @@ def policies_section():
     )
     with st.expander("Remove policies from group"):
         remove_policy_group = st.text_input("Policy Group Name", key="remove_policy_group")
-
-        data_client = get_data_client()
         locations = []
 
         if data_client:
             try:
-                resp = data_client.ListLocations({})
-                locations = resp.get("locations", [])
+                response = await data_client.list_locations(dp.ListLocationsRequest())
+                response_dict = response.to_dict()
+                locations = response_dict.get("locations", [])
             except Exception as e:
                 st.error(f"❌ Failed to fetch locations: {e}")
 
@@ -155,7 +150,7 @@ def policies_section():
             st.info("ℹ️ No locations found. Please create a location first.")
 
         location_options = {
-            f"{loc.get('location_name', 'N/A')} — {loc.get('location_uuid', '')}": loc.get("location_uuid")
+            f"{loc.get('locationName', 'N/A')} — {loc.get('locationUuid', '')}": loc.get("locationUuid")
             for loc in locations
         }
 
@@ -176,14 +171,14 @@ def policies_section():
                 st.warning("⚠️ Please fill in all required fields")
             else:
                 try:
-                    admin_client.RemoveLocationPoliciesFromGroup({
-                        "location_policy_group_name": remove_policy_group,
-                        "location_policies": [{
-                            "location_id": remove_location_id,
-                            "energy_source": ENERGY_SOURCES[remove_energy_source],
-                            "permission": PERMISSIONS[remove_permission]
-                        }]
-                    })
+                    await admin_client.remove_location_policies_from_group(dp.RemoveLocationPoliciesFromGroupRequest(
+                        location_policy_group_name=remove_policy_group,
+                        location_policies=[dp.LocationPolicy(
+                            location_id=remove_location_id,
+                            energy_source=ENERGY_SOURCES[remove_energy_source],
+                            permission=PERMISSIONS[remove_permission]
+                        )]
+                    ))
                     st.success(f"✅ Policy removed from group '{remove_policy_group}'!")
                 except grpc.RpcError as e:
                     st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
@@ -206,10 +201,10 @@ def policies_section():
             st.warning("⚠️ Please fill in all fields")
         else:
             try:
-                admin_client.AddLocationPolicyGroupToOrganisation({
-                    "org_name": add_pg_org,
-                    "location_policy_group_name": add_pg_name
-                })
+                await admin_client.add_location_policy_group_to_organisation(dp.AddLocationPolicyGroupToOrganisationRequest(
+                    org_name=add_pg_org,
+                    location_policy_group_name=add_pg_name
+                ))
                 st.success(f"✅ Policy group '{add_pg_name}' added to organisation '{add_pg_org}'!")
             except grpc.RpcError as e:
                 st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
@@ -231,10 +226,10 @@ def policies_section():
             st.error("❌ Could not connect to Data Platform")
         else:
             try:
-                admin_client.RemoveLocationPolicyGroupFromOrganisation({
-                    "org_name": remove_policy_group_org,
-                    "location_policy_group_name": remove_policy_group_name
-                })
+                await admin_client.remove_location_policy_group_from_organisation(dp.RemoveLocationPolicyGroupFromOrganisationRequest(
+                    org_name=remove_policy_group_org,
+                    location_policy_group_name=remove_policy_group_name
+                ))
                 st.success(f"✅ Policy group '{remove_policy_group_name}' removed from organisation '{remove_policy_group_org}'!")
             except grpc.RpcError as e:
                 st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")

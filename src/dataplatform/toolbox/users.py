@@ -2,15 +2,12 @@
 
 import streamlit as st
 import json
-from dataplatform.toolbox.clients import get_admin_client
-
+from dp_sdk.ocf import dp
 import grpc
 
 
-def users_section():
+async def users_section(admin_client):
     """User management section."""
-    
-    admin_client = get_admin_client()
     
     # Get User Details
     st.markdown(
@@ -25,9 +22,10 @@ def users_section():
             st.warning("⚠️ Please enter an OAuth ID")
         else:
             try:
-                response = admin_client.GetUser({"oauth_id": oauth_id})
+                response = await admin_client.get_user(dp.GetUserRequest(oauth_id=oauth_id))
+                response_dict = response.to_dict()
                 st.success(f"✅ Found user: {oauth_id}")
-                st.write(response)
+                st.write(response_dict)
                     
             except grpc.RpcError as e:
                 st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
@@ -59,15 +57,12 @@ def users_section():
                 try:
                     # Parse metadata JSON
                     metadata = json.loads(user_metadata) if user_metadata.strip() else {}
-                    #pass the object rather than dictionary
-                    response = admin_client.CreateUser({
-                        "oauth_id": new_oauth_id,
-                        "organisation": user_org,
-                        "metadata": metadata
-                    })
-                    
+                    response = await admin_client.create_user(dp.CreateUserRequest(oauth_id=new_oauth_id,
+                                                                                   organisation=user_org,
+                                                                                   metadata=metadata))
+                    response_dict = response.to_dict()
                     st.success(f"✅ User '{new_oauth_id}' created in organisation '{user_org}'!")
-                    st.write(response)
+                    st.write(response_dict)
                     
                 except json.JSONDecodeError:
                     st.error("❌ Invalid JSON in metadata field")
@@ -97,7 +92,8 @@ def users_section():
                 st.warning("⚠️ Please confirm deletion by checking the box above")
             else:
                 try:
-                    admin_client.DeleteUser({"user_id": del_user_id})
+                    # admin_client.DeleteUser({"user_id": del_user_id})
+                    await admin_client.delete_user(dp.DeleteUserRequest(user_id=del_user_id))
                     st.success(f"✅ User '{del_user_id}' deleted successfully!")
                     
                 except grpc.RpcError as e:
