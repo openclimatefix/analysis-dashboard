@@ -10,7 +10,6 @@ from tests.integration.conftest import (
     add_user_to_org_grpc, create_org_grpc, create_user_grpc, get_user_grpc, random_org_name, random_user_oauth
 )
 
-
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_add_user_org_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):

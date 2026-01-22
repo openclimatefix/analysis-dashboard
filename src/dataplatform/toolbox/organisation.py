@@ -2,9 +2,7 @@
 
 import streamlit as st
 import json
-
 from dp_sdk.ocf import dp
-
 import grpc
 
 

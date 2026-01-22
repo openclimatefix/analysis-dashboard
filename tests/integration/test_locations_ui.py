@@ -12,7 +12,6 @@ from tests.integration.conftest import (
     create_location_grpc, list_locations_grpc, random_location_name
 )
 
-
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_list_locations_ui(app, data_client: dp.DataPlatformDataServiceStub):

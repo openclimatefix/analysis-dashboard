@@ -6,7 +6,6 @@ from dp_sdk.ocf import dp
 
 async def policies_section(admin_client, data_client):
     """Policy management section."""
-
     
     # Permission mappings
     PERMISSIONS = {

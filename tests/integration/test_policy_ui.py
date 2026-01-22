@@ -24,7 +24,6 @@ from tests.integration.conftest import (
     
 )
 
-
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_create_policy_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
