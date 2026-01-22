@@ -65,9 +65,7 @@ async def locations_section(data_client):
                 if locations:
                     st.success(f"✅ Found {len(locations)} location(s)")
                     loc_dicts = [loc.to_dict() for loc in locations]
-                    # st.write(loc_dicts) # if displaying raw dicts
-                    df = pd.DataFrame(loc_dicts)
-                    st.dataframe(df, use_container_width=True)
+                    st.write(loc_dicts)
                 else:
                     st.info("No locations found with the specified filters")
             except grpc.RpcError as e:
