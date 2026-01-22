@@ -7,7 +7,6 @@ Run tests for Locations tab
 
 import pytest
 from dp_sdk.ocf import dp
-import pandas as pd
 
 from tests.integration.conftest import (
     create_location_grpc,
@@ -41,11 +40,14 @@ async def test_list_locations_ui(app, data_client: dp.DataPlatformDataServiceStu
     app.button("list_locations_button").click()
     app.run()
 
-    dfs = [df.value for df in app.dataframe]
-    # Combine all rendered dataframes
-    all_tables = pd.concat(dfs)
+    # Assert success message is shown
+    assert any("found" in s.value.lower() for s in app.success)
+
+    # Verify via gRPC that locations were created
+    response = await list_locations_grpc(data_client)
+    all_location_names = [loc.location_name for loc in response.locations]
     for location_name in location_names:
-        assert location_name in all_tables["locationName"].values
+        assert location_name in all_location_names
 
 
 @pytest.mark.integration
