@@ -4,16 +4,24 @@ Run tests for Users tab
 2. get user details
 3. delete user
 """
+
 import pytest
 from dp_sdk.ocf import dp
 
 from tests.integration.conftest import (
-    create_org_grpc, create_user_grpc, get_user_grpc, random_org_name, random_user_oauth
+    create_org_grpc,
+    create_user_grpc,
+    get_user_grpc,
+    random_org_name,
+    random_user_oauth,
 )
+
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_create_user_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
+async def test_create_user_ui(
+    app, admin_client: dp.DataPlatformAdministrationServiceStub
+):
     """
     - create an org for the user
     - fill in create user form and submit
@@ -44,9 +52,10 @@ async def test_create_user_ui(app, admin_client:dp.DataPlatformAdministrationSer
     response = await get_user_grpc(admin_client, user_oauth_id)
     assert response.oauth_id == user_oauth_id
 
+
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_get_user_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
+async def test_get_user_ui(app, admin_client: dp.DataPlatformAdministrationServiceStub):
     """
     - create random user via grpc
     - fill in get user form and submit
@@ -63,9 +72,12 @@ async def test_get_user_ui(app, admin_client:dp.DataPlatformAdministrationServic
 
     assert any(user_oauth_id in s.value for s in app.success)
 
+
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_delete_user_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
+async def test_delete_user_ui(
+    app, admin_client: dp.DataPlatformAdministrationServiceStub
+):
     """
     - create random user via grpc
     - fill in delete user form and submit

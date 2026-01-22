@@ -4,13 +4,17 @@ Run tests for Locations tab
 2. get location details
 3. create location
 """
+
 import pytest
 from dp_sdk.ocf import dp
 import pandas as pd
 
 from tests.integration.conftest import (
-    create_location_grpc, list_locations_grpc, random_location_name
+    create_location_grpc,
+    list_locations_grpc,
+    random_location_name,
 )
+
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
@@ -66,6 +70,7 @@ async def test_get_location_ui(app, data_client: dp.DataPlatformDataServiceStub)
     # Assert location details are displayed
     assert any(location_uuid in s.value for s in app.success)
 
+
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_create_location_ui(app, data_client: dp.DataPlatformDataServiceStub):
@@ -92,4 +97,3 @@ async def test_create_location_ui(app, data_client: dp.DataPlatformDataServiceSt
     # Verify creation via gRPC
     response = await list_locations_grpc(data_client)
     assert any(loc.location_name == location_name for loc in response.locations)
-    

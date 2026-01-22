@@ -10,6 +10,7 @@ from streamlit.testing.v1 import AppTest
 from dp_sdk.ocf import dp
 from grpclib.client import Channel
 
+
 @pytest_asyncio.fixture(scope="session")
 async def dp_channel():
     """
@@ -20,15 +21,12 @@ async def dp_channel():
 
     # we use a specific postgres image with postgis and pgpartman installed
     # TODO make a release of this, not using logging tag.
-    with (
-        PostgresContainer(
-            "ghcr.io/openclimatefix/data-platform-pgdb:logging",
-            username="postgres",
-            password="postgres",
-            dbname="postgres",
-        ).with_env("POSTGRES_HOST", "db")
-    ) as postgres:
-        
+    with PostgresContainer(
+        "ghcr.io/openclimatefix/data-platform-pgdb:logging",
+        username="postgres",
+        password="postgres",
+        dbname="postgres",
+    ).with_env("POSTGRES_HOST", "db") as postgres:
         database_url = postgres.get_connection_url()
         # we need to get ride of psycopg2, so the go driver works
         database_url = database_url.replace("postgresql+psycopg2", "postgres")
@@ -49,19 +47,22 @@ async def dp_channel():
             port = dp_container.get_exposed_port(50051)
 
             os.environ["DATA_PLATFORM_HOST"] = host
-            os.environ["DATA_PLATFORM_PORT"] = str(port)            
-            
+            os.environ["DATA_PLATFORM_PORT"] = str(port)
+
             channel = Channel(host=host, port=port)
             yield channel
             channel.close()
+
 
 @pytest_asyncio.fixture(scope="session")
 async def admin_client(dp_channel):
     return dp.DataPlatformAdministrationServiceStub(dp_channel)
 
+
 @pytest_asyncio.fixture(scope="session")
 async def data_client(dp_channel):
     return dp.DataPlatformDataServiceStub(dp_channel)
+
 
 @pytest.fixture
 def app():
@@ -73,52 +74,51 @@ def app():
 def random_org_name():
     return "org-test-" + str(uuid.uuid4())
 
+
 def random_org_name():
     return "org-test-" + str(uuid.uuid4())
+
 
 def random_user_oauth():
     return "user-oauth-id-" + str(uuid.uuid4())
 
+
 def random_location_name():
     return f"ui_location_{uuid.uuid4().hex}"
+
 
 def random_policy_name():
     return f"policy-test-{uuid.uuid4()}"
 
+
 async def create_org_grpc(admin_client, org_name: str):
     await admin_client.create_organisation(
-        dp.CreateOrganisationRequest(
-            org_name=org_name,
-            metadata={}
-        )
+        dp.CreateOrganisationRequest(org_name=org_name, metadata={})
     )
+
 
 async def get_org_grpc(admin_client, org_name: str):
     return await admin_client.get_organisation(
         dp.GetOrganisationRequest(org_name=org_name)
     )
 
+
 async def create_user_grpc(admin_client, user_oauth_id: str, org_name: str):
     await admin_client.create_user(
-        dp.CreateUserRequest(
-            oauth_id=user_oauth_id,
-            organisation=org_name,
-            metadata={}
-        )
+        dp.CreateUserRequest(oauth_id=user_oauth_id, organisation=org_name, metadata={})
     )
 
+
 async def get_user_grpc(admin_client, user_oauth_id: str):
-    return await admin_client.get_user(
-        dp.GetUserRequest(oauth_id=user_oauth_id)
-    )
+    return await admin_client.get_user(dp.GetUserRequest(oauth_id=user_oauth_id))
+
 
 async def add_user_to_org_grpc(admin_client, user_oauth_id: str, org_name: str):
     return await admin_client.add_user_to_organisation(
-        dp.AddUserToOrganisationRequest(
-            org_name=org_name,
-            user_oauth_id=user_oauth_id
-        )
+        dp.AddUserToOrganisationRequest(org_name=org_name, user_oauth_id=user_oauth_id)
     )
+
+
 async def create_location_grpc(
     data_client,
     location_name: str,
@@ -132,17 +132,20 @@ async def create_location_grpc(
             geometry_wkt="POINT(0 0)",
             location_type=location_type,
             effective_capacity_watts=100,
-            metadata={}
+            metadata={},
         )
     )
 
+
 async def list_locations_grpc(data_client):
     return await data_client.list_locations(dp.ListLocationsRequest())
+
 
 async def create_policy_group_grpc(admin_client, policy_name: str):
     await admin_client.create_location_policy_group(
         dp.CreateLocationPolicyGroupRequest(name=policy_name)
     )
+
 
 async def get_policy_group_grpc(admin_client, policy_name: str):
     return await admin_client.get_location_policy_group(
@@ -170,8 +173,11 @@ async def add_policy_to_group_grpc(
         )
     )
 
+
 async def add_policy_to_org_grpc(admin_client, org_name, policy_name):
-    await admin_client.add_location_policy_group_to_organisation(dp.AddLocationPolicyGroupToOrganisationRequest(
-        org_name=org_name,
-        location_policy_group_name=policy_name,
-    ))
+    await admin_client.add_location_policy_group_to_organisation(
+        dp.AddLocationPolicyGroupToOrganisationRequest(
+            org_name=org_name,
+            location_policy_group_name=policy_name,
+        )
+    )

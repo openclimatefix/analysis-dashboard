@@ -3,16 +3,25 @@ Run tests for User Organisation tab
 1. add user to organisation
 2. remove user from organisation
 """
+
 import pytest
 from dp_sdk.ocf import dp
 
 from tests.integration.conftest import (
-    add_user_to_org_grpc, create_org_grpc, create_user_grpc, get_user_grpc, random_org_name, random_user_oauth
+    add_user_to_org_grpc,
+    create_org_grpc,
+    create_user_grpc,
+    get_user_grpc,
+    random_org_name,
+    random_user_oauth,
 )
+
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_add_user_org_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
+async def test_add_user_org_ui(
+    app, admin_client: dp.DataPlatformAdministrationServiceStub
+):
     """
     - create two orgs and a user in one org
     - fill in add user to org form and submit
@@ -43,11 +52,14 @@ async def test_add_user_org_ui(app, admin_client:dp.DataPlatformAdministrationSe
     user = await get_user_grpc(admin_client, user_id)
     assert user.oauth_id == user_id
     assert org_a in user.organisation
-    assert org_b not in user.organisation #not sure that user can be in multiple orgs
+    assert org_b not in user.organisation  # not sure that user can be in multiple orgs
+
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_remove_user_org_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
+async def test_remove_user_org_ui(
+    app, admin_client: dp.DataPlatformAdministrationServiceStub
+):
     """
     - create two orgs and a user in both orgs
     - fill in remove user from org form and submit

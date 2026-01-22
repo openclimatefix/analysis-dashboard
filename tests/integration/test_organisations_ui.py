@@ -4,16 +4,18 @@ Run tests for Organisations UI
 2. get organisation details
 3. delete organisation
 """
+
 import pytest
 from dp_sdk.ocf import dp
 
-from tests.integration.conftest import (
-    create_org_grpc, random_org_name
-)
+from tests.integration.conftest import create_org_grpc, random_org_name
+
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_create_organisation_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
+async def test_create_organisation_ui(
+    app, admin_client: dp.DataPlatformAdministrationServiceStub
+):
     """
     - create random org name
     - fill in create org form and submit
@@ -35,12 +37,17 @@ async def test_create_organisation_ui(app, admin_client:dp.DataPlatformAdministr
     # Assert success
     assert any("created" in s.value.lower() for s in app.success)
 
-    response = await admin_client.get_organisation(dp.GetOrganisationRequest(org_name=org_name))
+    response = await admin_client.get_organisation(
+        dp.GetOrganisationRequest(org_name=org_name)
+    )
     assert response.org_name == org_name
+
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_get_organisation_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
+async def test_get_organisation_ui(
+    app, admin_client: dp.DataPlatformAdministrationServiceStub
+):
     """
     - create random org name via grpc
     - fill in get org form and submit
@@ -55,9 +62,12 @@ async def test_get_organisation_ui(app, admin_client:dp.DataPlatformAdministrati
 
     assert any(org_name in s.value for s in app.success)
 
+
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_delete_organisation_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
+async def test_delete_organisation_ui(
+    app, admin_client: dp.DataPlatformAdministrationServiceStub
+):
     """
     - create random org name via grpc
     - fill in delete org form and submit

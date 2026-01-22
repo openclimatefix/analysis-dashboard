@@ -4,10 +4,10 @@ import streamlit as st
 from dp_sdk.ocf import dp
 import grpc
 
+
 async def user_organisation_section(admin_client):
     """User + Organisation relationship management."""
-    
-    
+
     # Add User to Organisation
     st.markdown(
         '<h2 style="color:#ffd053;font-size:32px;">Add User to Organisation</h2>',
@@ -22,17 +22,21 @@ async def user_organisation_section(admin_client):
             st.warning("⚠️ Please fill in all fields")
         else:
             try:
-                await admin_client.add_user_to_organisation(dp.AddUserToOrganisationRequest(
-                    org_name=add_org,
-                    user_oauth_id=add_user_oauth
-                ))
-                st.success(f"✅ User '{add_user_oauth}' added to organisation '{add_org}'!")
-                
+                await admin_client.add_user_to_organisation(
+                    dp.AddUserToOrganisationRequest(
+                        org_name=add_org, user_oauth_id=add_user_oauth
+                    )
+                )
+                st.success(
+                    f"✅ User '{add_user_oauth}' added to organisation '{add_org}'!"
+                )
+
             except grpc.RpcError as e:
-                st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
+                st.error(
+                    f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                )
             except Exception as e:
                 st.error(f"❌ Error adding user to organisation: {str(e)}")
-
 
     # Remove User from Organisation
     st.markdown(
@@ -48,13 +52,18 @@ async def user_organisation_section(admin_client):
             st.warning("⚠️ Please fill in all fields")
         else:
             try:
-                await admin_client.remove_user_from_organisation(dp.RemoveUserFromOrganisationRequest(
-                    org_name=remove_org,
-                    user_oauth_id=remove_user_oauth
-                ))
-                st.success(f"✅ User '{remove_user_oauth}' removed from organisation '{remove_org}'!")
-                
+                await admin_client.remove_user_from_organisation(
+                    dp.RemoveUserFromOrganisationRequest(
+                        org_name=remove_org, user_oauth_id=remove_user_oauth
+                    )
+                )
+                st.success(
+                    f"✅ User '{remove_user_oauth}' removed from organisation '{remove_org}'!"
+                )
+
             except grpc.RpcError as e:
-                st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
+                st.error(
+                    f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                )
             except Exception as e:
                 st.error(f"❌ Error removing user from organisation: {str(e)}")

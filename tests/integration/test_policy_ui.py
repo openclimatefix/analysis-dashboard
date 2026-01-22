@@ -7,6 +7,7 @@ Run tests for Policy tab
 5. add policy group to organisation
 6. remove policy group from organisation
 """
+
 import pytest
 from dp_sdk.ocf import dp
 
@@ -21,12 +22,14 @@ from tests.integration.conftest import (
     random_location_name,
     random_org_name,
     random_policy_name,
-    
 )
+
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_create_policy_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
+async def test_create_policy_ui(
+    app, admin_client: dp.DataPlatformAdministrationServiceStub
+):
     """
     - fill in create policy group form and submit
     - assert success message
@@ -49,9 +52,12 @@ async def test_create_policy_ui(app, admin_client:dp.DataPlatformAdministrationS
     response = await get_policy_group_grpc(admin_client, policy_name)
     assert response.name == policy_name
 
+
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_get_policy_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
+async def test_get_policy_ui(
+    app, admin_client: dp.DataPlatformAdministrationServiceStub
+):
     """
     - create a policy group via grpc
     - fill in get policy group form and submit
@@ -59,16 +65,21 @@ async def test_get_policy_ui(app, admin_client:dp.DataPlatformAdministrationServ
     """
     policy_name = random_policy_name()
     await create_policy_group_grpc(admin_client, policy_name)
-   
+
     app.text_input("get_policy_group_name").set_value(policy_name)
     app.button("get_policy_group_button").click()
     app.run()
 
     assert any(policy_name in s.value for s in app.success)
 
+
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_add_policy_to_group(app, admin_client: dp.DataPlatformAdministrationServiceStub,data_client: dp.DataPlatformDataServiceStub):
+async def test_add_policy_to_group(
+    app,
+    admin_client: dp.DataPlatformAdministrationServiceStub,
+    data_client: dp.DataPlatformDataServiceStub,
+):
     """
     - create a policy group via grpc
     - create a location via grpc
@@ -92,9 +103,14 @@ async def test_add_policy_to_group(app, admin_client: dp.DataPlatformAdministrat
     app.run()
     assert any(policy_name in s.value for s in app.success)
 
+
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_remove_policy_from_group(app, admin_client:dp.DataPlatformAdministrationServiceStub, data_client: dp.DataPlatformDataServiceStub):
+async def test_remove_policy_from_group(
+    app,
+    admin_client: dp.DataPlatformAdministrationServiceStub,
+    data_client: dp.DataPlatformDataServiceStub,
+):
     """
     - create a policy group via grpc
     - create a location via grpc
@@ -128,7 +144,9 @@ async def test_remove_policy_from_group(app, admin_client:dp.DataPlatformAdminis
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_add_policy_to_org(app, admin_client: dp.DataPlatformAdministrationServiceStub):
+async def test_add_policy_to_org(
+    app, admin_client: dp.DataPlatformAdministrationServiceStub
+):
     """
     - create a policy group via grpc
     - create an organisation via grpc
@@ -148,13 +166,15 @@ async def test_add_policy_to_org(app, admin_client: dp.DataPlatformAdministratio
     app.button("add_pg_to_org_button").click()
     app.run()
     assert any("added" in s.value.lower() for s in app.success)
-    response = await get_org_grpc(admin_client,org_name=org_name)
+    response = await get_org_grpc(admin_client, org_name=org_name)
     assert policy_name in response.location_policy_groups
 
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_remove_policy_from_org(app, admin_client:dp.DataPlatformAdministrationServiceStub):
+async def test_remove_policy_from_org(
+    app, admin_client: dp.DataPlatformAdministrationServiceStub
+):
     """
     - create a policy group via grpc
     - create an organisation via grpc
@@ -183,5 +203,5 @@ async def test_remove_policy_from_org(app, admin_client:dp.DataPlatformAdministr
     app.run()
 
     assert any("removed" in s.value.lower() for s in app.success)
-    response = await get_org_grpc(admin_client,org_name=org_name)
+    response = await get_org_grpc(admin_client, org_name=org_name)
     assert policy_name not in response.location_policy_groups
