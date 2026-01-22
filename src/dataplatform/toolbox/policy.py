@@ -10,13 +10,13 @@ async def policies_section(admin_client, data_client):
     
     # Permission mappings
     PERMISSIONS = {
-        "READ": 1,   # PERMISSION_READ
-        "WRITE": 2,  # PERMISSION_WRITE
+        "READ": dp.Permission.READ,
+        "WRITE": dp.Permission.WRITE,
     }
     
     ENERGY_SOURCES = {
-        "SOLAR": 1,  # ENERGY_SOURCE_SOLAR
-        "WIND": 2,   # ENERGY_SOURCE_WIND
+        "SOLAR": dp.EnergySource.SOLAR,
+        "WIND": dp.EnergySource.WIND,
     }
     
     # Create Location Policy Group

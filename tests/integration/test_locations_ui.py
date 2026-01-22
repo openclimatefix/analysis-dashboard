@@ -1,4 +1,9 @@
-import uuid
+"""
+Run tests for Locations tab
+1. list all locations
+2. get location details
+3. create location
+"""
 import pytest
 from dp_sdk.ocf import dp
 import pandas as pd
@@ -11,11 +16,13 @@ from tests.integration.conftest import (
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_list_locations_ui(app, data_client: dp.DataPlatformDataServiceStub):
-    # -----------------
-    # LIST LOCATIONS (UI)
-    # -----------------
+    """
+    - create some locations via grpc
+    - fill in list locations form and submit
+    - assert success message
+    - verify locations listed via grpc
+    """
 
-    # Create some locations via gRPC
     location_names = []
 
     for _ in range(3):
@@ -35,15 +42,17 @@ async def test_list_locations_ui(app, data_client: dp.DataPlatformDataServiceStu
     # Combine all rendered dataframes
     all_tables = pd.concat(dfs)
     for location_name in location_names:
-        assert location_name in all_tables["Name"].values
+        assert location_name in all_tables["locationName"].values
 
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_get_location_ui(app, data_client: dp.DataPlatformDataServiceStub):
-    # -----------------
-    # GET LOCATION (UI)
-    # -----------------
+    """
+    - create a location via grpc
+    - fill in get location form and submit
+    - assert success message
+    """
     location_name = random_location_name()
     response = await create_location_grpc(data_client, location_name)
     location_uuid = response.location_uuid
@@ -61,15 +70,17 @@ async def test_get_location_ui(app, data_client: dp.DataPlatformDataServiceStub)
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_create_location_ui(app, data_client: dp.DataPlatformDataServiceStub):
-    # -----------------
-    # CREATE LOCATION (UI)
-    # -----------------
+    """
+    - fill in create location form and submit
+    - assert success message
+    - verify location created via grpc
+    """
     location_name = random_location_name()
 
     # Fill in form and create location via UI
     app.text_input("create_loc_name").set_value(location_name)
     app.selectbox("create_loc_energy").set_value("WIND")
-    app.selectbox("create_loc_type").set_value("REGION")
+    app.selectbox("create_loc_type").set_value("SITE")
     app.text_input("create_loc_geom").set_value("POINT(0 0)")
     app.number_input("create_loc_cap").set_value(100)
     app.text_area("create_loc_metadata").set_value("{}")

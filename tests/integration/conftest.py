@@ -53,9 +53,6 @@ async def dp_channel():
             os.environ["DATA_PLATFORM_PORT"] = str(port)            
             
             channel = Channel(host=host, port=port)
-            # client =  dp.DataPlatformAdministrationServiceStub(channel)
-            # data_client = dp.DataPlatformDataServiceStub(channel)
-            # yield client, data_client
             yield channel
             channel.close()
 

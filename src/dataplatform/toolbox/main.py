@@ -1,4 +1,4 @@
-"""This module contains the data platform toolbox for the OCF dashboard"""
+"""Data Platform Toolbox Streamlit Page Main Code."""
 import asyncio
 from grpclib.client import Channel
 import streamlit as st

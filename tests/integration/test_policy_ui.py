@@ -1,4 +1,12 @@
-import uuid
+"""
+Run tests for Policy tab
+1. create new policy group
+2. get policy group details
+3. add policy to group
+4. remove policy from group
+5. add policy group to organisation
+6. remove policy group from organisation
+"""
 import pytest
 from dp_sdk.ocf import dp
 
@@ -20,9 +28,11 @@ from tests.integration.conftest import (
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_create_policy_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
-    # -----------------
-    # Create
-    # -----------------
+    """
+    - fill in create policy group form and submit
+    - assert success message
+    - verify policy group created via grpc
+    """
     policy_name = random_policy_name()
     app.expander[0].expanded = True
     app.run()
@@ -43,9 +53,11 @@ async def test_create_policy_ui(app, admin_client:dp.DataPlatformAdministrationS
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_get_policy_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
-    # -----------------
-    # GET (UI)
-    # -----------------
+    """
+    - create a policy group via grpc
+    - fill in get policy group form and submit
+    - assert success message
+    """
     policy_name = random_policy_name()
     await create_policy_group_grpc(admin_client, policy_name)
    
@@ -57,8 +69,13 @@ async def test_get_policy_ui(app, admin_client:dp.DataPlatformAdministrationServ
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_add_policy2group_ui(app, admin_client: dp.DataPlatformAdministrationServiceStub,data_client: dp.DataPlatformDataServiceStub):
-
+async def test_add_policy_to_group(app, admin_client: dp.DataPlatformAdministrationServiceStub,data_client: dp.DataPlatformDataServiceStub):
+    """
+    - create a policy group via grpc
+    - create a location via grpc
+    - fill in add policy to group form and submit
+    - assert success message
+    """
     policy_name = random_policy_name()
     await create_policy_group_grpc(admin_client, policy_name)
 
@@ -79,7 +96,14 @@ async def test_add_policy2group_ui(app, admin_client: dp.DataPlatformAdministrat
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_remove_policy_from_group(app, admin_client:dp.DataPlatformAdministrationServiceStub, data_client: dp.DataPlatformDataServiceStub):
-
+    """
+    - create a policy group via grpc
+    - create a location via grpc
+    - add policy to group via grpc
+    - fill in remove policy from group form and submit
+    - assert success message
+    - verify policy removal via grpc
+    """
     policy_name = random_policy_name()
     await create_policy_group_grpc(admin_client, policy_name)
 
@@ -106,7 +130,13 @@ async def test_remove_policy_from_group(app, admin_client:dp.DataPlatformAdminis
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_add_policy_to_org(app, admin_client: dp.DataPlatformAdministrationServiceStub):
-
+    """
+    - create a policy group via grpc
+    - create an organisation via grpc
+    - fill in add policy group to org form and submit
+    - assert success message
+    - verify policy group added to org via grpc
+    """
     policy_name = random_policy_name()
     await create_policy_group_grpc(admin_client, policy_name)
 
@@ -126,7 +156,14 @@ async def test_add_policy_to_org(app, admin_client: dp.DataPlatformAdministratio
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_remove_policy_from_org(app, admin_client:dp.DataPlatformAdministrationServiceStub):
-    
+    """
+    - create a policy group via grpc
+    - create an organisation via grpc
+    - add policy group to org via grpc
+    - fill in remove policy group from org form and submit
+    - assert success message
+    - verify policy group removed from org via grpc
+    """
     policy_name = random_policy_name()
     await create_policy_group_grpc(admin_client, policy_name)
 

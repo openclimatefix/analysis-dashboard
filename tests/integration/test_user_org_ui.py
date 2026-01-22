@@ -1,4 +1,8 @@
-import uuid
+"""
+Run tests for User Organisation tab
+1. add user to organisation
+2. remove user from organisation
+"""
 import pytest
 from dp_sdk.ocf import dp
 
@@ -10,10 +14,14 @@ from tests.integration.conftest import (
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_add_user_org_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
-    # -----------------
-    # ADD USER TO ORG (UI)
-    # -----------------
+    """
+    - create two orgs and a user in one org
+    - fill in add user to org form and submit
+    - assert success message
+    - verify user added to org via grpc
+    """
 
+    # first create two orgs and a user in one org
     org_a = random_org_name()
     org_b = random_org_name()
     user_id = random_user_oauth()
@@ -41,9 +49,12 @@ async def test_add_user_org_ui(app, admin_client:dp.DataPlatformAdministrationSe
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_remove_user_org_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
-    # -----------------
-    # REMOVE USER FROM ORG (UI)
-    # -----------------
+    """
+    - create two orgs and a user in both orgs
+    - fill in remove user from org form and submit
+    - assert success message
+    - verify user removed from org via grpc
+    """
     org_a = random_org_name()
     org_b = random_org_name()
     user_id = random_user_oauth()

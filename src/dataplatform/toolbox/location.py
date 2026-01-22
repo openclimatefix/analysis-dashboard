@@ -12,18 +12,22 @@ async def locations_section(data_client):
     # Energy source and location type mappings
     ENERGY_SOURCES = {
         "All": None,
-        "SOLAR": 1,  # ENERGY_SOURCE_SOLAR
-        "WIND": 2,   # ENERGY_SOURCE_WIND
+        "SOLAR": dp.EnergySource.SOLAR,
+        "WIND": dp.EnergySource.WIND,
     }
     
     LOCATION_TYPES = {
-        "All": None,
-        "SITE": 1,     # LOCATION_TYPE_SITE
-        "GSP": 2,      # LOCATION_TYPE_GSP
-        "REGION": 3,   # LOCATION_TYPE_REGION
-        "COUNTRY": 4,  # LOCATION_TYPE_COUNTRY
+        "All": dp.LocationType.UNSPECIFIED,
+        "SITE": dp.LocationType.SITE,
+        "GSP": dp.LocationType.GSP,
+        "DNO": dp.LocationType.DNO,
+        "NATION": dp.LocationType.NATION,
+        "STATE": dp.LocationType.STATE,
+        "COUNTY": dp.LocationType.COUNTY,
+        "CITY": dp.LocationType.CITY,
+        "PRIMARY SUBSTATION": dp.LocationType.PRIMARY_SUBSTATION,
     }
-    
+
     # List Locations
     st.markdown(
         '<h2 style="color:#63BCAF;font-size:32px;">List Locations</h2>',
@@ -31,13 +35,13 @@ async def locations_section(data_client):
     )
     with st.expander("Filter options"):
         energy_source_filter = st.selectbox(
-            "Energy Source", 
-            ["All", "SOLAR", "WIND"], 
+            "Energy Source",
+            list(ENERGY_SOURCES.keys()),
             key="list_loc_energy"
         )
         location_type_filter = st.selectbox(
             "Location Type",
-            ["All", "SITE", "GSP", "REGION", "COUNTRY"],
+            list(LOCATION_TYPES.keys()),
             key="list_loc_type"
         )
         user_filter = st.text_input(
@@ -59,51 +63,16 @@ async def locations_section(data_client):
                     request.user_oauth_id_filter = user_filter
                 
                 response = await data_client.list_locations(request)
-                response_dict = response.to_dict()
-                st.write(response_dict)
-                locations = response_dict.get("locations", [])
-                
+                locations = response.locations
+
                 if locations:
                     st.success(f"✅ Found {len(locations)} location(s)")
-                    
-                    # Display as a table
-                    location_data = []
-                    location_type_names = ["Unknown", "SITE", "GSP", "REGION", "COUNTRY"]
-                    for loc in locations:
-                        latlng = loc.get("latlng", {})
-                        # Handle energy_source that might be string or int
-                        energy = loc.get("energySource", 0)
-                        if isinstance(energy, str):
-                            energy_display = "SOLAR" if energy in ("1", "SOLAR") else "WIND" if energy in ("2", "WIND") else energy
-                        else:
-                            energy_display = "SOLAR" if energy == 1 else "WIND" if energy == 2 else "Unknown"
-                        
-                        # Handle location_type that might be string or int
-                        loc_type = loc.get("locationType", 0)
-                        if isinstance(loc_type, str):
-                            # Could be "1" or "SITE" etc.
-                            if loc_type.isdigit():
-                                loc_type_display = location_type_names[int(loc_type)] if int(loc_type) < len(location_type_names) else loc_type
-                            else:
-                                loc_type_display = loc_type
-                        else:
-                            loc_type_display = location_type_names[loc_type] if loc_type < len(location_type_names) else "Unknown"
-                        
-                        location_data.append({
-                            "UUID": loc.get("locationUuid", "N/A"),
-                            "Name": loc.get("locationName", "N/A"),
-                            "Energy Source": energy_display,
-                            "Type": loc_type_display,
-                            "Capacity (W)": loc.get("effectiveCapacityWatts", 0),
-                            "Latitude": latlng.get("latitude", "N/A"),
-                            "Longitude": latlng.get("longitude", "N/A"),
-                        })
-
-                    df = pd.DataFrame(location_data)
+                    loc_dicts = [loc.to_dict() for loc in locations]
+                    # st.write(loc_dicts)  # raw structured output (mentor suggestion)
+                    df = pd.DataFrame(loc_dicts)
                     st.dataframe(df, use_container_width=True)
                 else:
                     st.info("No locations found with the specified filters")
-                    
             except grpc.RpcError as e:
                 st.error(f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}")
             except Exception as e:
@@ -115,7 +84,7 @@ async def locations_section(data_client):
         unsafe_allow_html=True,
     )
     loc_uuid = st.text_input("Location UUID", key="get_loc_uuid")
-    loc_energy = st.selectbox("Energy Source", ["SOLAR", "WIND"], key="get_loc_energy")
+    loc_energy = st.selectbox("Energy Source", list(ENERGY_SOURCES.keys()), key="get_loc_energy")
     include_geometry = st.checkbox("Include Geometry", key="get_loc_geom")
     if st.button("Get Location Details", key="get_location_button"):
         if not loc_uuid.strip():
@@ -145,8 +114,8 @@ async def locations_section(data_client):
     )
     with st.expander("Create new location"):
         loc_name = st.text_input("Location Name *", key="create_loc_name")
-        loc_energy_src = st.selectbox("Energy Source *", ["SOLAR", "WIND"], key="create_loc_energy")
-        loc_type = st.selectbox("Location Type *", ["SITE", "GSP", "REGION", "COUNTRY"], key="create_loc_type")
+        loc_energy_src = st.selectbox("Energy Source *", list(ENERGY_SOURCES.keys()), key="create_loc_energy")
+        loc_type = st.selectbox("Location Type *", list(LOCATION_TYPES.keys()), key="create_loc_type")
         geometry_wkt = st.text_input(
             "Geometry (WKT) *", 
             placeholder="POINT(-0.127 51.507)",

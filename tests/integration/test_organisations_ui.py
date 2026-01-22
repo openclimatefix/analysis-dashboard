@@ -1,3 +1,9 @@
+"""
+Run tests for Organisations UI
+1. create new organisation
+2. get organisation details
+3. delete organisation
+"""
 import pytest
 from dp_sdk.ocf import dp
 
@@ -5,14 +11,15 @@ from tests.integration.conftest import (
     create_org_grpc, random_org_name
 )
 
-
-
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_create_organisation_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
-    # -----------------
-    # Create
-    # -----------------
+    """
+    - create random org name
+    - fill in create org form and submit
+    - assert success message
+    - verify org created via grpc
+    """
     org_name = random_org_name()
     app.expander[0].expanded = True
     app.run()
@@ -34,9 +41,11 @@ async def test_create_organisation_ui(app, admin_client:dp.DataPlatformAdministr
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_get_organisation_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
-    # -----------------
-    # GET (UI)
-    # -----------------
+    """
+    - create random org name via grpc
+    - fill in get org form and submit
+    - assert success message
+    """
     org_name = random_org_name()
     await create_org_grpc(admin_client, org_name)
 
@@ -49,10 +58,14 @@ async def test_get_organisation_ui(app, admin_client:dp.DataPlatformAdministrati
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_delete_organisation_ui(app, admin_client:dp.DataPlatformAdministrationServiceStub):
-    # -----------------
-    # DELETE (UI)
-    # -----------------
+    """
+    - create random org name via grpc
+    - fill in delete org form and submit
+    - assert success message
+    - verify org deletion via grpc
+    """
 
+    # first create an org to delete
     org_name = random_org_name()
     await create_org_grpc(admin_client, org_name)
 
