@@ -3,7 +3,7 @@
 import streamlit as st
 import json
 from dp_sdk.ocf import dp
-import grpc
+from grpclib.exceptions import GRPCError
 
 
 async def locations_section(data_client):
@@ -51,9 +51,9 @@ async def locations_section(data_client):
         else:
             try:
                 request = dp.ListLocationsRequest()
-                if energy_source_filter != "All":
+                if energy_source_filter != "UNSPECIFIED":
                     request.energy_source_filter = ENERGY_SOURCES[energy_source_filter]
-                if location_type_filter != "All":
+                if location_type_filter != "UNSPECIFIED":
                     request.location_type_filter = LOCATION_TYPES[location_type_filter]
                 if user_filter:
                     request.user_oauth_id_filter = user_filter
@@ -67,9 +67,9 @@ async def locations_section(data_client):
                     st.write(loc_dicts)
                 else:
                     st.info("No locations found with the specified filters")
-            except grpc.RpcError as e:
+            except GRPCError as e:
                 st.error(
-                    f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                    f"❌ gRPC Error: {e.message}"
                 )
             except Exception as e:
                 st.error(f"❌ Error listing locations: {str(e)}")
@@ -94,16 +94,16 @@ async def locations_section(data_client):
                 response = await data_client.get_location(
                     dp.GetLocationRequest(
                         location_uuid=loc_uuid,
-                        energy_source=ENERGY_SOURCES.get(loc_energy, 1),
+                        energy_source=ENERGY_SOURCES[loc_energy],
                         include_geometry=include_geometry,
                     )
                 )
                 response_dict = response.to_dict()
                 st.success(f"✅ Found location: {loc_uuid}")
                 st.write(response_dict)
-            except grpc.RpcError as e:
+            except GRPCError as e:
                 st.error(
-                    f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                    f"❌ gRPC Error: {e.message}"
                 )
             except Exception as e:
                 st.error(f"❌ Error fetching location: {str(e)}")
@@ -167,9 +167,9 @@ async def locations_section(data_client):
 
                 except json.JSONDecodeError:
                     st.error("❌ Invalid JSON in metadata field")
-                except grpc.RpcError as e:
+                except GRPCError as e:
                     st.error(
-                        f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                        f"❌ gRPC Error: {e.message}"
                     )
                 except Exception as e:
                     st.error(f"❌ Error creating location: {str(e)}")

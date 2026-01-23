@@ -1,7 +1,7 @@
 """Policy management section for the Data Platform Toolbox."""
 
 import streamlit as st
-import grpc
+from grpclib.exceptions import GRPCError
 from dp_sdk.ocf import dp
 
 
@@ -41,9 +41,9 @@ async def policies_section(admin_client, data_client):
                     response_dict = response.to_dict()
                     st.success(f"✅ Policy Group '{new_policy_group_name}' created!")
                     st.write(response_dict)
-                except grpc.RpcError as e:
+                except GRPCError as e:
                     st.error(
-                        f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                        f"❌ gRPC Error: {e.message}"
                     )
                 except Exception as e:
                     st.error(f"❌ Error creating policy group: {str(e)}")
@@ -70,9 +70,9 @@ async def policies_section(admin_client, data_client):
                 st.success(f"✅ Found policy group: {policy_group_name}")
                 st.write(response_dict)
 
-            except grpc.RpcError as e:
+            except GRPCError as e:
                 st.error(
-                    f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                    f"❌ gRPC Error: {e.message}"
                 )
             except Exception as e:
                 st.error(f"❌ Error fetching policy group: {str(e)}")
@@ -137,9 +137,9 @@ async def policies_section(admin_client, data_client):
                         )
                     )
                     st.success(f"✅ Policy added to group '{add_policy_group}'!")
-                except grpc.RpcError as e:
+                except GRPCError as e:
                     st.error(
-                        f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                        f"❌ gRPC Error: {e.message}"
                     )
                 except Exception as e:
                     st.error(f"❌ Error adding policy: {str(e)}")
@@ -207,9 +207,9 @@ async def policies_section(admin_client, data_client):
                         )
                     )
                     st.success(f"✅ Policy removed from group '{remove_policy_group}'!")
-                except grpc.RpcError as e:
+                except GRPCError as e:
                     st.error(
-                        f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                        f"❌ gRPC Error: {e.message}"
                     )
                 except Exception as e:
                     st.error(f"❌ Error removing policy: {str(e)}")
@@ -236,9 +236,9 @@ async def policies_section(admin_client, data_client):
                 st.success(
                     f"✅ Policy group '{add_pg_name}' added to organisation '{add_pg_org}'!"
                 )
-            except grpc.RpcError as e:
+            except GRPCError as e:
                 st.error(
-                    f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                    f"❌ gRPC Error: {e.message}"
                 )
             except Exception as e:
                 st.error(f"❌ Error adding policy group to organisation: {str(e)}")
@@ -273,9 +273,9 @@ async def policies_section(admin_client, data_client):
                 st.success(
                     f"✅ Policy group '{remove_policy_group_name}' removed from organisation '{remove_policy_group_org}'!"
                 )
-            except grpc.RpcError as e:
+            except GRPCError as e:
                 st.error(
-                    f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                    f"❌ gRPC Error: {e.message}"
                 )
             except Exception as e:
                 st.error(f"❌ Error removing policy group from organisation: {str(e)}")

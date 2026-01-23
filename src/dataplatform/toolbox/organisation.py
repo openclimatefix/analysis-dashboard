@@ -3,7 +3,7 @@
 import streamlit as st
 import json
 from dp_sdk.ocf import dp
-import grpc
+from grpclib.exceptions import GRPCError
 
 
 async def organisation_section(admin_client):
@@ -29,9 +29,9 @@ async def organisation_section(admin_client):
                 st.success(f"✅ Found organisation: {org_name}")
                 st.write(response_dict)
 
-            except grpc.RpcError as e:
+            except GRPCError as e:
                 st.error(
-                    f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                    f"❌ gRPC Error: {e.message}"
                 )
             except Exception as e:
                 st.error(f"❌ Error fetching organisation: {str(e)}")
@@ -74,9 +74,9 @@ async def organisation_section(admin_client):
 
                 except json.JSONDecodeError:
                     st.error("❌ Invalid JSON in metadata field")
-                except grpc.RpcError as e:
+                except GRPCError as e:
                     st.error(
-                        f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                        f"❌ gRPC Error: {e.message}"
                     )
                 except Exception as e:
                     st.error(f"❌ Error creating organisation: {str(e)}")
@@ -111,9 +111,9 @@ async def organisation_section(admin_client):
                         f"✅ Organisation '{del_org_name}' deleted successfully!"
                     )
 
-                except grpc.RpcError as e:
+                except GRPCError as e:
                     st.error(
-                        f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                        f"❌ gRPC Error: {e.message}"
                     )
                 except Exception as e:
                     st.error(f"❌ Error deleting organisation: {str(e)}")

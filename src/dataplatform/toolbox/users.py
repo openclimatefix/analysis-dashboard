@@ -3,7 +3,7 @@
 import streamlit as st
 import json
 from dp_sdk.ocf import dp
-import grpc
+from grpclib.exceptions import GRPCError
 
 
 async def users_section(admin_client):
@@ -29,9 +29,9 @@ async def users_section(admin_client):
                 st.success(f"✅ Found user: {oauth_id}")
                 st.write(response_dict)
 
-            except grpc.RpcError as e:
+            except GRPCError as e:
                 st.error(
-                    f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                    f"❌ gRPC Error: {e.message}"
                 )
             except Exception as e:
                 st.error(f"❌ Error fetching user: {str(e)}")
@@ -80,9 +80,9 @@ async def users_section(admin_client):
 
                 except json.JSONDecodeError:
                     st.error("❌ Invalid JSON in metadata field")
-                except grpc.RpcError as e:
+                except GRPCError as e:
                     st.error(
-                        f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                        f"❌ gRPC Error: {e.message}"
                     )
                 except Exception as e:
                     st.error(f"❌ Error creating user: {str(e)}")
@@ -118,9 +118,9 @@ async def users_section(admin_client):
                     )
                     st.success(f"✅ User '{del_user_id}' deleted successfully!")
 
-                except grpc.RpcError as e:
+                except GRPCError as e:
                     st.error(
-                        f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                        f"❌ gRPC Error: {e.message}"
                     )
                 except Exception as e:
                     st.error(f"❌ Error deleting user: {str(e)}")

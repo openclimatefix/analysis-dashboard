@@ -2,7 +2,7 @@
 
 import streamlit as st
 from dp_sdk.ocf import dp
-import grpc
+from grpclib.exceptions import GRPCError
 
 
 async def user_organisation_section(admin_client):
@@ -31,9 +31,9 @@ async def user_organisation_section(admin_client):
                     f"✅ User '{add_user_oauth}' added to organisation '{add_org}'!"
                 )
 
-            except grpc.RpcError as e:
+            except GRPCError as e:
                 st.error(
-                    f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                    f"❌ gRPC Error: {e.message}"
                 )
             except Exception as e:
                 st.error(f"❌ Error adding user to organisation: {str(e)}")
@@ -61,9 +61,9 @@ async def user_organisation_section(admin_client):
                     f"✅ User '{remove_user_oauth}' removed from organisation '{remove_org}'!"
                 )
 
-            except grpc.RpcError as e:
+            except GRPCError as e:
                 st.error(
-                    f"❌ gRPC Error: {e.details() if hasattr(e, 'details') else str(e)}"
+                    f"❌ gRPC Error: {e.message}"
                 )
             except Exception as e:
                 st.error(f"❌ Error removing user from organisation: {str(e)}")
