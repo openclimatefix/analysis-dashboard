@@ -34,12 +34,11 @@ async def test_list_locations_ui(app, data_client: dp.DataPlatformDataServiceStu
 
     app.run()
     # Expand filter options and click list button
-    app.selectbox("list_loc_energy").set_value("All")
-    app.selectbox("list_loc_type").set_value("All")
+    app.selectbox("list_loc_energy").set_value("UNSPECIFIED")
+    app.selectbox("list_loc_type").set_value("UNSPECIFIED")
     app.text_input("list_loc_user").set_value("")
     app.button("list_locations_button").click()
     app.run()
-
     # Assert success message is shown
     assert any("found" in s.value.lower() for s in app.success)
 

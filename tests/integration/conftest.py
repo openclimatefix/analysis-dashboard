@@ -75,10 +75,6 @@ def random_org_name():
     return "org-test-" + str(uuid.uuid4())
 
 
-def random_org_name():
-    return "org-test-" + str(uuid.uuid4())
-
-
 def random_user_oauth():
     return "user-oauth-id-" + str(uuid.uuid4())
 

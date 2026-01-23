@@ -11,13 +11,13 @@ async def locations_section(data_client):
 
     # Energy source and location type mappings
     ENERGY_SOURCES = {
-        "All": None,
+        "UNSPECIFIED": dp.EnergySource.UNSPECIFIED,
         "SOLAR": dp.EnergySource.SOLAR,
         "WIND": dp.EnergySource.WIND,
     }
 
     LOCATION_TYPES = {
-        "All": dp.LocationType.UNSPECIFIED,
+        "UNSPECIFIED": dp.LocationType.UNSPECIFIED,
         "SITE": dp.LocationType.SITE,
         "GSP": dp.LocationType.GSP,
         "DNO": dp.LocationType.DNO,

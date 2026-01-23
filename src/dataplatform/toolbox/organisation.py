@@ -50,7 +50,7 @@ async def organisation_section(admin_client):
             help="Enter valid JSON for organisation metadata",
         )
 
-        if st.button("Create Organisation", key="create_org_button") and admin_client:
+        if st.button("Create Organisation", key="create_org_button"):
             if not admin_client:
                 st.error("❌ Could not connect to Data Platform")
             elif not new_org_name.strip():
