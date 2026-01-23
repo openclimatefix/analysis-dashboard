@@ -81,7 +81,8 @@ async def locations_section(data_client):
     )
     loc_uuid = st.text_input("Location UUID", key="get_loc_uuid")
     loc_energy = st.selectbox(
-        "Energy Source", list(ENERGY_SOURCES.keys()), key="get_loc_energy"
+        # to avoid defaulting to UNSPECIFIED
+        "Energy Source", list(ENERGY_SOURCES.keys())[1:], key="get_loc_energy"
     )
     include_geometry = st.checkbox("Include Geometry", key="get_loc_geom")
     if st.button("Get Location Details", key="get_location_button"):
@@ -116,10 +117,12 @@ async def locations_section(data_client):
     with st.expander("Create new location"):
         loc_name = st.text_input("Location Name *", key="create_loc_name")
         loc_energy_src = st.selectbox(
-            "Energy Source *", list(ENERGY_SOURCES.keys()), key="create_loc_energy"
+            # to avoid defaulting to UNSPECIFIED
+            "Energy Source *", list(ENERGY_SOURCES.keys())[1:], key="create_loc_energy"
         )
         loc_type = st.selectbox(
-            "Location Type *", list(LOCATION_TYPES.keys()), key="create_loc_type"
+            # to avoid defaulting to UNSPECIFIED
+            "Location Type *", list(LOCATION_TYPES.keys())[1:], key="create_loc_type"
         )
         geometry_wkt = st.text_input(
             "Geometry (WKT) *",

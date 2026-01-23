@@ -51,8 +51,11 @@ async def test_add_user_org_ui(
 
     user = await get_user_grpc(admin_client, user_id)
     assert user.oauth_id == user_id
+    
+    # not sure that user can be in multiple orgs
+    # https://github.com/openclimatefix/data-platform/discussions/117
     assert org_a in user.organisation
-    assert org_b not in user.organisation  # not sure that user can be in multiple orgs
+    assert org_b not in user.organisation
 
 
 @pytest.mark.integration
