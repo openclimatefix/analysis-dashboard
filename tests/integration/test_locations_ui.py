@@ -1,0 +1,100 @@
+"""
+Run tests for Locations tab
+1. list all locations
+2. get location details
+3. create location
+"""
+
+import pytest
+from dp_sdk.ocf import dp
+
+from tests.integration.conftest import (
+    create_location_grpc,
+    list_locations_grpc,
+    random_location_name,
+)
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio(loop_scope="session")
+async def test_list_locations_ui(app, data_client: dp.DataPlatformDataServiceStub):
+    """
+    - create some locations via grpc
+    - fill in list locations form and submit
+    - assert success message
+    - verify locations listed via grpc
+    """
+
+    location_names = []
+
+    for _ in range(3):
+        name = random_location_name()
+        location_names.append(name)
+        await create_location_grpc(data_client, name)
+
+    app.run()
+    # Expand filter options and click list button
+    app.selectbox("list_loc_energy").set_value("UNSPECIFIED")
+    app.selectbox("list_loc_type").set_value("UNSPECIFIED")
+    app.text_input("list_loc_user").set_value("")
+    app.button("list_locations_button").click()
+    app.run()
+    # Assert success message is shown
+    assert any("found" in s.value.lower() for s in app.success)
+
+    # Verify via gRPC that locations were created
+    response = await list_locations_grpc(data_client)
+    all_location_names = [loc.location_name for loc in response.locations]
+    for location_name in location_names:
+        assert location_name in all_location_names
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio(loop_scope="session")
+async def test_get_location_ui(app, data_client: dp.DataPlatformDataServiceStub):
+    """
+    - create a location via grpc
+    - fill in get location form and submit
+    - assert success message
+    """
+    location_name = random_location_name()
+    response = await create_location_grpc(data_client, location_name)
+    location_uuid = response.location_uuid
+
+    # Get location via UI
+    app.text_input("get_loc_uuid").set_value(location_uuid)
+    app.selectbox("get_loc_energy").set_value("SOLAR")
+    app.checkbox("get_loc_geom").set_value(True)
+    app.button("get_location_button").click()
+    app.run()
+
+    # Assert location details are displayed
+    assert any(location_uuid in s.value for s in app.success)
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio(loop_scope="session")
+async def test_create_location_ui(app, data_client: dp.DataPlatformDataServiceStub):
+    """
+    - fill in create location form and submit
+    - assert success message
+    - verify location created via grpc
+    """
+    location_name = random_location_name()
+
+    # Fill in form and create location via UI
+    app.text_input("create_loc_name").set_value(location_name)
+    app.selectbox("create_loc_energy").set_value("WIND")
+    app.selectbox("create_loc_type").set_value("SITE")
+    app.text_input("create_loc_geom").set_value("POINT(0 0)")
+    app.number_input("create_loc_cap").set_value(100)
+    app.text_area("create_loc_metadata").set_value("{}")
+    app.button("create_location_button").click()
+    app.run()
+
+    # Assert success message in UI
+    assert any("created" in s.value.lower() for s in app.success)
+
+    # Verify creation via gRPC
+    response = await list_locations_grpc(data_client)
+    assert any(loc.location_name == location_name for loc in response.locations)
