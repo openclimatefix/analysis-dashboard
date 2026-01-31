@@ -105,6 +105,11 @@ def user_page():
     last_request = last_request.sort_values(by="last API request", ascending=False)
     last_request.set_index("email", inplace=True)
 
+    # Add checkbox to exclude openclimatefix.org emails
+    exclude_openclimatefix = st.sidebar.checkbox("Exclude openclimatefix")
+    if exclude_openclimatefix:
+        last_request = last_request[~last_request.index.str.endswith("@openclimatefix.org")]
+
     st.write(last_request)
 
     # Add selectbox for users
