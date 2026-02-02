@@ -39,6 +39,13 @@ from adjuster import adjuster_page
 from batch_page import batch_page
 from dataplatform.toolbox.main import dataplatform_toolbox_page
 
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("analysis-dashboard")
+except PackageNotFoundError:
+    __version__ = "v?"
+
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
 
@@ -254,7 +261,7 @@ def metric_page():
 
 
 def main_page():
-    st.text('This is the Analysis Dashboard UK. Please select the page you want from the menu at the top of this page')
+    st.text(f'This is the Analysis Dashboard UK v{__version__}. Please select the page you want from the menu at the top of this page')
 
 
 if check_password():
