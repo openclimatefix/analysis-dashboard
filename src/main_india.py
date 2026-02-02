@@ -15,12 +15,18 @@ from weather_forecast import weather_forecast_page
 from mlmodel import mlmodel_page
 from weather_graph import weather_graph_page
 from batch_page import batch_page
+from utils import get_app_version
 
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
 
 def main_page():
-    st.text('This is the Analysis Dashboard India. Please select the page you want on the left hand side')
+    version = get_app_version()
+
+    st.text(
+        f"This is the Analysis Dashboard India   {version}. "
+        "Please select the page you want on the left hand side"
+    )
 
 
 if check_password():

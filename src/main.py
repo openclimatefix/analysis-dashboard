@@ -255,10 +255,13 @@ def metric_page():
 
 
 def main_page():
+    version = get_app_version()
+
     st.text(
-        "This is the Analysis Dashboard UK. Please select the page you want from the menu at the top of this page"
+        f"This is the Analysis Dashboard UK   {version}. "
+        "Please select the page you want from the menu at the top of this page"
     )
-    st.caption(f"Version: {get_app_version()}")
+
 
 if check_password():
     pg = st.navigation([
