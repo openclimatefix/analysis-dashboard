@@ -6,11 +6,11 @@
 
 [![ease of contribution: hard](https://img.shields.io/badge/ease%20of%20contribution:%20hard-bb2629)](https://github.com/openclimatefix#how-easy-is-it-to-get-involved)
 
-Internal dashboard for OCF to track forecast statistics and log the historical data of the forecast performance.
+Internal dashboard for OCF to track forecast statistics, log the historical data of the forecast performance and to manage Data Platform resources.
 
 The analysis dashboard is a tool that was developed for OCF’s internal use and continues to evolve.
 
-Built with [Streamlit](https://streamlit.io/), a Python-based framework made specifically for creating data apps, the dashboard tracks and displays Quartz Solar and other data model statistics, such as mean absolute error (MAE), normalized mean absolute error (nMAE) for all the client sites. The database provides the error statistic using comparing the live generation with the forecast provided. Internally it has the option of chosing the forecast horizion to check the performance with genration. The larger the error, the less accurate the forecast.
+Built with [Streamlit](https://streamlit.io/), a Python-based framework made specifically for creating data apps, the dashboard tracks and displays Quartz Solar and other data model statistics, such as mean absolute error (MAE), normalized mean absolute error (nMAE) for all the client sites. The database provides the error statistic using comparing the live generation with the forecast provided. Internally it has the option of chosing the forecast horizion to check the performance with generation. The larger the error, the less accurate the forecast.
 
 Thanks to the analysis dashboard, OCF has a valuable feedback tool for understanding the accuracy of the forecasts being provided to it's clients.
 
@@ -76,6 +76,26 @@ Run app:
 ```shell
 cd src && streamlit run main.py
 ```
+
+## Data Platform Toolbox
+
+The Analysis Dashboard now includes a **Data Platform Toolbox**, for interacting with the OCF Data Platform via gRPC.
+
+The toolbox allows internal users to:
+
+- Manage **Organisations**
+  - Create, fetch, and delete organisations
+- Manage **Users**
+  - Create users and view user details
+  - Add or remove users from organisations
+- Manage **Locations**
+  - Create locations
+  - Fetch location details
+  - List locations with filters (energy source, location type)
+- Manage **Policies**
+  - Create location policy groups
+  - Add or remove policies from groups
+  - Attach or detach policy groups to organisations
 
 ## Database connection
 
@@ -176,6 +196,17 @@ Function to make `pinball` and exceedance plots. This shows how good the probabi
 ### plots/ramp_rate.py
 
 Function to make `ramp rate` plots.
+
+### dataplatform/toolbox/
+
+- `clients.py` – Creates and manages async gRPC clients for interacting with the Data Platform services.
+- `organisation.py` – Organisation management for creating, fetching, and deleting organisations.
+- `users.py` – Manages users and retrieving user details.
+- `user_organisation.py` – Handles adding and removing users from organisations via the UI.
+- `location.py` – UI for creating locations, fetching location details, and listing locations with filters.
+- `policy.py` – UI for managing location policies, policy groups, and their organisation mappings.
+
+
 
 ## 🛠️ infrastructure
 
