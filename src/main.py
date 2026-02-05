@@ -38,6 +38,7 @@ from cloudcasting_page import cloudcasting_page
 from adjuster import adjuster_page
 from batch_page import batch_page
 from dataplatform.toolbox.main import dataplatform_toolbox_page
+from utils import get_app_version
 
 st.get_option("theme.primaryColor")
 st.set_page_config(layout="wide", page_title="OCF Dashboard")
@@ -254,7 +255,12 @@ def metric_page():
 
 
 def main_page():
-    st.text('This is the Analysis Dashboard UK. Please select the page you want from the menu at the top of this page')
+    version = get_app_version()
+
+    st.text(
+        f"This is the Analysis Dashboard UK   {version}. "
+        "Please select the page you want from the menu at the top of this page"
+    )
 
 
 if check_password():
