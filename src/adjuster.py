@@ -21,6 +21,8 @@ def adjuster_page():
     url = 'https://www.notion.so/openclimatefix/Adjuster-cae707fbac0a440895f8aacec2a7b55c?pvs=4'
     st.markdown(f'<a href="{url}" target="_blank">Link to Notion page</a>', unsafe_allow_html=True)
 
+    st.markdown("**Note:** Adjuster values are subtracted from the forecast. Positive adjuster values will reduce the forecast.")
+
     connection = DatabaseConnection(url=os.environ["DB_URL"], echo=True)
     with connection.get_session() as session:
         # get all the models with adjust values
@@ -50,9 +52,19 @@ def adjuster_page():
         index="time_of_day", columns="forecast_horizon_minutes", values="value"
     )
 
+    # Define OCF colorscale using only bold colors for full range
+    colorscale = [
+        [0, '#4675c1'],      # Bold blue (negative values)
+        [0.25, '#65b0c9'],   # Bold cyan
+        [0.5, '#58b0a9'],    # Bold teal (around zero)
+        [0.75, '#ffd480'],   # Bold yellow-orange
+        [1, '#faa056']       # Bold orange (positive values)
+    ]
+
     fig = go.Figure(
         data=go.Heatmap(
-            z=metric_values_df.values, x=metric_values_df.columns, y=metric_values_df.index
+            z=metric_values_df.values, x=metric_values_df.columns, y=metric_values_df.index,
+            colorscale=colorscale, zmid=0, zmin=-3500, zmax=3500
         ),
         layout=go.Layout(
             title=go.layout.Title(text=f"Adjuster Value for {model_name}"),
