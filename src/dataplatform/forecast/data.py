@@ -146,12 +146,24 @@ async def get_all_observations(
             temp_start_date = temp_start_date + timedelta(days=7)
 
         observation_one_df = pd.concat(observation_one_df, ignore_index=True)
-        observation_one_df = observation_one_df.sort_values(by="timestamp_utc")
-        observation_one_df["observer_name"] = observer_name
+        # Handle case where no observation data is returned
+        if (
+            not observation_one_df.empty
+            and "timestamp_utc" in observation_one_df.columns
+        ):
+            observation_one_df = observation_one_df.sort_values(by="timestamp_utc")
+        else:
+            observation_one_df = pd.DataFrame()
+
+        if not observation_one_df.empty:
+            observation_one_df["observer_name"] = observer_name
 
         all_observations_df.append(observation_one_df)
 
     all_observations_df = pd.concat(all_observations_df, ignore_index=True)
+    # If no observations were returned at all, return empty dataframe
+    if all_observations_df.empty:
+        return pd.DataFrame()
 
     all_observations_df["effective_capacity_watts"] = all_observations_df[
         "effective_capacity_watts"
@@ -197,7 +209,12 @@ async def get_all_data(
     # If the observation data includes pvlive_day_after and pvlive_in_day,
     # then lets just take pvlive_day_after
     one_observations_df = all_observations_df.copy()
-    if "pvlive_day_after" in all_observations_df["observer_name"].values:
+    if (
+        not all_observations_df.empty
+        and "observer_name" in all_observations_df.columns
+        and "pvlive_day_after" in all_observations_df["observer_name"].values
+    ):
+
         one_observations_df = all_observations_df[
             all_observations_df["observer_name"] == "pvlive_day_after"
         ]
