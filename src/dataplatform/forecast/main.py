@@ -154,8 +154,12 @@ async def async_dp_forecast_page() -> None:
     st.subheader("Summary Accuracy Table")
 
     # add slider to select min and max horizon mins
-    default_min_horizon = int(summary_df["horizon_mins"].min())
-    default_max_horizon = int(summary_df["horizon_mins"].max())
+    if len(summary_df) > 0:
+        default_min_horizon = int(summary_df["horizon_mins"].min())
+        default_max_horizon = int(summary_df["horizon_mins"].max())
+    else:
+        default_min_horizon = 0
+        default_max_horizon = 1440
     min_horizon, max_horizon = st.slider(
         "Select Horizon Mins Range",
         default_min_horizon,
@@ -199,7 +203,6 @@ async def async_dp_forecast_page() -> None:
     st.write("Add more metrics")
     st.write("Group adjust and non-adjust")
     st.write("speed up read, use async and more caching")
-    st.write("Get page working with no observations data")
 
 
 def make_summary_data(

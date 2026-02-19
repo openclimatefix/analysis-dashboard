@@ -33,7 +33,18 @@ async def get_forecast_data(
         if forecaster_data_df is not None:
             all_data_df.append(forecaster_data_df)
 
-    all_data_df = pd.concat(all_data_df, ignore_index=True)
+    if len(all_data_df) == 0:
+        all_data_df = pd.DataFrame(columns=[
+            "location_uuid",
+            "forecaster_name",
+            "effective_capacity_watts",
+            "p50_fraction",
+            "init_timestamp",
+            "horizon_mins",
+            "target_timestamp_utc",
+        ])
+    else:
+        all_data_df = pd.concat(all_data_df, ignore_index=True)
 
     all_data_df["effective_capacity_watts"] = all_data_df["effective_capacity_watts"].astype(float)
 
@@ -89,7 +100,16 @@ async def get_forecast_data_one_forecaster(
 
     all_data_df = pd.DataFrame.from_dict(all_data_list_dict)
     if len(all_data_df) == 0:
-        return None
+        return pd.DataFrame(columns=[
+            "location_uuid",
+            "forecaster_fullname",
+            "forecaster_name",
+            "effective_capacity_watts",
+            "p50_fraction",
+            "init_timestamp",
+            "horizon_mins",
+            "target_timestamp_utc",
+        ])
 
     # get plevels into columns and rename them 'fraction
     columns_before_expand = set(all_data_df.columns)
