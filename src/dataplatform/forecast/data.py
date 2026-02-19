@@ -33,7 +33,18 @@ async def get_forecast_data(
         if forecaster_data_df is not None:
             all_data_df.append(forecaster_data_df)
 
-    all_data_df = pd.concat(all_data_df, ignore_index=True)
+    if len(all_data_df) == 0:
+        all_data_df = pd.DataFrame(columns=[
+            "location_uuid",
+            "forecaster_name",
+            "effective_capacity_watts",
+            "p50_fraction",
+            "init_timestamp",
+            "horizon_mins",
+            "target_timestamp_utc",
+        ])
+    else:
+        all_data_df = pd.concat(all_data_df, ignore_index=True)
 
     all_data_df["effective_capacity_watts"] = all_data_df["effective_capacity_watts"].astype(float)
 
@@ -89,7 +100,16 @@ async def get_forecast_data_one_forecaster(
 
     all_data_df = pd.DataFrame.from_dict(all_data_list_dict)
     if len(all_data_df) == 0:
-        return None
+        return pd.DataFrame(columns=[
+            "location_uuid",
+            "forecaster_fullname",
+            "forecaster_name",
+            "effective_capacity_watts",
+            "p50_fraction",
+            "init_timestamp",
+            "horizon_mins",
+            "target_timestamp_utc",
+        ])
 
     # get plevels into columns and rename them 'fraction
     columns_before_expand = set(all_data_df.columns)
@@ -146,12 +166,24 @@ async def get_all_observations(
             temp_start_date = temp_start_date + timedelta(days=7)
 
         observation_one_df = pd.concat(observation_one_df, ignore_index=True)
-        observation_one_df = observation_one_df.sort_values(by="timestamp_utc")
-        observation_one_df["observer_name"] = observer_name
+        # Handle case where no observation data is returned
+        if (
+            not observation_one_df.empty
+            and "timestamp_utc" in observation_one_df.columns
+        ):
+            observation_one_df = observation_one_df.sort_values(by="timestamp_utc")
+        else:
+            observation_one_df = pd.DataFrame()
+
+        if not observation_one_df.empty:
+            observation_one_df["observer_name"] = observer_name
 
         all_observations_df.append(observation_one_df)
 
     all_observations_df = pd.concat(all_observations_df, ignore_index=True)
+    # If no observations were returned at all, return empty dataframe
+    if all_observations_df.empty:
+        return pd.DataFrame()
 
     all_observations_df["effective_capacity_watts"] = all_observations_df[
         "effective_capacity_watts"
@@ -197,7 +229,12 @@ async def get_all_data(
     # If the observation data includes pvlive_day_after and pvlive_in_day,
     # then lets just take pvlive_day_after
     one_observations_df = all_observations_df.copy()
-    if "pvlive_day_after" in all_observations_df["observer_name"].values:
+    if (
+        not all_observations_df.empty
+        and "observer_name" in all_observations_df.columns
+        and "pvlive_day_after" in all_observations_df["observer_name"].values
+    ):
+
         one_observations_df = all_observations_df[
             all_observations_df["observer_name"] == "pvlive_day_after"
         ]
