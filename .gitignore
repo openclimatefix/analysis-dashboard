@@ -1,5 +1,6 @@
 .env
 myenv
+venv/
 src/venv.
 shsohos
 *.pyc
