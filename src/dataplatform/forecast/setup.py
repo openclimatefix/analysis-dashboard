@@ -53,6 +53,7 @@ async def setup_page(client: dp.DataPlatformDataServiceStub) -> dict:
     # Select Location Type
     location_types = [
         dp.LocationType.NATION,
+        dp.LocationType.STATE,
         dp.LocationType.GSP,
         dp.LocationType.SITE,
     ]
