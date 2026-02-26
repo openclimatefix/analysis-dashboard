@@ -40,3 +40,23 @@ def format_time(local_time):
     formatted_time = local_time.strftime("%H:%M")
     timezone_name = local_time.tzname()
     return formatted_date, formatted_time, timezone_name
+
+
+import subprocess
+
+
+def get_app_version() -> str:
+    """
+    Get the current application version from git tags.
+
+    Falls back gracefully if git is not available (e.g. packaged builds).
+    """
+    try:
+        version = subprocess.check_output(
+            ["git", "describe", "--tags", "--dirty", "--always"],
+            stderr=subprocess.DEVNULL,
+            cwd=None,
+        ).decode("utf-8").strip()
+        return version
+    except Exception:
+        return "v?"

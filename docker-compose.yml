@@ -16,6 +16,8 @@ services:
       - ./src:/app/src # Mounting the src directory inside the container
     command:
       [
+        "uv",
+        "run",
         "streamlit",
         "run",
         "src/main.py",
