@@ -1,5 +1,6 @@
 import time
 import uuid
+import docker
 import pytest
 from testcontainers.postgres import PostgresContainer
 from testcontainers.core.container import DockerContainer
@@ -11,6 +12,15 @@ from dp_sdk.ocf import dp
 from grpclib.client import Channel
 
 
+def _is_docker_available() -> bool:
+    try:
+        client = docker.from_env()
+        client.ping()
+        return True
+    except Exception:
+        return False
+
+
 @pytest_asyncio.fixture(scope="session")
 async def dp_channel():
     """
@@ -18,6 +28,9 @@ async def dp_channel():
     This fixture uses `testcontainers` to start a fresh PostgreSQL container and provides
     the connection URL dynamically for use in other fixtures.
     """
+
+    if not _is_docker_available():
+        pytest.skip("Docker daemon is not available; skipping integration tests")
 
     # we use a specific postgres image with postgis and pgpartman installed
     # TODO make a release of this, not using logging tag.

@@ -1,5 +1,6 @@
 import datetime as dt
 
+import docker
 import pytest
 from nowcasting_datamodel.models.base import Base_Forecast
 from nowcasting_datamodel.models.metric import MetricSQL, MetricValueSQL, DatetimeIntervalSQL
@@ -11,9 +12,21 @@ from sqlalchemy.orm import Session
 from testcontainers.postgres import PostgresContainer
 
 
+def _is_docker_available() -> bool:
+    try:
+        client = docker.from_env()
+        client.ping()
+        return True
+    except Exception:
+        return False
+
+
 @pytest.fixture(scope="session")
 def engine():
     """Database engine fixture."""
+    if not _is_docker_available():
+        pytest.skip("Docker daemon is not available; skipping Docker-dependent tests")
+
     with PostgresContainer("postgres:14.5") as postgres:
         # TODO need to setup postgres database with docker
         url = postgres.get_connection_url()
