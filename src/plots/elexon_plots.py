@@ -106,7 +106,7 @@ def fetch_forecast_data(
             return pd.DataFrame()
 
         df = pd.DataFrame([item.to_dict() for item in response.data])
-        solar_df = df[df["business_type"] == "Solar generation"]
+        solar_df = df[df["business_type"] == "Solar generation"].copy()
         solar_df["start_time"] = pd.to_datetime(solar_df["start_time"])
         solar_df = solar_df.set_index("start_time")
 
