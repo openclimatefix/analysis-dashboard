@@ -1,7 +1,7 @@
 from unittest.mock import Mock, patch
 import pandas as pd
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from plotly import graph_objects as go
 from plots.elexon_plots import  add_elexon_plot, determine_start_and_end_datetimes, fetch_forecast_data
 from elexonpy.api_client import ApiClient
@@ -9,7 +9,7 @@ from elexonpy.api.generation_forecast_api import GenerationForecastApi
 
 def test_determine_start_and_end_datetimes_no_input():
     # Test with no input
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     start, end = determine_start_and_end_datetimes([], [])
     assert start < now, "Start time should be before current time."
     assert end > start, "End time should be after start time."
