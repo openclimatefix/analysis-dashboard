@@ -8,6 +8,32 @@ import plotly.graph_objects as go
 from dataplatform.forecast.constant import colours
 
 
+def _pick_latest_forecast_per_target(
+    forecast_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """Pick one forecast row per target and forecaster.
+
+    We match the classic Forecast page behavior by choosing the lowest horizon,
+    and for ties choosing the most recently created forecast.
+    """
+    if forecast_df.empty:
+        return forecast_df
+
+    sort_columns = ["target_timestamp_utc", "forecaster_name", "horizon_mins"]
+    ascending = [True, True, True]
+
+    if "created_timestamp_utc" in forecast_df.columns:
+        sort_columns.append("created_timestamp_utc")
+        # latest created forecast should win when horizon ties
+        ascending.append(False)
+
+    sorted_df = forecast_df.sort_values(by=sort_columns, ascending=ascending)
+    return sorted_df.drop_duplicates(
+        subset=["target_timestamp_utc", "forecaster_name"],
+        keep="first",
+    )
+
+
 def make_time_series_trace(
     fig: go.Figure,
     forecaster_df: pd.DataFrame,
@@ -79,29 +105,21 @@ def plot_forecast_time_series(
     This make a plot of the raw forecasts and observations, for mulitple forecast.
     """
     if selected_forecast_type == "Current":
-        # Choose current forecast
-        # this is done by selecting the unique target_timestamp_utc with the the lowest horizonMins
-        # it should also be unique for each forecasterFullName
-        current_forecast_df = all_forecast_data_df.loc[
-            all_forecast_data_df.groupby(["target_timestamp_utc", "forecaster_name"])[
-                "horizon_mins"
-            ].idxmin()
-        ]
+        # Choose current forecast per target by lowest horizon.
+        # If there are duplicate rows at the same horizon, choose the latest created one.
+        current_forecast_df = _pick_latest_forecast_per_target(all_forecast_data_df)
     elif selected_forecast_type == "Horizon":
         # Choose horizon forecast
         if strict_horizon_filtering:
-            current_forecast_df = all_forecast_data_df[
+            horizon_filtered_df = all_forecast_data_df[
                 all_forecast_data_df["horizon_mins"] == selected_forecast_horizon
             ]
         else:
-            current_forecast_df = all_forecast_data_df[
+            horizon_filtered_df = all_forecast_data_df[
                 all_forecast_data_df["horizon_mins"] >= selected_forecast_horizon
             ]
-        current_forecast_df = current_forecast_df.loc[
-            current_forecast_df.groupby(["target_timestamp_utc", "forecaster_name"])[
-                "horizon_mins"
-            ].idxmin()
-        ]
+
+        current_forecast_df = _pick_latest_forecast_per_target(horizon_filtered_df)
     elif selected_forecast_type == "t0":
         current_forecast_df = all_forecast_data_df[
             all_forecast_data_df["init_timestamp"].isin(selected_t0s)
