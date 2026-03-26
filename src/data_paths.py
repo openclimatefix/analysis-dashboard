@@ -20,7 +20,7 @@ all_nwp_paths = {
         "UKV": f"s3://nowcasting-nwp-{env}/data-metoffice/latest.zarr",
         "ECMWF": f"s3://nowcasting-nwp-{env}/ecmwf/data/latest.zarr",
         "ECMWF-NL": f"s3://nowcasting-nwp-{env}/ecmwf-nl/data/latest.zarr",
-        "UM Global-NL": f"s3://nowcasting-nwp-{env}/mo-nl/data/latest.zarr",
+        "NL MetOffice": f"s3://nowcasting-nwp-{env}/mo-nl/data/latest.zarr",
     },
     "india": {
         "ECMWF": f"s3://india-nwp-{env}/ecmwf/data/latest.zarr",
