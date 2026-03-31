@@ -116,9 +116,10 @@ async def get_forecast_data_one_forecaster(
 
     # get plevels into columns and rename them 'fraction
     columns_before_expand = set(all_data_df.columns)
-    all_data_df = all_data_df.pipe(
-        lambda df: df.join(pd.json_normalize(df["other_statistics_fractions"])),
-    ).drop("other_statistics_fractions", axis=1)
+    if "other_statistics_fractions" in all_data_df.columns:
+        all_data_df = all_data_df.pipe(
+            lambda df: df.join(pd.json_normalize(df["other_statistics_fractions"])),
+        ).drop("other_statistics_fractions", axis=1)
     new_columns = set(all_data_df.columns) - columns_before_expand
     if len(new_columns) > 0:
         all_data_df = all_data_df.rename(columns={col: f"{col}_fraction" for col in new_columns})
