@@ -155,14 +155,14 @@ def pvsite_forecast_page():
         capacity_kw = site.capacity_kw  # Extract capacity dynamically
 
         if forecast_type == "Latest":
-            created = pd.Timestamp.utcnow().ceil("15min")
+            created = pd.Timestamp.now(tz="UTC").ceil("15min")
             created = created.astimezone(timezone.utc)
             created = created.astimezone(timezone_selected)
             created = created.replace(tzinfo=None)
             created = st.sidebar.text_input("Created Before", created)
 
             if created == "":
-                created = pd.Timestamp.utcnow().ceil("15min")
+                created = pd.Timestamp.now(tz="UTC").ceil("15min")
                 created = created.astimezone(timezone.utc)
                 created = created.astimezone(timezone_selected)
                 created = created.replace(tzinfo=None)
