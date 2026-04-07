@@ -260,9 +260,7 @@ def main_page():
 if check_password():
     pg = st.navigation([
         st.Page(main_page, title="🏠 Home", default=True),
-        st.Page(metric_page, title="🔢 Metrics"),
         st.Page(status_page, title="🚦 Status"),
-        st.Page(forecast_page, title="📈 Forecast"),
         st.Page(pvsite_forecast_page, title="📉 Site Forecast"),
         st.Page(dp_forecast_page, title="📉 DP Forecast"),
         st.Page(sites_toolbox_page, title="🛠️ Sites Toolbox"),
@@ -270,7 +268,9 @@ if check_password():
         st.Page(nwp_page, title="🌤️ NWP"),
         st.Page(satellite_page, title="🛰️ Satellite"),
         st.Page(cloudcasting_page, title="☁️ Cloudcasting"),
-        st.Page(adjuster_page, title="🔧 Adjuster"),
         st.Page(batch_page, title="👀 Batch Visualisation Page"),
-        st.Page(dataplatform_toolbox_page, title="🛠️ Data Platform Toolbox")], position="top")
+        st.Page(dataplatform_toolbox_page, title="🛠️ Data Platform Toolbox"),
+        st.Page(metric_page, title="🔢 Legacy Metrics"),
+        st.Page(forecast_page, title="📈 Legacy Forecast"),
+        st.Page(adjuster_page, title="🔧 Legacy Adjuster")], position="top")
     pg.run()
