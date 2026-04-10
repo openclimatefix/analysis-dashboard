@@ -231,15 +231,28 @@ def make_summary_data(
         "value_watts",
         capacity_watts_col,
     ]
+    plevels = [10,25,50,75,90]
+    plevel_metrics = []
+    for plevel in plevels:
+        if f'p{plevel}_below' in summary_table_df.columns:
+            plevel_metrics.append(f'p{plevel}_below')
+            value_columns.append(f'p{plevel}_below')
     summary_table_df = summary_table_df[["forecaster_name", *value_columns]]
 
     # group by forecaster full name a
     summary_table_df = summary_table_df.groupby("forecaster_name").mean()
+    print(summary_table_df)
 
     # scale by units
-    summary_table_df = summary_table_df / scale_factor
+    non_plevel_columns = [col for col in summary_table_df.columns if col not in plevel_metrics]
+    summary_table_df[non_plevel_columns] = summary_table_df[non_plevel_columns] / scale_factor
+    summary_table_df[plevel_metrics] = summary_table_df[plevel_metrics] * 100
     summary_table_df = summary_table_df.rename(
-        {col: f"{col} [{units}]" for col in summary_table_df.columns},
+        {col: f"{col} [{units}]" for col in summary_table_df.columns if col not in plevel_metrics},
+        axis=1,
+    )
+    summary_table_df = summary_table_df.rename(
+        {col: f"{col} [%]" for col in summary_table_df.columns if col in plevel_metrics},
         axis=1,
     )
 

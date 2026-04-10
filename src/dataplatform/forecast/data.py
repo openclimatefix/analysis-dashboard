@@ -266,6 +266,11 @@ async def get_all_data(
     merged_df["error"] = merged_df["p50_watts"] - merged_df["value_watts"]
     merged_df["absolute_error"] = merged_df["error"].abs()
 
+    # calculate forecast below for the different plevels
+    for plevel in ["p10","p25","p50", "p75", "p90"]:
+        if f"{plevel}_watts" in merged_df.columns:
+            merged_df[f"{plevel}_below"] = merged_df[f"{plevel}_watts"] > merged_df["value_watts"]
+
     return {
         "merged_df": merged_df,
         "all_forecast_data_df": all_forecast_data_df,
