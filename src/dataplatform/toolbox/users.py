@@ -2,7 +2,7 @@
 
 import streamlit as st
 import json
-from dp_sdk.ocf import dp
+from ocf import dp
 from grpclib.exceptions import GRPCError
 
 

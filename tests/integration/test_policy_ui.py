@@ -9,7 +9,7 @@ Run tests for Policy tab
 """
 
 import pytest
-from dp_sdk.ocf import dp
+from ocf import dp
 
 from tests.integration.conftest import (
     add_policy_to_group_grpc,

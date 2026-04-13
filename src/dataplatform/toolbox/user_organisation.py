@@ -1,7 +1,7 @@
 """User-Organisation relationship management section for the Data Platform Toolbox."""
 
 import streamlit as st
-from dp_sdk.ocf import dp
+from ocf import dp
 from grpclib.exceptions import GRPCError
 
 

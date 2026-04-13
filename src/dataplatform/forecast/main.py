@@ -5,7 +5,7 @@ import os
 
 import pandas as pd
 import streamlit as st
-from dp_sdk.ocf import dp
+from ocf import dp
 from grpclib.client import Channel
 from grpc_requests import Client as GRPC_Client
 
@@ -35,9 +35,6 @@ async def async_dp_forecast_page() -> None:
     async with Channel(host=data_platform_host, port=data_platform_port) as channel:
         client = dp.DataPlatformDataServiceStub(channel)
 
-        # this is used to streamline requests
-        sync_client = GRPC_Client.get_by_endpoint(f"{data_platform_host}:{data_platform_port}")
-
         setup_page_dict = await setup_page(client)
         selected_location = setup_page_dict["selected_location"]
         start_date = setup_page_dict["start_date"]
@@ -55,7 +52,6 @@ async def async_dp_forecast_page() -> None:
         ### 1. Get all the data ###
         all_data_dict = await get_all_data(
             client=client,
-            sync_client=sync_client,
             start_date=start_date,
             end_date=end_date,
             selected_forecasters=selected_forecasters,

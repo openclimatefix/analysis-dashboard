@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 import pandas as pd
 import streamlit as st
 from aiocache import Cache, cached
-from dp_sdk.ocf import dp
+from ocf import dp
 
 from dataplatform.forecast.cache import key_builder_remove_client
 from dataplatform.forecast.constant import cache_seconds, metrics

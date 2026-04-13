@@ -7,7 +7,7 @@ import pytest_asyncio
 from importlib.metadata import version
 import os
 from streamlit.testing.v1 import AppTest
-from dp_sdk.ocf import dp
+from ocf import dp
 from grpclib.client import Channel
 
 
