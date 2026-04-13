@@ -30,7 +30,7 @@ def dp_forecast_page() -> None:
 async def async_dp_forecast_page() -> None:
     """Async Main function for the Data Platform Forecast Streamlit page."""
     st.title("Data Platform Forecast Page")
-    st.write("This is the forecast page from the Data Platform module. This is very much a WIP")
+    st.write("This is the forecast page from the Data Platform module. ")
 
     async with Channel(host=data_platform_host, port=data_platform_port) as channel:
         client = dp.DataPlatformDataServiceStub(channel)
