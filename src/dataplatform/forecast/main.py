@@ -241,7 +241,6 @@ def make_summary_data(
 
     # group by forecaster full name a
     summary_table_df = summary_table_df.groupby("forecaster_name").mean()
-    print(summary_table_df)
 
     # scale by units
     non_plevel_columns = [col for col in summary_table_df.columns if col not in plevel_metrics]
