@@ -6,7 +6,7 @@ Run tests for Users tab
 """
 
 import pytest
-from dp_sdk.ocf import dp
+from ocf import dp
 
 from tests.integration.conftest import (
     create_org_grpc,

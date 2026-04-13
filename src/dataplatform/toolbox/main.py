@@ -8,7 +8,7 @@ from dataplatform.toolbox.users import users_section
 from dataplatform.toolbox.user_organisation import user_organisation_section
 from dataplatform.toolbox.location import locations_section
 from dataplatform.toolbox.policy import policies_section
-from dp_sdk.ocf import dp
+from ocf import dp
 import os
 
 # Color scheme (matching existing toolbox)

@@ -5,7 +5,8 @@ Run tests for User Organisation tab
 """
 
 import pytest
-from dp_sdk.ocf import dp
+from ocf import dp
+
 
 from tests.integration.conftest import (
     add_user_to_org_grpc,

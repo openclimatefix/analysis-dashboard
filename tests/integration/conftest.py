@@ -3,13 +3,17 @@ import uuid
 import pytest
 from testcontainers.postgres import PostgresContainer
 from testcontainers.core.container import DockerContainer
+from testcontainers.core.wait_strategies import PortWaitStrategy
+from testcontainers.postgres import PostgresContainer
 import pytest_asyncio
 from importlib.metadata import version
 import os
 from streamlit.testing.v1 import AppTest
-from dp_sdk.ocf import dp
+from ocf import dp
 from grpclib.client import Channel
 
+DATA_PLATFORM_GRPC_PORT = 50051
+DATA_PLATFORM_STARTUP_TIMEOUT_SECONDS = 60
 
 @pytest_asyncio.fixture(scope="session")
 async def dp_channel():
@@ -22,29 +26,40 @@ async def dp_channel():
     # we use a specific postgres image with postgis and pgpartman installed
     # TODO make a release of this, not using logging tag.
     with PostgresContainer(
-        "ghcr.io/openclimatefix/data-platform-pgdb:logging",
+        f"ghcr.io/openclimatefix/data-platform-pgdb:{version('dp_sdk')}",
         username="postgres",
         password="postgres",
         dbname="postgres",
     ).with_env("POSTGRES_HOST", "db") as postgres:
-        database_url = postgres.get_connection_url()
-        # we need to get ride of psycopg2, so the go driver works
-        database_url = database_url.replace("postgresql+psycopg2", "postgres")
-        # we need to change to host.docker.internal so the data platform container can see it
-        # https://stackoverflow.com/questions/46973456/docker-access-localhost-port-from-container
-        database_url = database_url.replace("localhost", "host.docker.internal")
+        
+        postgres_container = postgres.get_wrapped_container()
+        assert postgres_container is not None
+        docker_client = postgres.get_docker_client()
+        postgres_network = docker_client.network_name(postgres_container.id)
+        postgres_ip = docker_client.bridge_ip(postgres_container.id)
+        database_url = (
+            f"postgres://{postgres.username}:{postgres.password}@"
+            f"{postgres_ip}:{postgres.port}/{postgres.dbname}"
+        )
+
         dp_container = (
             DockerContainer(
                 image=f"ghcr.io/openclimatefix/data-platform:{version('dp_sdk')}",
+                env={"DATABASE_URL": database_url},
+                ports=[DATA_PLATFORM_GRPC_PORT],
             )
-            .with_env("DATABASE_URL", database_url)
-            .with_exposed_ports(50051)
+            .with_kwargs(network=postgres_network)
+            .waiting_for(
+                PortWaitStrategy(DATA_PLATFORM_GRPC_PORT).with_startup_timeout(
+                    DATA_PLATFORM_STARTUP_TIMEOUT_SECONDS,
+                ),
+            )
         )
         with dp_container:
             time.sleep(3)
 
             host = dp_container.get_container_host_ip()
-            port = dp_container.get_exposed_port(50051)
+            port = dp_container.get_exposed_port(DATA_PLATFORM_GRPC_PORT)
 
             os.environ["DATA_PLATFORM_HOST"] = host
             os.environ["DATA_PLATFORM_PORT"] = str(port)

@@ -2,7 +2,7 @@
 
 import streamlit as st
 from grpclib.exceptions import GRPCError
-from dp_sdk.ocf import dp
+from ocf import dp
 
 
 async def policies_section(admin_client, data_client):

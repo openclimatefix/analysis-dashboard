@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime, timedelta
 
-from dp_sdk.ocf import dp
+from ocf import dp
 
 from dataplatform.forecast.constant import cache_seconds
 
