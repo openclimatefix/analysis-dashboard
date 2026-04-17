@@ -113,6 +113,7 @@ async def get_forecast_data_one_forecaster(
             "initTimestamp": "init_timestamp",
             "horizonMins": "horizon_mins",
             "targetTimestampUtc": "target_timestamp_utc",
+            "otherStatisticsFractions": "other_statistics_fractions",
         },
     )
 
