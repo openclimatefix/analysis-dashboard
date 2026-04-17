@@ -3,18 +3,19 @@
 import time
 from datetime import datetime, timedelta
 
-from grpc_requests import Client
-import betterproto
 import pandas as pd
 from aiocache import Cache, cached
 from ocf import dp
+from google.protobuf.json_format import MessageToDict
 
 from dataplatform.forecast.cache import key_builder_remove_client
 from dataplatform.forecast.constant import cache_seconds, observer_names
+from ocf.dp.dp import common_pb2
+from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
 
 
 async def get_forecast_data(
-    client: dp.DataPlatformDataServiceStub,
+    dpc: service_pb2_grpc.DataPlatformDataServiceStub,
     location: dp.ListLocationsResponseLocationSummary,
     start_date: datetime,
     end_date: datetime,
@@ -25,7 +26,7 @@ async def get_forecast_data(
 
     for forecaster in selected_forecasters:
         forecaster_data_df = await get_forecast_data_one_forecaster(
-            client,
+            dpc,
             location,
             start_date,
             end_date,
@@ -64,7 +65,7 @@ async def get_forecast_data(
 
 @cached(ttl=cache_seconds, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
 async def get_forecast_data_one_forecaster(
-    client: dp.DataPlatformDataServiceStub,
+    dpc: service_pb2_grpc.DataPlatformDataServiceStub,
     location: dp.ListLocationsResponseLocationSummary,
     start_date: datetime,
     end_date: datetime,
@@ -79,26 +80,43 @@ async def get_forecast_data_one_forecaster(
         temp_end_date = min(temp_start_date + timedelta(days=30), end_date)
 
         # fetch data
-        stream_forecast_data_request = dp.StreamForecastDataRequest(
+        stream_forecast_data_request = messages_pb2.StreamForecastDataRequest(
             location_uuid=location.location_uuid,
-            energy_source=dp.EnergySource.SOLAR,
-            time_window=dp.TimeWindow(
+            energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
+            time_window=messages_pb2.StreamForecastDataRequest.TimeWindow(
                 start_timestamp_utc=temp_start_date,
                 end_timestamp_utc=temp_end_date,
             ),
-            forecasters=[selected_forecaster],
+            forecasters=[messages_pb2.Forecaster(forecaster_name=selected_forecaster.forecaster_name, 
+                                                 forecaster_version=selected_forecaster.forecaster_version)],
         )
 
         forecasts = []
-        async for chunk in client.stream_forecast_data(stream_forecast_data_request):
+        async for chunk in dpc.StreamForecastData(stream_forecast_data_request):
             forecasts.append(chunk)
-
+        
         if len(forecasts) > 0:
-            all_data_list_dict.extend(f.to_dict(include_default_values=True, casing=betterproto.Casing.SNAKE) for f in forecasts)
+            all_data_list_dict.extend(MessageToDict(f, always_print_fields_with_no_presence=True) for f in forecasts)
 
         temp_start_date = temp_start_date + timedelta(days=30)
 
     all_data_df = pd.DataFrame.from_dict(all_data_list_dict)
+
+    # change from camelCase to snake_case
+    all_data_df = all_data_df.rename(
+        columns={
+            "locationUuid": "location_uuid",
+            "forecasterFullname": "forecaster_fullname",
+            "forecasterName": "forecaster_name",
+            "effectiveCapacityWatts": "effective_capacity_watts",
+            "p50Fraction": "p50_fraction",
+            "initTimestamp": "init_timestamp",
+            "horizonMins": "horizon_mins",
+            "targetTimestampUtc": "target_timestamp_utc",
+            "otherStatisticsFractions": "other_statistics_fractions",
+        },
+    )
+
     if len(all_data_df) == 0:
         return pd.DataFrame(columns=[
             "location_uuid",
@@ -131,7 +149,7 @@ async def get_forecast_data_one_forecaster(
 
 @cached(ttl=cache_seconds, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
 async def get_all_observations(
-    client: dp.DataPlatformDataServiceStub,
+    client: service_pb2_grpc.DataPlatformDataServiceStub,
     location: dp.ListLocationsResponseLocationSummary,
     start_date: datetime,
     end_date: datetime,
@@ -146,20 +164,21 @@ async def get_all_observations(
         while temp_start_date <= end_date:
             temp_end_date = min(temp_start_date + timedelta(days=7), end_date)
 
-            get_observations_request = dp.GetObservationsAsTimeseriesRequest(
+            get_observations_request = messages_pb2.GetObservationsAsTimeseriesRequest(
                 observer_name=observer_name,
                 location_uuid=location.location_uuid,
-                energy_source=dp.EnergySource.SOLAR,
-                time_window=dp.TimeWindow(temp_start_date, temp_end_date),
+                energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
+                time_window=messages_pb2.TimeWindow(start_timestamp_utc=temp_start_date, 
+                                                    end_timestamp_utc=temp_end_date),
             )
-            get_observations_response = await client.get_observations_as_timeseries(
+            get_observations_response = await client.GetObservationsAsTimeseries(
                 get_observations_request,
             )
 
             observations = []
             for chunk in get_observations_response.values:
                 observations.append(
-                    chunk.to_dict(include_default_values=True, casing=betterproto.Casing.SNAKE),
+                    MessageToDict(chunk, always_print_fields_with_no_presence=True),
                 )
 
             observation_one_df.append(pd.DataFrame.from_dict(observations))
@@ -167,6 +186,14 @@ async def get_all_observations(
             temp_start_date = temp_start_date + timedelta(days=7)
 
         observation_one_df = pd.concat(observation_one_df, ignore_index=True)
+
+        # rename varibales from Camel case to snake case
+        observation_one_df = observation_one_df.rename(columns={
+            "timestampUtc": "timestamp_utc",
+            "effectiveCapacityWatts": "effective_capacity_watts",
+            "valueFraction": "value_fraction",
+        })
+
         # Handle case where no observation data is returned
         if (
             not observation_one_df.empty
@@ -199,7 +226,7 @@ async def get_all_observations(
 
 
 async def get_all_data(
-    client: dp.DataPlatformDataServiceStub,
+    client: service_pb2_grpc.DataPlatformDataServiceStub,
     selected_location: dp.ListLocationsResponseLocationSummary,
     start_date: datetime,
     end_date: datetime,

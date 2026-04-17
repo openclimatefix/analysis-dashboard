@@ -1,13 +1,14 @@
 """Data Platform Forecast Streamlit Page Main Code."""
 
 import asyncio
+import grpc
 import os
 
 import pandas as pd
 import streamlit as st
 from ocf import dp
 from grpclib.client import Channel
-from grpc_requests import Client as GRPC_Client
+from ocf.dp.dp_data import service_pb2_grpc
 
 from dataplatform.forecast.constant import metrics, observer_names
 from dataplatform.forecast.data import align_t0, get_all_data
@@ -34,6 +35,11 @@ async def async_dp_forecast_page() -> None:
 
     async with Channel(host=data_platform_host, port=data_platform_port) as channel:
         client = dp.DataPlatformDataServiceStub(channel)
+        grpc_channel = grpc.aio.insecure_channel(
+            target=data_platform_host + ":" + str(data_platform_port),
+        )
+        # This client is much faster for loading data
+        dp_client = service_pb2_grpc.DataPlatformDataServiceStub(grpc_channel)
 
         setup_page_dict = await setup_page(client)
         selected_location = setup_page_dict["selected_location"]
@@ -51,7 +57,7 @@ async def async_dp_forecast_page() -> None:
 
         ### 1. Get all the data ###
         all_data_dict = await get_all_data(
-            client=client,
+            client=dp_client,
             start_date=start_date,
             end_date=end_date,
             selected_forecasters=selected_forecasters,
