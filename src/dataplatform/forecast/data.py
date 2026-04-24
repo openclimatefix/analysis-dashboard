@@ -140,9 +140,8 @@ async def get_forecast_data_one_forecaster(
         all_data_df = all_data_df.rename(columns={col: f"{col}_fraction" for col in new_columns})
 
     # create column forecaster_name, its forecaster_fullname with version removed
-    all_data_df["forecaster_name"] = all_data_df["forecaster_fullname"].apply(
-        lambda x: x.rsplit(":", 1)[0],  # split from right, max 1 split
-    )
+    all_data_df["forecaster_name"] = all_data_df["forecaster_fullname"]\
+        .str.rsplit(":", n=1).str[0]  # split from right, max 1 split
 
     return all_data_df
 
@@ -175,11 +174,10 @@ async def get_all_observations(
                 get_observations_request,
             )
 
-            observations = []
-            for chunk in get_observations_response.values:
-                observations.append(
-                    MessageToDict(chunk, always_print_fields_with_no_presence=True),
-                )
+            observations = [
+                MessageToDict(chunk, always_print_fields_with_no_presence=True)
+                for chunk in get_observations_response.values
+            ]
 
             observation_one_df.append(pd.DataFrame.from_dict(observations))
 
@@ -256,7 +254,7 @@ async def get_all_data(
 
     # If the observation data includes pvlive_day_after and pvlive_in_day,
     # then lets just take pvlive_day_after
-    one_observations_df = all_observations_df.copy()
+    one_observations_df = all_observations_df
     if (
         not all_observations_df.empty
         and "observer_name" in all_observations_df.columns
@@ -273,11 +271,26 @@ async def get_all_data(
         "init_timestamp"
     ] + pd.to_timedelta(all_forecast_data_df["horizon_mins"], unit="m")
 
+    forecast_cols = [
+        "target_timestamp_utc",
+        "location_uuid",
+        "forecaster_name",
+        "init_timestamp",
+        "horizon_mins",
+        "p50_watts",
+    ]
+
+    obs_cols = [
+        "timestamp_utc",
+        "value_watts",
+        "effective_capacity_watts",
+    ]
+
     # take the foecast data, and group by horizonMins, forecasterFullName
     # calculate mean absolute error between p50Fraction and observations valueFraction
     merged_df = pd.merge(
-        all_forecast_data_df,
-        one_observations_df,
+        all_forecast_data_df[forecast_cols],
+        one_observations_df[obs_cols],
         left_on=["target_timestamp_utc"],
         right_on=["timestamp_utc"],
         how="inner",

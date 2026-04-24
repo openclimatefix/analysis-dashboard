@@ -225,7 +225,7 @@ def make_summary_data(
         (merged_df["horizon_mins"] >= min_horizon) & (merged_df["horizon_mins"] <= max_horizon)
     ]
 
-    capacity_watts_col = "effective_capacity_watts_observation"
+    capacity_watts_col = "effective_capacity_watts"
 
     value_columns = [
         "error",
@@ -305,16 +305,16 @@ def make_summary_data_metric_vs_horizon_minutes(
 
     # TODO more metrics
 
-    summary_df["effective_capacity_watts_observation"] = (
+    summary_df["effective_capacity_watts"] = (
         merged_df.groupby(["horizon_mins", "forecaster_name"])
-        .agg({"effective_capacity_watts_observation": "mean"})
-        .reset_index()["effective_capacity_watts_observation"]
+        .agg({"effective_capacity_watts": "mean"})
+        .reset_index()["effective_capacity_watts"]
     )
 
     # rename absolute_error to MAE
     summary_df = summary_df.rename(columns={"absolute_error_mean": "MAE", "error_mean": "ME"})
     summary_df["NMAE (by capacity)"] = (
-        summary_df["MAE"] / summary_df["effective_capacity_watts_observation"]
+        summary_df["MAE"] / summary_df["effective_capacity_watts"]
     )
     summary_df["NMAE (by mean observed generation)"] = summary_df["MAE"] / mean_observed_generation
 
