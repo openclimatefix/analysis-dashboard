@@ -1,6 +1,6 @@
 from typing import Callable, List, Optional, Tuple, Union
 import pandas as pd
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, UTC
 from plotly import graph_objects as go
 import streamlit as st
 from elexonpy.api_client import ApiClient
@@ -132,7 +132,7 @@ def determine_start_and_end_datetimes(
     - start_datetime_utc: datetime object in UTC
     - end_datetime_utc: datetime object in UTC
     """
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     # Determine start_datetime_utc
     if start_datetimes:
