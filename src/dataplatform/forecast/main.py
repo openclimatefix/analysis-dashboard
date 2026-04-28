@@ -1,8 +1,8 @@
 """Data Platform Forecast Streamlit Page Main Code."""
-import dataclasses
 
 import asyncio
 import os
+import dataclasses
 import datetime
 
 import pandas as pd
@@ -219,7 +219,9 @@ async def async_dp_forecast_page() -> None:
                 st.session_state.forecast_df = df_forecast
                 st.session_state.observations_df = df_obs
                 st.session_state.merged_metrics_df = None  # Reset metrics on new fetch
-                st.session_state.locked_config = dataclasses.replace(cfg) # Copy the config to a new instance
+                st.session_state.locked_config = dataclasses.replace(
+                    cfg
+                )  # Copy the config to a new instance
 
                 st.session_state.fetch_time_stats = (
                     f"Fetched `{len(df_forecast)}` forecast rows "
