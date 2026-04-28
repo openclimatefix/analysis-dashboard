@@ -1,4 +1,5 @@
 """Data Platform Forecast Streamlit Page Main Code."""
+import dataclasses
 
 import asyncio
 import os
@@ -31,6 +32,8 @@ def init_session_state():
         st.session_state.merged_metrics_df = None
     if "fetch_time_stats" not in st.session_state:
         st.session_state.fetch_time_stats = ""
+    if "locked_params" not in st.session_state:
+        st.session_state.locked_params = None
 
 
 async def fetch_timeseries(
@@ -216,6 +219,7 @@ async def async_dp_forecast_page() -> None:
                 st.session_state.forecast_df = df_forecast
                 st.session_state.observations_df = df_obs
                 st.session_state.merged_metrics_df = None  # Reset metrics on new fetch
+                st.session_state.locked_config = dataclasses.replace(cfg) # Copy the config to a new instance
 
                 st.session_state.fetch_time_stats = (
                     f"Fetched `{len(df_forecast)}` forecast rows "
@@ -245,18 +249,19 @@ async def async_dp_forecast_page() -> None:
             st.header("Time Series Plot")
             show_probabilistic = st.checkbox("Show Probabilistic Forecasts", value=True)
 
+            lcfg = st.session_state.locked_config
             fig = plot_forecast_time_series(
                 all_forecast_data_df=all_forecast_data_df,
                 all_observations_df=all_observations_df,
-                forecaster_names=[f.forecaster_name for f in cfg.forecasters],
+                forecaster_names=[f.forecaster_name for f in lcfg.forecasters],
                 observer_names=observer_names,
-                scale_factor=cfg.scale_factor,
-                units=cfg.units,
-                selected_forecast_type=cfg.forecast_type,
-                selected_forecast_horizon=cfg.forecast_horizon,
-                selected_t0s=cfg.t0s,
+                scale_factor=lcfg.scale_factor,
+                units=lcfg.units,
+                selected_forecast_type=lcfg.forecast_type,
+                selected_forecast_horizon=lcfg.forecast_horizon,
+                selected_t0s=lcfg.t0s,
                 show_probabilistic=show_probabilistic,
-                strict_horizon_filtering=cfg.strict_horizon_filtering,
+                strict_horizon_filtering=lcfg.strict_horizon_filtering,
             )
             st.plotly_chart(fig)
 
@@ -308,10 +313,10 @@ async def async_dp_forecast_page() -> None:
 
                 fig2 = plot_forecast_metric_vs_horizon_minutes(
                     summary_df,
-                    [f.forecaster_name for f in cfg.forecasters],
-                    cfg.metric,
-                    cfg.scale_factor,
-                    cfg.units,
+                    [f.forecaster_name for f in lcfg.forecasters],
+                    lcfg.metric,
+                    lcfg.scale_factor,
+                    lcfg.units,
                     show_sem,
                 )
                 st.plotly_chart(fig2)
@@ -343,18 +348,18 @@ async def async_dp_forecast_page() -> None:
                     merged_df=merged_df,
                     min_horizon=min_horizon,
                     max_horizon=max_horizon,
-                    scale_factor=cfg.scale_factor,
-                    units=cfg.units,
+                    scale_factor=lcfg.scale_factor,
+                    units=lcfg.units,
                 )
                 st.dataframe(summary_table_df)
 
                 st.subheader("Daily Metrics Plots")
                 fig3 = plot_forecast_metric_per_day(
                     merged_df=merged_df,
-                    forecaster_names=[f.forecaster_name for f in cfg.forecasters],
-                    scale_factor=cfg.scale_factor,
-                    units=cfg.units,
-                    selected_metric=cfg.metric,
+                    forecaster_names=[f.forecaster_name for f in lcfg.forecasters],
+                    scale_factor=lcfg.scale_factor,
+                    units=lcfg.units,
+                    selected_metric=lcfg.metric,
                 )
                 st.plotly_chart(fig3)
 
