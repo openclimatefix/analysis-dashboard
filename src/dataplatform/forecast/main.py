@@ -255,7 +255,7 @@ async def async_dp_forecast_page() -> None:
             fig = plot_forecast_time_series(
                 all_forecast_data_df=all_forecast_data_df,
                 all_observations_df=all_observations_df,
-                forecaster_names=[f.forecaster_name for f in lcfg.forecasters],
+                forecaster_names=list({f.forecaster_name for f in lcfg.forecasters}),
                 observer_names=observer_names,
                 scale_factor=lcfg.scale_factor,
                 units=lcfg.units,
@@ -358,7 +358,7 @@ async def async_dp_forecast_page() -> None:
                 st.subheader("Daily Metrics Plots")
                 fig3 = plot_forecast_metric_per_day(
                     merged_df=merged_df,
-                    forecaster_names=[f.forecaster_name for f in lcfg.forecasters],
+                    forecaster_names=list({f.forecaster_name for f in lcfg.forecasters}),
                     scale_factor=lcfg.scale_factor,
                     units=lcfg.units,
                     selected_metric=lcfg.metric,
