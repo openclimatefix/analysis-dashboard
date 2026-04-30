@@ -169,10 +169,6 @@ docker-compose down
 
 `main_india.py` contains functions for the `home page` of the app, which focuses on MAE for the OCF `Quartz Energy` forecast.
 
-### forecast.py
-
-`forecast.py` contains functions for the `forecast page`. The forecast page looks at how well each of OCF's forecast models is performing compared to `PVLive updated` truth values.
-
 ### status.py
 
 `status.py` contains functionality for the `status pagwe` and allows the OCF team to update the forecast status in the database. This is one of the advantages of using an interface like Streamlit, facilitating status updates in a database.
