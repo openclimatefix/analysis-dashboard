@@ -46,11 +46,6 @@ if check_password():
         ],
         "Cloudcasting": [
             st.Page(cloudcasting_page, title="Cloudcasting"),
-        ],
-        "Legacy": [
-            st.Page(metric_page, title="Legacy Metrics"),
-            st.Page(forecast_page, title="Legacy Forecast"),
-            st.Page(adjuster_page, title="Legacy Adjuster"),
         ]},
         position="top",
     )
