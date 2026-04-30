@@ -104,7 +104,7 @@ def plot_forecast_time_series(
         ]
     elif selected_forecast_type == "t0":
         current_forecast_df = all_forecast_data_df[
-            all_forecast_data_df["init_timestamp"].isin(selected_t0s)
+            all_forecast_data_df["initialization_timestamp_utc"].isin(selected_t0s)
         ]
 
     # plot the results
@@ -122,7 +122,7 @@ def plot_forecast_time_series(
 
         fig.add_trace(
             go.Scatter(
-                x=obs_df["timestamp_utc"],
+                x=obs_df["target_timestamp_utc"],
                 y=obs_df["value_watts"] / scale_factor,
                 mode="lines",
                 name=observer_name,
@@ -145,7 +145,7 @@ def plot_forecast_time_series(
             )
         elif selected_forecast_type == "t0":
             for _, t0 in enumerate(selected_t0s):
-                forecaster_with_t0_df = forecaster_df[forecaster_df["init_timestamp"] == t0]
+                forecaster_with_t0_df = forecaster_df[forecaster_df["initialization_timestamp_utc"] == t0]
                 forecaster_name_wth_t0 = f"{forecaster_name} | t0: {t0}"
                 fig = make_time_series_trace(
                     fig,
@@ -236,7 +236,7 @@ def plot_forecast_metric_per_day(
 ) -> go.Figure:
     """Plot forecast metric per day."""
     daily_plots_df = merged_df
-    daily_plots_df["date_utc"] = daily_plots_df["timestamp_utc"].dt.date
+    daily_plots_df["date_utc"] = daily_plots_df["target_timestamp_utc"].dt.date
 
     # group by forecaster name and date
     daily_metrics_df = (
