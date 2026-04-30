@@ -25,16 +25,33 @@ def main_page():
 
 
 if check_password():
-    pg = st.navigation([
-        st.Page(main_page, title="🏠 Home", default=True),
-        st.Page(status_page, title="🚦 Status"),
-        st.Page(pvsite_forecast_page, title="📉 Site Forecast"),
-        st.Page(dp_forecast_page, title="📉 DP Forecast"),
-        st.Page(sites_toolbox_page, title="🛠️ Sites Toolbox"),
-        st.Page(user_page, title="👥 API Users"),
-        st.Page(nwp_page, title="🌤️ NWP"),
-        st.Page(satellite_page, title="🛰️ Satellite"),
-        st.Page(cloudcasting_page, title="☁️ Cloudcasting"),
-        st.Page(batch_page, title="👀 Batch Visualisation Page"),
-        st.Page(dataplatform_toolbox_page, title="🛠️ Data Platform Toolbox")], position="top")
+    pg = st.navigation({
+        "Home": [
+            st.Page(main_page, title="🏠 Home", default=True),
+            st.Page(status_page, title="Status"),
+            st.Page(user_page, title="API Users"),
+        ],
+        "Data Platform": [
+            st.Page(dp_forecast_page, title="Data Platform Forecast"),
+            st.Page(dataplatform_toolbox_page, title="Data Platform Toolbox"),
+        ],
+        "Sites": [
+            st.Page(pvsite_forecast_page, title="Site Forecast"),
+            st.Page(sites_toolbox_page, title="Sites Toolbox"),
+        ],
+        "Input Data": [
+            st.Page(nwp_page, title="NWP"),
+            st.Page(satellite_page, title="Satellite"),
+            st.Page(batch_page, title="Batch Visualisation Page"),
+        ],
+        "Cloudcasting": [
+            st.Page(cloudcasting_page, title="Cloudcasting"),
+        ],
+        "Legacy": [
+            st.Page(metric_page, title="Legacy Metrics"),
+            st.Page(forecast_page, title="Legacy Forecast"),
+            st.Page(adjuster_page, title="Legacy Adjuster"),
+        ]},
+        position="top",
+    )
     pg.run()

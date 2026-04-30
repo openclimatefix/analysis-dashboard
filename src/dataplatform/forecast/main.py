@@ -12,10 +12,13 @@ from grpclib.client import Channel
 from ocf import dp
 
 from dataplatform.forecast.constant import metrics, observer_names
+from dataplatform.forecast.backend import fetch_observations, fetch_timeseries
 from dataplatform.forecast.plot import (
     plot_forecast_metric_per_day,
     plot_forecast_metric_vs_horizon_minutes,
     plot_forecast_time_series,
+    make_summary_data,
+    make_summary_data_metric_vs_horizon_minutes,
 )
 from dataplatform.forecast.setup import setup_page
 
@@ -34,144 +37,6 @@ def init_session_state():
         st.session_state.fetch_time_stats = ""
     if "locked_params" not in st.session_state:
         st.session_state.locked_params = None
-
-
-async def fetch_timeseries(
-    client: dp.DataPlatformDataServiceStub,
-    location_uuid: str,
-    start_date: datetime.datetime,
-    end_date: datetime.datetime,
-    horizon_mins: int,
-    forecasters: list[dp.Forecaster],
-    init_times_utc: list[datetime.datetime] | None = None,
-) -> pd.DataFrame:
-    """Directly calls GetForecastAsTimeseries for selected models and init times."""
-
-    time_window = dp.TimeWindow(
-        start_timestamp_utc=start_date, end_timestamp_utc=end_date
-    )
-
-    times_to_fetch = init_times_utc if init_times_utc else [None]
-
-    async def fetch_one(
-        forecaster_obj: dp.Forecaster, init_time: datetime.datetime | None
-    ):
-        req = dp.GetForecastAsTimeseriesRequest(
-            location_uuid=location_uuid,
-            energy_source=dp.EnergySource.SOLAR,
-            horizon_mins=horizon_mins,
-            time_window=time_window,
-            forecaster=forecaster_obj,
-            initialization_timestamp_utc=init_time,
-        )
-
-        try:
-            resp = await client.get_forecast_as_timeseries(req)
-            rows = []
-            for val in resp.values:
-                row = {
-                    "target_timestamp_utc": val.target_timestamp_utc,
-                    "initialization_timestamp_utc": val.initialization_timestamp_utc,
-                    "created_timestamp_utc": val.created_timestamp_utc,
-                    "effective_capacity_watts": val.effective_capacity_watts,
-                    "forecaster_name": forecaster_obj.forecaster_name,
-                    "location_uuid": resp.location_uuid,
-                    "horizon_mins": (
-                        val.target_timestamp_utc - val.initialization_timestamp_utc
-                    ).total_seconds()
-                    // 60,
-                    "p50_watts": int(
-                        val.p50_value_fraction * val.effective_capacity_watts
-                    ),
-                }
-
-                if val.other_statistics_fractions:
-                    row.update(
-                        {
-                            f"{k}_watts": int(v * val.effective_capacity_watts)
-                            for k, v in val.other_statistics_fractions.items()
-                        }
-                    )
-                rows.append(row)
-
-            return rows
-        except Exception as e:
-            time_str = init_time.isoformat() if init_time else "Latest"
-            st.error(
-                f"Failed to fetch {forecaster_obj.forecaster_name} at {time_str}: {e}"
-            )
-            return []
-
-    tasks = [fetch_one(f, t) for f in forecasters for t in times_to_fetch]
-
-    results = await asyncio.gather(*tasks)
-    all_rows = [item for sublist in results for item in sublist]
-
-    df = pd.DataFrame(all_rows)
-    if not df.empty:
-        df["target_timestamp_utc"] = pd.to_datetime(df["target_timestamp_utc"])
-        if "initialization_timestamp_utc" in df.columns:
-            df["initialization_timestamp_utc"] = pd.to_datetime(
-                df["initialization_timestamp_utc"]
-            )
-
-    return df
-
-
-async def fetch_observations(
-    client: dp.DataPlatformDataServiceStub,
-    location_uuid: str,
-    start_date: datetime.datetime,
-    end_date: datetime.datetime,
-    observers: list[str],
-    energy_source: dp.EnergySource = dp.EnergySource.SOLAR,
-) -> pd.DataFrame:
-    """Directly calls GetObservationsAsTimeseries for selected observers."""
-
-    time_window = dp.TimeWindow(
-        start_timestamp_utc=start_date, end_timestamp_utc=end_date
-    )
-
-    # Run requests concurrently for all selected observers
-    async def fetch_one(obs_name: str):
-        req = dp.GetObservationsAsTimeseriesRequest(
-            location_uuid=location_uuid,
-            observer_name=obs_name,
-            energy_source=energy_source,
-            time_window=time_window,
-        )
-
-        try:
-            resp = await client.get_observations_as_timeseries(req)
-            rows = []
-            for val in resp.values:
-                rows.append(
-                    {
-                        "target_timestamp_utc": val.timestamp_utc,
-                        "value_fraction": val.value_fraction,
-                        "effective_capacity_watts": val.effective_capacity_watts,
-                        "observer_name": obs_name,
-                        "location_uuid": resp.location_uuid,
-                        "value_watts": int(
-                            val.value_fraction * val.effective_capacity_watts
-                        ),
-                    }
-                )
-            return rows
-        except Exception as e:
-            st.error(f"Failed to fetch observations for {obs_name}: {e}")
-            return []
-
-    results = await asyncio.gather(*[fetch_one(obs) for obs in observers])
-    all_rows = [item for sublist in results for item in sublist]
-
-    df = pd.DataFrame(all_rows)
-
-    if not df.empty:
-        df["target_timestamp_utc"] = pd.to_datetime(df["target_timestamp_utc"])
-
-    return df
-
 
 def dp_forecast_page() -> None:
     """Wrapper function that is not async to call the main async function."""
@@ -287,7 +152,14 @@ async def async_dp_forecast_page() -> None:
                     )
 
                     if align_t0s_ui:
-                        merged_df = align_t0(merged_df)
+                        num_forecasters = merged_df["forecaster_name"].nunique()
+                        # Count number of forecasters that have each t0 time
+                        counts = merged_df.groupby("initialization_timestamp_utc")[
+                            "forecaster_name"
+                        ].nunique()
+                        # Filter to just those t0s that all forecasters have
+                        common_t0s = counts[counts == num_forecasters].index
+                        merged_df = merged_df[merged_df["initialization_timestamp_utc"].isin(common_t0s)]
 
                     merged_df["error"] = (
                         merged_df["p50_watts"] - merged_df["value_watts"]
@@ -304,7 +176,7 @@ async def async_dp_forecast_page() -> None:
                 st.subheader("Metric vs Forecast Horizon")
 
                 show_sem = False
-                if cfg.metric == "MAE":
+                if cfg.metric == "MAE": # This is not locked on purpose
                     show_sem = st.checkbox(
                         "Show Uncertainty",
                         value=True,
@@ -315,8 +187,8 @@ async def async_dp_forecast_page() -> None:
 
                 fig2 = plot_forecast_metric_vs_horizon_minutes(
                     summary_df,
-                    [f.forecaster_name for f in lcfg.forecasters],
-                    lcfg.metric,
+                    list({f.forecaster_name for f in lcfg.forecasters}),
+                    cfg.metric, # This is not locked on purpose
                     lcfg.scale_factor,
                     lcfg.units,
                     show_sem,
@@ -361,7 +233,7 @@ async def async_dp_forecast_page() -> None:
                     forecaster_names=list({f.forecaster_name for f in lcfg.forecasters}),
                     scale_factor=lcfg.scale_factor,
                     units=lcfg.units,
-                    selected_metric=lcfg.metric,
+                    selected_metric=cfg.metric, # This is also not locked on purpose
                 )
                 st.plotly_chart(fig3)
 
@@ -370,137 +242,3 @@ async def async_dp_forecast_page() -> None:
                 "Configure your filters in the sidebar and click 'Fetch Forecast & Observations' to begin."
             )
 
-
-def make_summary_data(
-    merged_df: pd.DataFrame,
-    min_horizon: int,
-    max_horizon: int,
-    scale_factor: float,
-    units: str,
-) -> pd.DataFrame:
-    """Make summary data table for given min and max horizon mins."""
-    # Reduce by horizon mins
-    summary_table_df = merged_df[
-        (merged_df["horizon_mins"] >= min_horizon)
-        & (merged_df["horizon_mins"] <= max_horizon)
-    ]
-
-    capacity_watts_col = "effective_capacity_watts"
-
-    value_columns = [
-        "error",
-        "absolute_error",
-        "value_watts",
-        capacity_watts_col,
-    ]
-    plevels = [10, 25, 50, 75, 90]
-    plevel_metrics = []
-    for plevel in plevels:
-        if f"p{plevel}_below" in summary_table_df.columns:
-            plevel_metrics.append(f"p{plevel}_below")
-            value_columns.append(f"p{plevel}_below")
-    summary_table_df = summary_table_df[["forecaster_name", *value_columns]]
-
-    summary_table_df = summary_table_df.groupby("forecaster_name").mean()
-
-    # Scale by units
-    non_plevel_columns = [
-        col for col in summary_table_df.columns if col not in plevel_metrics
-    ]
-    summary_table_df[non_plevel_columns] = (
-        summary_table_df[non_plevel_columns] / scale_factor
-    )
-    summary_table_df[plevel_metrics] = summary_table_df[plevel_metrics] * 100
-    summary_table_df = summary_table_df.rename(
-        {
-            col: f"{col} [{units}]"
-            for col in summary_table_df.columns
-            if col not in plevel_metrics
-        },
-        axis=1,
-    )
-    summary_table_df = summary_table_df.rename(
-        {
-            col: f"{col} [%]"
-            for col in summary_table_df.columns
-            if col in plevel_metrics
-        },
-        axis=1,
-    )
-
-    # Pivot table, so forecaster_name is columns
-    summary_table_df = summary_table_df.pivot_table(
-        columns=summary_table_df.index,
-        values=summary_table_df.columns.tolist(),
-    )
-
-    # Rename
-    summary_table_df = summary_table_df.rename(
-        columns={
-            "error": "ME",
-            "absolute_error": "MAE",
-            capacity_watts_col: "Mean Capacity",
-            "value_watts": "Mean Observed Generation",
-        },
-    )
-
-    return summary_table_df
-
-
-def make_summary_data_metric_vs_horizon_minutes(
-    merged_df: pd.DataFrame,
-) -> pd.DataFrame:
-    """Make summary data for forecast metric vs horizon minutes."""
-    # Get the mean observed generation
-    mean_observed_generation = merged_df["value_watts"].mean()
-
-    summary_df = (
-        merged_df.groupby(["horizon_mins", "forecaster_name"])
-        .agg(
-            {
-                "absolute_error": ["mean", "std", "count"],
-                "error": "mean",
-            },
-        )
-        .reset_index()
-    )
-
-    summary_df.columns = ["_".join(col).strip() for col in summary_df.columns.values]
-    summary_df.columns = [
-        col[:-1] if col.endswith("_") else col for col in summary_df.columns
-    ]
-
-    # Calculate sem of MAE
-    summary_df["sem"] = summary_df["absolute_error_std"] / (
-        summary_df["absolute_error_count"] ** 0.5
-    )
-
-    summary_df["effective_capacity_watts_observation"] = (
-        merged_df.groupby(["horizon_mins", "forecaster_name"])
-        .agg({"effective_capacity_watts": "mean"})
-        .reset_index()["effective_capacity_watts"]
-    )
-
-    summary_df = summary_df.rename(
-        columns={"absolute_error_mean": "MAE", "error_mean": "ME"}
-    )
-    summary_df["NMAE (by capacity)"] = (
-        summary_df["MAE"] / summary_df["effective_capacity_watts"]
-    )
-    summary_df["NMAE (by mean observed generation)"] = (
-        summary_df["MAE"] / mean_observed_generation
-    )
-
-    return summary_df
-
-
-def align_t0(merged_df: pd.DataFrame) -> pd.DataFrame:
-    """Align t0 forecasts for different forecasters."""
-    num_forecasters = merged_df["forecaster_name"].nunique()
-    # Count number of forecasters that have each t0 time
-    counts = merged_df.groupby("initialization_timestamp_utc")[
-        "forecaster_name"
-    ].nunique()
-    # Filter to just those t0s that all forecasters have
-    common_t0s = counts[counts == num_forecasters].index
-    return merged_df[merged_df["initialization_timestamp_utc"].isin(common_t0s)]

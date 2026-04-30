@@ -271,3 +271,126 @@ def plot_forecast_metric_per_day(
         fig3.update_yaxes(range=[0, None])
 
     return fig3
+
+def make_summary_data(
+    merged_df: pd.DataFrame,
+    min_horizon: int,
+    max_horizon: int,
+    scale_factor: float,
+    units: str,
+) -> pd.DataFrame:
+    """Make summary data table for given min and max horizon mins."""
+    # Reduce by horizon mins
+    summary_table_df = merged_df[
+        (merged_df["horizon_mins"] >= min_horizon)
+        & (merged_df["horizon_mins"] <= max_horizon)
+    ]
+
+    capacity_watts_col = "effective_capacity_watts_observation"
+
+    value_columns = [
+        "error",
+        "absolute_error",
+        "value_watts",
+        capacity_watts_col,
+    ]
+    plevels = [10, 25, 50, 75, 90]
+    plevel_metrics = []
+    for plevel in plevels:
+        if f"p{plevel}_below" in summary_table_df.columns:
+            plevel_metrics.append(f"p{plevel}_below")
+            value_columns.append(f"p{plevel}_below")
+    summary_table_df = summary_table_df[["forecaster_name", *value_columns]]
+
+    summary_table_df = summary_table_df.groupby("forecaster_name").mean()
+
+    # Scale by units
+    non_plevel_columns = [
+        col for col in summary_table_df.columns if col not in plevel_metrics
+    ]
+    summary_table_df[non_plevel_columns] = (
+        summary_table_df[non_plevel_columns] / scale_factor
+    )
+    summary_table_df[plevel_metrics] = summary_table_df[plevel_metrics] * 100
+    summary_table_df = summary_table_df.rename(
+        {
+            col: f"{col} [{units}]"
+            for col in summary_table_df.columns
+            if col not in plevel_metrics
+        },
+        axis=1,
+    )
+    summary_table_df = summary_table_df.rename(
+        {
+            col: f"{col} [%]"
+            for col in summary_table_df.columns
+            if col in plevel_metrics
+        },
+        axis=1,
+    )
+
+    # Pivot table, so forecaster_name is columns
+    summary_table_df = summary_table_df.pivot_table(
+        columns=summary_table_df.index,
+        values=summary_table_df.columns.tolist(),
+    )
+
+    # Rename
+    summary_table_df = summary_table_df.rename(
+        columns={
+            "error": "ME",
+            "absolute_error": "MAE",
+            capacity_watts_col: "Mean Capacity",
+            "value_watts": "Mean Observed Generation",
+        },
+    )
+
+    return summary_table_df
+
+
+def make_summary_data_metric_vs_horizon_minutes(
+    merged_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """Make summary data for forecast metric vs horizon minutes."""
+    # Get the mean observed generation
+    mean_observed_generation = merged_df["value_watts"].mean()
+
+    summary_df = (
+        merged_df.groupby(["horizon_mins", "forecaster_name"])
+        .agg(
+            {
+                "absolute_error": ["mean", "std", "count"],
+                "error": "mean",
+            },
+        )
+        .reset_index()
+    )
+
+    summary_df.columns = ["_".join(col).strip() for col in summary_df.columns.values]
+    summary_df.columns = [
+        col[:-1] if col.endswith("_") else col for col in summary_df.columns
+    ]
+
+    # Calculate sem of MAE
+    summary_df["sem"] = summary_df["absolute_error_std"] / (
+        summary_df["absolute_error_count"] ** 0.5
+    )
+
+    summary_df["effective_capacity_watts_observation"] = (
+        merged_df.groupby(["horizon_mins", "forecaster_name"])
+        .agg({"effective_capacity_watts_observation": "mean"})
+        .reset_index()["effective_capacity_watts_observation"]
+    )
+
+    summary_df = summary_df.rename(
+        columns={"absolute_error_mean": "MAE", "error_mean": "ME"}
+    )
+    summary_df["NMAE (by capacity)"] = (
+        summary_df["MAE"] / summary_df["effective_capacity_watts_observation"]
+    )
+    summary_df["NMAE (by mean observed generation)"] = (
+        summary_df["MAE"] / mean_observed_generation
+    )
+
+    return summary_df
+

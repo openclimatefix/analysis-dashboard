@@ -1,6 +1,6 @@
 """Setup Forecast Streamlit Page."""
 
-from datetime import UTC, datetime, timedelta
+import datetime as dt
 import dataclasses
 
 import pandas as pd
@@ -51,13 +51,13 @@ async def get_forecasters(
 class PageConfig:
     location: dp.ListLocationsResponseLocationSummary
     forecasters: list[dp.Forecaster]
-    start_date: datetime
-    end_date: datetime
+    start_date: dt.datetime
+    end_date: dt.datetime
     forecast_type: str
     scale_factor: float
     metric: str
     forecast_horizon: int
-    t0s: list[datetime] | None
+    t0s: list[dt.datetime] | None
     units: str
     strict_horizon_filtering: bool
 
@@ -66,7 +66,7 @@ async def setup_page(client: dp.DataPlatformDataServiceStub) -> PageConfig:
     """Setup the Streamlit page with sidebar options."""
     location_names = await get_location_names(client)
     selected_location_name = st.sidebar.selectbox(
-        "Select a Location",
+        "Location",
         location_names.keys(),
         index=0,
     )
@@ -80,7 +80,7 @@ async def setup_page(client: dp.DataPlatformDataServiceStub) -> PageConfig:
         forecaster_names.index("pvnet_v2") if "pvnet_v2" in forecaster_names else 0
     )
     selected_forecaster_name = st.sidebar.multiselect(
-        "Select a Forecaster",
+        "Forecaster",
         forecaster_names,
         default=forecaster_names[default_index],
     )
@@ -91,22 +91,23 @@ async def setup_page(client: dp.DataPlatformDataServiceStub) -> PageConfig:
         if forecaster.forecaster_name in selected_forecaster_name
     ]
 
-    start_date = st.sidebar.date_input(
-        "Start date:",
-        datetime.now(tz=UTC).date() - timedelta(days=2),
+    now = dt.datetime.now(tz=dt.UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+    window = st.sidebar.date_input(
+        "Time window",
+        (
+            (now - dt.timedelta(days=1)).date(),
+            (now + dt.timedelta(days=2)).date(),
+        ),
+        (now - dt.timedelta(days=365)).date(),
+        (now + dt.timedelta(days=365)).date(),
     )
-    end_date = st.sidebar.date_input(
-        "End date:", datetime.now(tz=UTC).date() + timedelta(days=2)
-    )
-    start_date = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=UTC)
-    end_date = datetime.combine(end_date, datetime.min.time()).replace(
-        tzinfo=UTC
-    ) - timedelta(
-        seconds=1,
-    )
+    start_date = dt.datetime.combine(window[0], now.time()).replace(tzinfo=dt.UTC)
+    end_date = (start_date + dt.timedelta(days=2)).replace(tzinfo=dt.UTC) - dt.timedelta(seconds=1)
+    if len(window) == 2:
+        end_date = dt.datetime.combine(window[1], now.time()).replace(tzinfo=dt.UTC) - dt.timedelta(seconds=1)
 
     selected_forecast_type = st.sidebar.selectbox(
-        "Select a Forecast Type",
+        "Forecast Type",
         ["Current", "Horizon", "t0"],
         index=0,
     )
@@ -117,12 +118,12 @@ async def setup_page(client: dp.DataPlatformDataServiceStub) -> PageConfig:
 
     if selected_forecast_type == "Horizon":
         selected_forecast_horizon = st.sidebar.selectbox(
-            "Select a Forecast Horizon",
+            "Minimum Forecast Horizon (minutes)",
             list(range(0, 36 * 60, 30)),
             index=3,
         )
         strict_horizon_filtering = st.sidebar.checkbox(
-            "Strict Horizon Filtering",
+            "Exact horizons only",
             value=False,
             help="Only show forecasts that exactly match the selected horizon, "
             "if not, we use any forecast horizon greater or equal than",
@@ -135,21 +136,23 @@ async def setup_page(client: dp.DataPlatformDataServiceStub) -> PageConfig:
             .to_pydatetime()
             .tolist()
         )
+        t0_dict = {t.strftime("%Y-%m-%d %H:%M"): t for t in all_t0s}
 
-        selected_t0s = st.sidebar.multiselect(
-            "Select t0s",
-            all_t0s,
-            default=all_t0s[: min(5, len(all_t0s))],
+        selected_t0_strs = st.sidebar.multiselect(
+            "Desired t0s",
+            options=list(t0_dict.keys()),
+            default=list(t0_dict.keys())[:5],
         )
+        selected_t0s = [t0_dict[t_str] for t_str in selected_t0_strs]
 
     default_unit_index = 2  # MW
     units = st.sidebar.selectbox(
-        "Select Units", ["W", "kW", "MW", "GW"], index=default_unit_index
+        "Units", ["W", "kW", "MW", "GW"], index=default_unit_index
     )
     scale_factors = {"W": 1, "kW": 1e3, "MW": 1e6, "GW": 1e9}
     scale_factor = scale_factors[units]
 
-    selected_metric = st.sidebar.selectbox("Select Metrics", metrics.keys(), index=0)
+    selected_metric = st.sidebar.selectbox("Desired Metric", metrics.keys(), index=0)
 
     return PageConfig(
         location=selected_location,
