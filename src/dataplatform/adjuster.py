@@ -81,7 +81,10 @@ async def _async_dp_adjuster_page() -> None:
         location_type = st.sidebar.selectbox(
             "Select a Location Type", location_types, index=0,
         )
-        location_names = await get_location_names(client, location_type)
+        location_names = {
+            k: v for k, v in (await get_location_names(client)).items()
+            if v.location_type == location_type
+        }
         if not location_names:
             st.warning("No locations found for the selected location type.")
             return
