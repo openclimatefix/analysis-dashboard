@@ -166,7 +166,15 @@ async def fetch_observations(
     results = await asyncio.gather(*[fetch_one(obs, w) for obs in observers for w in time_windows])
     all_rows = [item for sublist in results for item in sublist]
 
-    df = pd.DataFrame(all_rows)
+    obs_columns = [
+        "target_timestamp_utc",
+        "value_fraction",
+        "effective_capacity_watts",
+        "observer_name",
+        "location_uuid",
+        "value_watts",
+    ]
+    df = pd.DataFrame(all_rows, columns=obs_columns) if all_rows else pd.DataFrame(columns=obs_columns)
 
     if not df.empty:
         df["target_timestamp_utc"] = pd.to_datetime(df["target_timestamp_utc"])
