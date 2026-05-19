@@ -93,7 +93,7 @@ async def get_forecast_data_one_forecaster(
 
         forecasts = []
         async for chunk in dpc.StreamForecastData(stream_forecast_data_request):
-            forecasts.append(chunk)
+            forecasts.extend(chunk.values)
         
         if len(forecasts) > 0:
             all_data_list_dict.extend(MessageToDict(f, always_print_fields_with_no_presence=True) for f in forecasts)
