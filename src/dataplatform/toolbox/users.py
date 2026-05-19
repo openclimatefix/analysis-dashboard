@@ -2,9 +2,9 @@
 
 import streamlit as st
 import json
-from ocf import dp
+from ocf.dp.dp_admin import messages_pb2
 from grpclib.exceptions import GRPCError
-
+from google.protobuf.json_format import MessageToDict
 
 async def users_section(admin_client):
     """User management section."""
@@ -22,10 +22,10 @@ async def users_section(admin_client):
             st.warning("⚠️ Please enter an OAuth ID")
         else:
             try:
-                response = await admin_client.get_user(
-                    dp.GetUserRequest(oauth_id=oauth_id)
+                response = await admin_client.GetUser(
+                    messages_pb2.GetUserRequest(oauth_id=oauth_id)
                 )
-                response_dict = response.to_dict()
+                response_dict = MessageToDict(response)
                 st.success(f"✅ Found user: {oauth_id}")
                 st.write(response_dict)
 
@@ -65,14 +65,14 @@ async def users_section(admin_client):
                     metadata = (
                         json.loads(user_metadata) if user_metadata.strip() else {}
                     )
-                    response = await admin_client.create_user(
-                        dp.CreateUserRequest(
+                    response = await admin_client.CreateUser(
+                        messages_pb2.CreateUserRequest(
                             oauth_id=new_oauth_id,
                             organisation=user_org,
                             metadata=metadata,
                         )
                     )
-                    response_dict = response.to_dict()
+                    response_dict = MessageToDict(response)
                     st.success(
                         f"✅ User '{new_oauth_id}' created in organisation '{user_org}'!"
                     )
@@ -113,8 +113,8 @@ async def users_section(admin_client):
             else:
                 try:
                     # admin_client.DeleteUser({"user_id": del_user_id})
-                    await admin_client.delete_user(
-                        dp.DeleteUserRequest(user_id=del_user_id)
+                    await admin_client.DeleteUser(
+                        messages_pb2.DeleteUserRequest(user_id=del_user_id)
                     )
                     st.success(f"✅ User '{del_user_id}' deleted successfully!")
 

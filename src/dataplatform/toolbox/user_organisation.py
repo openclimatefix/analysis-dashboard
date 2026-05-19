@@ -1,7 +1,7 @@
 """User-Organisation relationship management section for the Data Platform Toolbox."""
 
 import streamlit as st
-from ocf import dp
+from ocf.dp.dp_admin import messages_pb2
 from grpclib.exceptions import GRPCError
 
 
@@ -22,8 +22,8 @@ async def user_organisation_section(admin_client):
             st.warning("⚠️ Please fill in all fields")
         else:
             try:
-                await admin_client.add_user_to_organisation(
-                    dp.AddUserToOrganisationRequest(
+                await admin_client.AddUserToOrganisation(
+                    messages_pb2.AddUserToOrganisationRequest(
                         org_name=add_org, user_oauth_id=add_user_oauth
                     )
                 )
@@ -52,8 +52,8 @@ async def user_organisation_section(admin_client):
             st.warning("⚠️ Please fill in all fields")
         else:
             try:
-                await admin_client.remove_user_from_organisation(
-                    dp.RemoveUserFromOrganisationRequest(
+                await admin_client.RemoveUserFromOrganisation(
+                    messages_pb2.RemoveUserFromOrganisationRequest(
                         org_name=remove_org, user_oauth_id=remove_user_oauth
                     )
                 )

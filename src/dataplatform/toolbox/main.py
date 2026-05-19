@@ -1,14 +1,16 @@
 """Data Platform Toolbox Streamlit Page Main Code."""
 
 import asyncio
-from grpclib.client import Channel
+import grpc.aio
 import streamlit as st
 from dataplatform.toolbox.organisation import organisation_section
 from dataplatform.toolbox.users import users_section
 from dataplatform.toolbox.user_organisation import user_organisation_section
 from dataplatform.toolbox.location import locations_section
 from dataplatform.toolbox.policy import policies_section
-from ocf import dp
+from ocf.dp.dp import common_pb2
+from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
+from ocf.dp.dp_admin import messages_pb2 as dp_admin_messages_pb2, service_pb2_grpc as dp_admin_service_pb2_grpc
 import os
 
 # Color scheme (matching existing toolbox)
@@ -28,9 +30,10 @@ async def async_dataplatform_toolbox_page():
     """Async Main function for the Data Platform Toolbox Streamlit page."""
     host = os.environ.get("DATA_PLATFORM_HOST", "localhost")
     port = os.environ.get("DATA_PLATFORM_PORT", "50051")
-    async with Channel(host=host, port=int(port)) as channel:
-        admin_client = dp.DataPlatformAdministrationServiceStub(channel)
-        data_client = dp.DataPlatformDataServiceStub(channel)
+    channel = grpc.aio.insecure_channel(f"{host}:{int(port)}")
+    try:
+        admin_client = dp_admin_service_pb2_grpc.DataPlatformAdministrationServiceStub(channel)
+        data_client = service_pb2_grpc.DataPlatformDataServiceStub(channel)
 
         st.markdown(
             '<h1 style="color:#63BCAF;font-size:48px;">Data Platform Toolbox</h1>',
@@ -62,6 +65,9 @@ async def async_dataplatform_toolbox_page():
 
         with tab5:
             await policies_section(admin_client, data_client)
+
+    finally:
+        await channel.close()
 
 
 # Required for the tests to run this as a script

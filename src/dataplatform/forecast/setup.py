@@ -6,7 +6,8 @@ import dataclasses
 import pandas as pd
 import streamlit as st
 from aiocache import Cache, cached
-from ocf import dp
+from ocf.dp.dp import common_pb2
+from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
 
 from dataplatform.forecast.cache import key_builder_remove_client
 from dataplatform.forecast.constant import cache_seconds, metrics
@@ -14,11 +15,11 @@ from dataplatform.forecast.constant import cache_seconds, metrics
 
 @cached(ttl=cache_seconds, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
 async def get_location_names(
-    client: dp.DataPlatformDataServiceStub,
+    client: service_pb2_grpc.DataPlatformDataServiceStub,
 ) -> dict:
     """Get location names."""
-    list_locations_request = dp.ListLocationsRequest()
-    list_locations_response = await client.list_locations(list_locations_request)
+    list_locations_request = messages_pb2.ListLocationsRequest()
+    list_locations_response = await client.ListLocations(list_locations_request)
     all_locations = list_locations_response.locations
 
     location_names = {loc.location_name: loc for loc in all_locations}
@@ -38,19 +39,19 @@ async def get_location_names(
 
 @cached(ttl=cache_seconds, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
 async def get_forecasters(
-    client: dp.DataPlatformDataServiceStub,
-) -> list[dp.Forecaster]:
+    client: service_pb2_grpc.DataPlatformDataServiceStub,
+) -> list[messages_pb2.Forecaster]:
     """Get all forecasters."""
-    get_forecasters_request = dp.ListForecastersRequest()
-    get_forecasters_response = await client.list_forecasters(get_forecasters_request)
+    get_forecasters_request = messages_pb2.ListForecastersRequest()
+    get_forecasters_response = await client.ListForecasters(get_forecasters_request)
     forecasters = get_forecasters_response.forecasters
     return forecasters
 
 
 @dataclasses.dataclass
 class PageConfig:
-    location: dp.ListLocationsResponseLocationSummary
-    forecasters: list[dp.Forecaster]
+    location: messages_pb2.ListLocationsResponse.LocationSummary
+    forecasters: list[messages_pb2.Forecaster]
     start_date: dt.datetime
     end_date: dt.datetime
     forecast_type: str
@@ -62,7 +63,7 @@ class PageConfig:
     strict_horizon_filtering: bool
 
 
-async def setup_page(client: dp.DataPlatformDataServiceStub) -> PageConfig:
+async def setup_page(client: service_pb2_grpc.DataPlatformDataServiceStub) -> PageConfig:
     """Setup the Streamlit page with sidebar options."""
     location_names = await get_location_names(client)
     selected_location_name = st.sidebar.selectbox(

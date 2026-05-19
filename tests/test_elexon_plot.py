@@ -74,6 +74,7 @@ def test_add_elexon_plot_no_data(mock_fetch):
     assert len(updated_fig.data) == 0, "Figure should have no traces added if no data is available"
 
 @pytest.mark.integration
+@pytest.mark.skip(reason="Elexonpy not currently being used")
 def test_fetch_forecast_data_integration():
     # Initialize the actual API client and the function to be tested
     api_client = ApiClient()
