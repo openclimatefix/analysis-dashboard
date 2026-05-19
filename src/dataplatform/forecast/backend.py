@@ -6,21 +6,22 @@ import datetime
 import pandas as pd
 import streamlit as st
 
-from ocf import dp
+from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
+from ocf.dp.dp import common_pb2
 
 
 async def fetch_timeseries(
-    client: dp.DataPlatformDataServiceStub,
+    client: service_pb2_grpc.DataPlatformDataServiceStub,
     location_uuid: str,
     start_date: datetime.datetime,
     end_date: datetime.datetime,
     horizon_mins: int,
-    forecasters: list[dp.Forecaster],
+    forecasters: list[messages_pb2.Forecaster],
     init_times_utc: list[datetime.datetime] | None = None,
 ) -> pd.DataFrame:
     """Directly calls GetForecastAsTimeseries for selected models and init times."""
 
-    time_window = dp.TimeWindow(
+    time_window = messages_pb2.TimeWindow(
         start_timestamp_utc=start_date, end_timestamp_utc=end_date
     )
     time_windows = []
@@ -28,7 +29,7 @@ async def fetch_timeseries(
     while current_start < end_date:
         current_end = min(current_start + datetime.timedelta(days=7), end_date)
         time_windows.append(
-            dp.TimeWindow(
+            messages_pb2.TimeWindow(
                 start_timestamp_utc=current_start,
                 end_timestamp_utc=current_end
             )
@@ -38,13 +39,13 @@ async def fetch_timeseries(
     times_to_fetch = init_times_utc if init_times_utc else [None]
 
     async def fetch_one(
-        forecaster_obj: dp.Forecaster,
-        window: dp.TimeWindow,
+        forecaster_obj: messages_pb2.Forecaster,
+        window: messages_pb2.TimeWindow,
         init_time: datetime.datetime | None
     ):
-        req = dp.GetForecastAsTimeseriesRequest(
+        req = messages_pb2.GetForecastAsTimeseriesRequest(
             location_uuid=location_uuid,
-            energy_source=dp.EnergySource.SOLAR,
+            energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
             horizon_mins=horizon_mins,
             time_window=window,
             forecaster=forecaster_obj,
@@ -52,18 +53,18 @@ async def fetch_timeseries(
         )
 
         try:
-            resp = await client.get_forecast_as_timeseries(req)
+            resp = await client.GetForecastAsTimeseries(req)
             rows = []
             for val in resp.values:
                 row = {
-                    "target_timestamp_utc": val.target_timestamp_utc,
-                    "initialization_timestamp_utc": val.initialization_timestamp_utc,
-                    "created_timestamp_utc": val.created_timestamp_utc,
+                    "target_timestamp_utc": val.target_timestamp_utc.ToDatetime(tzinfo=datetime.UTC),
+                    "initialization_timestamp_utc": val.initialization_timestamp_utc.ToDatetime(tzinfo=datetime.UTC),
+                    "created_timestamp_utc": val.created_timestamp_utc.ToDatetime(tzinfo=datetime.UTC),
                     "effective_capacity_watts": val.effective_capacity_watts,
                     "forecaster_name": forecaster_obj.forecaster_name,
                     "location_uuid": resp.location_uuid,
                     "horizon_mins": (
-                        val.target_timestamp_utc - val.initialization_timestamp_utc
+                        val.target_timestamp_utc.ToDatetime(tzinfo=datetime.UTC) - val.initialization_timestamp_utc.ToDatetime(tzinfo=datetime.UTC)
                     ).total_seconds()
                     // 60,
                     "p50_watts": int(
@@ -108,16 +109,16 @@ async def fetch_timeseries(
 
 
 async def fetch_observations(
-    client: dp.DataPlatformDataServiceStub,
+    client: service_pb2_grpc.DataPlatformDataServiceStub,
     location_uuid: str,
     start_date: datetime.datetime,
     end_date: datetime.datetime,
     observers: list[str],
-    energy_source: dp.EnergySource = dp.EnergySource.SOLAR,
+    energy_source: common_pb2.EnergySource = common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
 ) -> pd.DataFrame:
     """Directly calls GetObservationsAsTimeseries for selected observers."""
 
-    time_window = dp.TimeWindow(
+    time_window = messages_pb2.TimeWindow(
         start_timestamp_utc=start_date, end_timestamp_utc=end_date
     )
     time_windows = []
@@ -125,7 +126,7 @@ async def fetch_observations(
     while current_start < end_date:
         current_end = min(current_start + datetime.timedelta(days=7), end_date)
         time_windows.append(
-            dp.TimeWindow(
+            messages_pb2.TimeWindow(
                 start_timestamp_utc=current_start,
                 end_timestamp_utc=current_end
             )
@@ -134,8 +135,8 @@ async def fetch_observations(
 
 
     # Run requests concurrently for all selected observers
-    async def fetch_one(obs_name: str, window: dp.TimeWindow):
-        req = dp.GetObservationsAsTimeseriesRequest(
+    async def fetch_one(obs_name: str, window: messages_pb2.TimeWindow):
+        req = messages_pb2.GetObservationsAsTimeseriesRequest(
             location_uuid=location_uuid,
             observer_name=obs_name,
             energy_source=energy_source,
@@ -143,12 +144,12 @@ async def fetch_observations(
         )
 
         try:
-            resp = await client.get_observations_as_timeseries(req)
+            resp = await client.GetObservationsAsTimeseries(req)
             rows = []
             for val in resp.values:
                 rows.append(
                     {
-                        "target_timestamp_utc": val.timestamp_utc,
+                        "target_timestamp_utc": val.timestamp_utc.ToDatetime(tzinfo=datetime.UTC),
                         "value_fraction": val.value_fraction,
                         "effective_capacity_watts": val.effective_capacity_watts,
                         "observer_name": obs_name,

@@ -9,8 +9,10 @@ import pytest_asyncio
 from importlib.metadata import version
 import os
 from streamlit.testing.v1 import AppTest
-from ocf import dp
-from grpclib.client import Channel
+from ocf.dp.dp import common_pb2
+from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
+from ocf.dp.dp_admin import messages_pb2 as dp_admin_messages_pb2, service_pb2_grpc as dp_admin_service_pb2_grpc
+import grpc.aio
 
 DATA_PLATFORM_GRPC_PORT = 50051
 DATA_PLATFORM_STARTUP_TIMEOUT_SECONDS = 60
@@ -64,19 +66,19 @@ async def dp_channel():
             os.environ["DATA_PLATFORM_HOST"] = host
             os.environ["DATA_PLATFORM_PORT"] = str(port)
 
-            channel = Channel(host=host, port=port)
+            channel = grpc.aio.insecure_channel(f"{host}:{port}")
             yield channel
-            channel.close()
+            await channel.close()
 
 
 @pytest_asyncio.fixture(scope="session")
 async def admin_client(dp_channel):
-    return dp.DataPlatformAdministrationServiceStub(dp_channel)
+    return dp_admin_service_pb2_grpc.DataPlatformAdministrationServiceStub(dp_channel)
 
 
 @pytest_asyncio.fixture(scope="session")
 async def data_client(dp_channel):
-    return dp.DataPlatformDataServiceStub(dp_channel)
+    return service_pb2_grpc.DataPlatformDataServiceStub(dp_channel)
 
 
 @pytest.fixture
@@ -103,41 +105,41 @@ def random_policy_name():
 
 
 async def create_org_grpc(admin_client, org_name: str):
-    await admin_client.create_organisation(
-        dp.CreateOrganisationRequest(org_name=org_name, metadata={})
+    await admin_client.CreateOrganisation(
+        dp_admin_messages_pb2.CreateOrganisationRequest(org_name=org_name, metadata={})
     )
 
 
 async def get_org_grpc(admin_client, org_name: str):
-    return await admin_client.get_organisation(
-        dp.GetOrganisationRequest(org_name=org_name)
+    return await admin_client.GetOrganisation(
+        dp_admin_messages_pb2.GetOrganisationRequest(org_name=org_name)
     )
 
 
 async def create_user_grpc(admin_client, user_oauth_id: str, org_name: str):
-    await admin_client.create_user(
-        dp.CreateUserRequest(oauth_id=user_oauth_id, organisation=org_name, metadata={})
+    await admin_client.CreateUser(
+        dp_admin_messages_pb2.CreateUserRequest(oauth_id=user_oauth_id, organisation=org_name, metadata={})
     )
 
 
 async def get_user_grpc(admin_client, user_oauth_id: str):
-    return await admin_client.get_user(dp.GetUserRequest(oauth_id=user_oauth_id))
+    return await admin_client.GetUser(dp_admin_messages_pb2.GetUserRequest(oauth_id=user_oauth_id))
 
 
 async def add_user_to_org_grpc(admin_client, user_oauth_id: str, org_name: str):
-    return await admin_client.add_user_to_organisation(
-        dp.AddUserToOrganisationRequest(org_name=org_name, user_oauth_id=user_oauth_id)
+    return await admin_client.AddUserToOrganisation(
+        dp_admin_messages_pb2.AddUserToOrganisationRequest(org_name=org_name, user_oauth_id=user_oauth_id)
     )
 
 
 async def create_location_grpc(
     data_client,
     location_name: str,
-    energy_source=dp.EnergySource.SOLAR,
-    location_type=dp.LocationType.SITE,
+    energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
+    location_type=common_pb2.LocationType.LOCATION_TYPE_SITE,
 ):
-    return await data_client.create_location(
-        dp.CreateLocationRequest(
+    return await data_client.CreateLocation(
+        messages_pb2.CreateLocationRequest(
             location_name=location_name,
             energy_source=energy_source,
             geometry_wkt="POINT(0 0)",
@@ -149,18 +151,18 @@ async def create_location_grpc(
 
 
 async def list_locations_grpc(data_client):
-    return await data_client.list_locations(dp.ListLocationsRequest())
+    return await data_client.ListLocations(messages_pb2.ListLocationsRequest())
 
 
 async def create_policy_group_grpc(admin_client, policy_name: str):
-    await admin_client.create_location_policy_group(
-        dp.CreateLocationPolicyGroupRequest(name=policy_name)
+    await admin_client.CreateLocationPolicyGroup(
+        dp_admin_messages_pb2.CreateLocationPolicyGroupRequest(name=policy_name)
     )
 
 
 async def get_policy_group_grpc(admin_client, policy_name: str):
-    return await admin_client.get_location_policy_group(
-        dp.GetLocationPolicyGroupRequest(location_policy_group_name=policy_name)
+    return await admin_client.GetLocationPolicyGroup(
+        dp_admin_messages_pb2.GetLocationPolicyGroupRequest(location_policy_group_name=policy_name)
     )
 
 
@@ -168,14 +170,14 @@ async def add_policy_to_group_grpc(
     admin_client,
     policy_name: str,
     location_uuid: str,
-    energy_source=dp.EnergySource.WIND,
-    permission=dp.Permission.WRITE,
+    energy_source=common_pb2.EnergySource.ENERGY_SOURCE_WIND,
+    permission=common_pb2.Permission.PERMISSION_WRITE,
 ):
-    await admin_client.add_location_policies_to_group(
-        dp.AddLocationPoliciesToGroupRequest(
+    await admin_client.AddLocationPoliciesToGroup(
+        dp_admin_messages_pb2.AddLocationPoliciesToGroupRequest(
             location_policy_group_name=policy_name,
             location_policies=[
-                dp.LocationPolicy(
+                dp_admin_messages_pb2.LocationPolicy(
                     location_id=location_uuid,
                     energy_source=energy_source,
                     permission=permission,
@@ -186,8 +188,8 @@ async def add_policy_to_group_grpc(
 
 
 async def add_policy_to_org_grpc(admin_client, org_name, policy_name):
-    await admin_client.add_location_policy_group_to_organisation(
-        dp.AddLocationPolicyGroupToOrganisationRequest(
+    await admin_client.AddLocationPolicyGroupToOrganisation(
+        dp_admin_messages_pb2.AddLocationPolicyGroupToOrganisationRequest(
             org_name=org_name,
             location_policy_group_name=policy_name,
         )

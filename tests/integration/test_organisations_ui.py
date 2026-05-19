@@ -6,7 +6,7 @@ Run tests for Organisations UI
 """
 
 import pytest
-from ocf import dp
+from ocf.dp.dp_admin import messages_pb2, service_pb2_grpc
 
 from tests.integration.conftest import create_org_grpc, random_org_name
 
@@ -14,7 +14,7 @@ from tests.integration.conftest import create_org_grpc, random_org_name
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_create_organisation_ui(
-    app, admin_client: dp.DataPlatformAdministrationServiceStub
+    app, admin_client: service_pb2_grpc.DataPlatformAdministrationServiceStub
 ):
     """
     - create random org name
@@ -37,8 +37,8 @@ async def test_create_organisation_ui(
     # Assert success
     assert any("created" in s.value.lower() for s in app.success)
 
-    response = await admin_client.get_organisation(
-        dp.GetOrganisationRequest(org_name=org_name)
+    response = await admin_client.GetOrganisation(
+        messages_pb2.GetOrganisationRequest(org_name=org_name)
     )
     assert response.org_name == org_name
 
@@ -46,7 +46,7 @@ async def test_create_organisation_ui(
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_get_organisation_ui(
-    app, admin_client: dp.DataPlatformAdministrationServiceStub
+    app, admin_client: service_pb2_grpc.DataPlatformAdministrationServiceStub
 ):
     """
     - create random org name via grpc
@@ -66,7 +66,7 @@ async def test_get_organisation_ui(
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_delete_organisation_ui(
-    app, admin_client: dp.DataPlatformAdministrationServiceStub
+    app, admin_client: service_pb2_grpc.DataPlatformAdministrationServiceStub
 ):
     """
     - create random org name via grpc
@@ -87,6 +87,6 @@ async def test_delete_organisation_ui(
 
     # verify deletion via grpc
     with pytest.raises(Exception):
-        await admin_client.get_organisation(
-            dp.GetOrganisationRequest(org_name=org_name)
+        await admin_client.GetOrganisation(
+            messages_pb2.GetOrganisationRequest(org_name=org_name)
         )

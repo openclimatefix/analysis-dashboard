@@ -2,8 +2,10 @@
 
 import streamlit as st
 import json
-from ocf import dp
+from ocf.dp.dp import common_pb2
+from ocf.dp.dp_data import messages_pb2
 from grpclib.exceptions import GRPCError
+from google.protobuf.json_format import MessageToDict
 
 
 async def locations_section(data_client):
@@ -11,21 +13,21 @@ async def locations_section(data_client):
 
     # Energy source and location type mappings
     ENERGY_SOURCES = {
-        "UNSPECIFIED": dp.EnergySource.UNSPECIFIED,
-        "SOLAR": dp.EnergySource.SOLAR,
-        "WIND": dp.EnergySource.WIND,
+        "UNSPECIFIED": common_pb2.EnergySource.ENERGY_SOURCE_UNSPECIFIED,
+        "SOLAR": common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
+        "WIND": common_pb2.EnergySource.ENERGY_SOURCE_WIND,
     }
 
     LOCATION_TYPES = {
-        "UNSPECIFIED": dp.LocationType.UNSPECIFIED,
-        "SITE": dp.LocationType.SITE,
-        "GSP": dp.LocationType.GSP,
-        "DNO": dp.LocationType.DNO,
-        "NATION": dp.LocationType.NATION,
-        "STATE": dp.LocationType.STATE,
-        "COUNTY": dp.LocationType.COUNTY,
-        "CITY": dp.LocationType.CITY,
-        "PRIMARY SUBSTATION": dp.LocationType.PRIMARY_SUBSTATION,
+        "UNSPECIFIED": common_pb2.LocationType.LOCATION_TYPE_UNSPECIFIED,
+        "SITE": common_pb2.LocationType.LOCATION_TYPE_SITE,
+        "GSP": common_pb2.LocationType.LOCATION_TYPE_GSP,
+        "DNO": common_pb2.LocationType.LOCATION_TYPE_DNO,
+        "NATION": common_pb2.LocationType.LOCATION_TYPE_NATION,
+        "STATE": common_pb2.LocationType.LOCATION_TYPE_STATE,
+        "COUNTY": common_pb2.LocationType.LOCATION_TYPE_COUNTY,
+        "CITY": common_pb2.LocationType.LOCATION_TYPE_CITY,
+        "PRIMARY SUBSTATION": common_pb2.LocationType.LOCATION_TYPE_PRIMARY_SUBSTATION,
     }
 
     # List Locations
@@ -50,7 +52,7 @@ async def locations_section(data_client):
             st.error("❌ Could not connect to Data Platform")
         else:
             try:
-                request = dp.ListLocationsRequest()
+                request = messages_pb2.ListLocationsRequest()
                 if energy_source_filter != "UNSPECIFIED":
                     request.energy_source_filter = ENERGY_SOURCES[energy_source_filter]
                 if location_type_filter != "UNSPECIFIED":
@@ -58,12 +60,12 @@ async def locations_section(data_client):
                 if user_filter:
                     request.user_oauth_id_filter = user_filter
 
-                response = await data_client.list_locations(request)
+                response = await data_client.ListLocations(request)
                 locations = response.locations
 
                 if locations:
                     st.success(f"✅ Found {len(locations)} location(s)")
-                    loc_dicts = [loc.to_dict() for loc in locations]
+                    loc_dicts = [MessageToDict(loc) for loc in locations]
                     st.write(loc_dicts)
                 else:
                     st.info("No locations found with the specified filters")
@@ -92,14 +94,14 @@ async def locations_section(data_client):
             st.error("❌ Could not connect to Data Platform")
         else:
             try:
-                response = await data_client.get_location(
-                    dp.GetLocationRequest(
+                response = await data_client.GetLocation(
+                    messages_pb2.GetLocationRequest(
                         location_uuid=loc_uuid,
                         energy_source=ENERGY_SOURCES[loc_energy],
                         include_geometry=include_geometry,
                     )
                 )
-                response_dict = response.to_dict()
+                response_dict = MessageToDict(response)
                 st.success(f"✅ Found location: {loc_uuid}")
                 st.write(response_dict)
             except GRPCError as e:
@@ -154,8 +156,8 @@ async def locations_section(data_client):
                 try:
                     # Parse metadata JSON
                     metadata = json.loads(loc_metadata) if loc_metadata.strip() else {}
-                    response = await data_client.create_location(
-                        dp.CreateLocationRequest(
+                    response = await data_client.CreateLocation(
+                        messages_pb2.CreateLocationRequest(
                             location_name=loc_name,
                             energy_source=ENERGY_SOURCES.get(loc_energy_src, 1),
                             location_type=LOCATION_TYPES.get(loc_type, 1),
@@ -164,7 +166,7 @@ async def locations_section(data_client):
                             metadata=metadata,
                         )
                     )
-                    response_dict = response.to_dict()
+                    response_dict = MessageToDict(response)
                     st.success(f"✅ Location '{loc_name}' created successfully!")
                     st.write(response_dict)
 

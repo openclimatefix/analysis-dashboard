@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime, timedelta
 
-from ocf import dp
+from ocf.dp.dp_data import service_pb2_grpc
 
 from dataplatform.forecast.constant import cache_seconds
 
@@ -11,7 +11,7 @@ def key_builder_remove_client(func: callable, *args: list, **kwargs: dict) -> st
     """Custom key builder that ignores the client argument for caching purposes."""
     key = f"{func.__name__}:"
     for arg in args:
-        if not isinstance(arg, dp.DataPlatformDataServiceStub):
+        if not isinstance(arg, service_pb2_grpc.DataPlatformDataServiceStub):
             key += f"{arg}-"
 
     for k, v in kwargs.items():
