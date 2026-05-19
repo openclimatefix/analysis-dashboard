@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 from aiocache import Cache, cached
-from ocf import dp
 from google.protobuf.json_format import MessageToDict
 
 from dataplatform.forecast.cache import key_builder_remove_client
@@ -16,10 +15,10 @@ from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
 
 async def get_forecast_data(
     dpc: service_pb2_grpc.DataPlatformDataServiceStub,
-    location: dp.ListLocationsResponseLocationSummary,
+    location: messages_pb2.ListLocationsResponse.LocationSummary,
     start_date: datetime,
     end_date: datetime,
-    selected_forecasters: list[dp.Forecaster],
+    selected_forecasters: list[messages_pb2.Forecaster],
 ) -> pd.DataFrame:
     """Get forecast data for the given location and time window."""
     all_data_df = []
@@ -66,10 +65,10 @@ async def get_forecast_data(
 @cached(ttl=cache_seconds, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
 async def get_forecast_data_one_forecaster(
     dpc: service_pb2_grpc.DataPlatformDataServiceStub,
-    location: dp.ListLocationsResponseLocationSummary,
+    location: messages_pb2.ListLocationsResponse.LocationSummary,
     start_date: datetime,
     end_date: datetime,
-    selected_forecaster: dp.Forecaster,
+    selected_forecaster: messages_pb2.Forecaster,
 ) -> pd.DataFrame | None:
     """Get forecast data for one forecaster for the given location and time window."""
     all_data_list_dict = []
@@ -93,7 +92,7 @@ async def get_forecast_data_one_forecaster(
 
         forecasts = []
         async for chunk in dpc.StreamForecastData(stream_forecast_data_request):
-            forecasts.append(chunk)
+            forecasts.extend(chunk.values)
         
         if len(forecasts) > 0:
             all_data_list_dict.extend(MessageToDict(f, always_print_fields_with_no_presence=True) for f in forecasts)
@@ -149,7 +148,7 @@ async def get_forecast_data_one_forecaster(
 @cached(ttl=cache_seconds, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
 async def get_all_observations(
     client: service_pb2_grpc.DataPlatformDataServiceStub,
-    location: dp.ListLocationsResponseLocationSummary,
+    location: messages_pb2.ListLocationsResponse.LocationSummary,
     start_date: datetime,
     end_date: datetime,
 ) -> pd.DataFrame:
@@ -225,10 +224,10 @@ async def get_all_observations(
 
 async def get_all_data(
     client: service_pb2_grpc.DataPlatformDataServiceStub,
-    selected_location: dp.ListLocationsResponseLocationSummary,
+    selected_location: messages_pb2.ListLocationsResponse.LocationSummary,
     start_date: datetime,
     end_date: datetime,
-    selected_forecasters: list[dp.Forecaster],
+    selected_forecasters: list[messages_pb2.Forecaster],
 ) -> dict:
     """Get all forecast and observation data, and merge them."""
     # get generation data

@@ -2,7 +2,10 @@
 
 import streamlit as st
 from grpclib.exceptions import GRPCError
-from ocf import dp
+from ocf.dp.dp import common_pb2
+from ocf.dp.dp_admin import messages_pb2, service_pb2_grpc
+from ocf.dp.dp_data import messages_pb2 as data_messages_pb2
+from google.protobuf.json_format import MessageToDict
 
 
 async def policies_section(admin_client, data_client):
@@ -10,13 +13,13 @@ async def policies_section(admin_client, data_client):
 
     # Permission mappings
     PERMISSIONS = {
-        "READ": dp.Permission.READ,
-        "WRITE": dp.Permission.WRITE,
+        "READ": common_pb2.Permission.PERMISSION_READ,
+        "WRITE": common_pb2.Permission.PERMISSION_WRITE,
     }
 
     ENERGY_SOURCES = {
-        "SOLAR": dp.EnergySource.SOLAR,
-        "WIND": dp.EnergySource.WIND,
+        "SOLAR": common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
+        "WIND": common_pb2.EnergySource.ENERGY_SOURCE_WIND,
     }
 
     # Create Location Policy Group
@@ -35,10 +38,10 @@ async def policies_section(admin_client, data_client):
                 st.warning("⚠️ Please enter a policy group name")
             else:
                 try:
-                    response = await admin_client.create_location_policy_group(
-                        dp.CreateLocationPolicyGroupRequest(name=new_policy_group_name)
+                    response = await admin_client.CreateLocationPolicyGroup(
+                        messages_pb2.CreateLocationPolicyGroupRequest(name=new_policy_group_name)
                     )
-                    response_dict = response.to_dict()
+                    response_dict = MessageToDict(response)
                     st.success(f"✅ Policy Group '{new_policy_group_name}' created!")
                     st.write(response_dict)
                 except GRPCError as e:
@@ -61,12 +64,12 @@ async def policies_section(admin_client, data_client):
             st.warning("⚠️ Please enter a policy group name")
         else:
             try:
-                response = await admin_client.get_location_policy_group(
-                    dp.GetLocationPolicyGroupRequest(
+                response = await admin_client.GetLocationPolicyGroup(
+                    messages_pb2.GetLocationPolicyGroupRequest(
                         location_policy_group_name=policy_group_name
                     )
                 )
-                response_dict = response.to_dict()
+                response_dict = MessageToDict(response)
                 st.success(f"✅ Found policy group: {policy_group_name}")
                 st.write(response_dict)
 
@@ -88,8 +91,8 @@ async def policies_section(admin_client, data_client):
 
         if data_client:
             try:
-                response = await data_client.list_locations(dp.ListLocationsRequest())
-                response_dict = response.to_dict()
+                response = await data_client.ListLocations(data_messages_pb2.ListLocationsRequest())
+                response_dict = MessageToDict(response)
                 locations = response_dict.get("locations", [])
             except Exception as e:
                 st.error(f"❌ Failed to fetch locations: {e}")
@@ -124,11 +127,11 @@ async def policies_section(admin_client, data_client):
                 st.warning("⚠️ Please fill in all required fields")
             else:
                 try:
-                    await admin_client.add_location_policies_to_group(
-                        dp.AddLocationPoliciesToGroupRequest(
+                    await admin_client.AddLocationPoliciesToGroup(
+                        messages_pb2.AddLocationPoliciesToGroupRequest(
                             location_policy_group_name=add_policy_group,
                             location_policies=[
-                                dp.LocationPolicy(
+                                messages_pb2.LocationPolicy(
                                     location_id=add_location_id,
                                     energy_source=ENERGY_SOURCES[add_energy_source],
                                     permission=PERMISSIONS[add_permission],
@@ -157,8 +160,8 @@ async def policies_section(admin_client, data_client):
 
         if data_client:
             try:
-                response = await data_client.list_locations(dp.ListLocationsRequest())
-                response_dict = response.to_dict()
+                response = await data_client.ListLocations(data_messages_pb2.ListLocationsRequest())
+                response_dict = MessageToDict(response)
                 locations = response_dict.get("locations", [])
             except Exception as e:
                 st.error(f"❌ Failed to fetch locations: {e}")
@@ -194,11 +197,11 @@ async def policies_section(admin_client, data_client):
                 st.warning("⚠️ Please fill in all required fields")
             else:
                 try:
-                    await admin_client.remove_location_policies_from_group(
-                        dp.RemoveLocationPoliciesFromGroupRequest(
+                    await admin_client.RemoveLocationPoliciesFromGroup(
+                        messages_pb2.RemoveLocationPoliciesFromGroupRequest(
                             location_policy_group_name=remove_policy_group,
                             location_policies=[
-                                dp.LocationPolicy(
+                                messages_pb2.LocationPolicy(
                                     location_id=remove_location_id,
                                     energy_source=ENERGY_SOURCES[remove_energy_source],
                                     permission=PERMISSIONS[remove_permission],
@@ -228,8 +231,8 @@ async def policies_section(admin_client, data_client):
             st.warning("⚠️ Please fill in all fields")
         else:
             try:
-                await admin_client.add_location_policy_group_to_organisation(
-                    dp.AddLocationPolicyGroupToOrganisationRequest(
+                await admin_client.AddLocationPolicyGroupToOrganisation(
+                    messages_pb2.AddLocationPolicyGroupToOrganisationRequest(
                         org_name=add_pg_org, location_policy_group_name=add_pg_name
                     )
                 )
@@ -264,8 +267,8 @@ async def policies_section(admin_client, data_client):
             st.error("❌ Could not connect to Data Platform")
         else:
             try:
-                await admin_client.remove_location_policy_group_from_organisation(
-                    dp.RemoveLocationPolicyGroupFromOrganisationRequest(
+                await admin_client.RemoveLocationPolicyGroupFromOrganisation(
+                    messages_pb2.RemoveLocationPolicyGroupFromOrganisationRequest(
                         org_name=remove_policy_group_org,
                         location_policy_group_name=remove_policy_group_name,
                     )

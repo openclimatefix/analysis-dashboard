@@ -5,6 +5,7 @@ from plotly import graph_objects as go
 import streamlit as st
 from elexonpy.api_client import ApiClient
 from elexonpy.api.generation_forecast_api import GenerationForecastApi
+from google.protobuf.json_format import MessageToDict
 
 
 def add_elexon_plot(
@@ -105,7 +106,11 @@ def fetch_forecast_data(
         if not response.data:
             return pd.DataFrame()
 
-        df = pd.DataFrame([item.to_dict() for item in response.data])
+        df = pd.DataFrame([MessageToDict(
+            item,
+            preserving_proto_field_name=True,
+            always_print_fields_with_no_presence=True
+        ) for item in response.data])
         solar_df = df[df["business_type"] == "Solar generation"]
         solar_df["start_time"] = pd.to_datetime(solar_df["start_time"])
         solar_df = solar_df.set_index("start_time")

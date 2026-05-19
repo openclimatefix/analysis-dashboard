@@ -5,7 +5,7 @@ Run tests for User Organisation tab
 """
 
 import pytest
-from ocf import dp
+from ocf.dp.dp_admin import service_pb2_grpc
 
 
 from tests.integration.conftest import (
@@ -21,7 +21,7 @@ from tests.integration.conftest import (
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_add_user_org_ui(
-    app, admin_client: dp.DataPlatformAdministrationServiceStub
+    app, admin_client: service_pb2_grpc.DataPlatformAdministrationServiceStub
 ):
     """
     - create two orgs and a user in one org
@@ -47,7 +47,9 @@ async def test_add_user_org_ui(
     app.button("add_user_to_org_button").click()
     app.run()
 
+
     # Assert success
+    assert len(app.error) == 0, f"Expected no errors, but got: {[s.value for s in app.error]}"
     assert any("added" in s.value.lower() for s in app.success)
 
     user = await get_user_grpc(admin_client, user_id)
@@ -62,7 +64,7 @@ async def test_add_user_org_ui(
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_remove_user_org_ui(
-    app, admin_client: dp.DataPlatformAdministrationServiceStub
+    app, admin_client: service_pb2_grpc.DataPlatformAdministrationServiceStub
 ):
     """
     - create two orgs and a user in both orgs

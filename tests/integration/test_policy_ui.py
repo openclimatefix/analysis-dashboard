@@ -9,7 +9,8 @@ Run tests for Policy tab
 """
 
 import pytest
-from ocf import dp
+from ocf.dp.dp_admin import messages_pb2, service_pb2_grpc
+from ocf.dp.dp_data import messages_pb2 as data_messages_pb2, service_pb2_grpc as data_service_pb2_grpc
 
 from tests.integration.conftest import (
     add_policy_to_group_grpc,
@@ -28,7 +29,7 @@ from tests.integration.conftest import (
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_create_policy_ui(
-    app, admin_client: dp.DataPlatformAdministrationServiceStub
+    app, admin_client: service_pb2_grpc.DataPlatformAdministrationServiceStub
 ):
     """
     - fill in create policy group form and submit
@@ -56,7 +57,7 @@ async def test_create_policy_ui(
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_get_policy_ui(
-    app, admin_client: dp.DataPlatformAdministrationServiceStub
+    app, admin_client: service_pb2_grpc.DataPlatformAdministrationServiceStub
 ):
     """
     - create a policy group via grpc
@@ -77,8 +78,8 @@ async def test_get_policy_ui(
 @pytest.mark.asyncio(loop_scope="session")
 async def test_add_policy_to_group(
     app,
-    admin_client: dp.DataPlatformAdministrationServiceStub,
-    data_client: dp.DataPlatformDataServiceStub,
+    admin_client: service_pb2_grpc.DataPlatformAdministrationServiceStub,
+    data_client: data_service_pb2_grpc.DataPlatformDataServiceStub,
 ):
     """
     - create a policy group via grpc
@@ -108,8 +109,8 @@ async def test_add_policy_to_group(
 @pytest.mark.asyncio(loop_scope="session")
 async def test_remove_policy_from_group(
     app,
-    admin_client: dp.DataPlatformAdministrationServiceStub,
-    data_client: dp.DataPlatformDataServiceStub,
+    admin_client: service_pb2_grpc.DataPlatformAdministrationServiceStub,
+    data_client: data_service_pb2_grpc.DataPlatformDataServiceStub,
 ):
     """
     - create a policy group via grpc
@@ -145,7 +146,7 @@ async def test_remove_policy_from_group(
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_add_policy_to_org(
-    app, admin_client: dp.DataPlatformAdministrationServiceStub
+    app, admin_client: service_pb2_grpc.DataPlatformAdministrationServiceStub
 ):
     """
     - create a policy group via grpc
@@ -173,7 +174,7 @@ async def test_add_policy_to_org(
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_remove_policy_from_org(
-    app, admin_client: dp.DataPlatformAdministrationServiceStub
+    app, admin_client: service_pb2_grpc.DataPlatformAdministrationServiceStub
 ):
     """
     - create a policy group via grpc

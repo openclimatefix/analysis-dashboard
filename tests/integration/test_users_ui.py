@@ -6,7 +6,7 @@ Run tests for Users tab
 """
 
 import pytest
-from ocf import dp
+from ocf.dp.dp_admin import service_pb2_grpc
 
 from tests.integration.conftest import (
     create_org_grpc,
@@ -20,7 +20,7 @@ from tests.integration.conftest import (
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_create_user_ui(
-    app, admin_client: dp.DataPlatformAdministrationServiceStub
+    app, admin_client: service_pb2_grpc.DataPlatformAdministrationServiceStub
 ):
     """
     - create an org for the user
@@ -47,6 +47,7 @@ async def test_create_user_ui(
     app.run()
 
     # Assert success
+    assert len(app.error) == 0, f"Expected no errors, but got: {[e.value for e in app.error]}"
     assert any("created" in s.value.lower() for s in app.success)
 
     response = await get_user_grpc(admin_client, user_oauth_id)
@@ -55,7 +56,7 @@ async def test_create_user_ui(
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_get_user_ui(app, admin_client: dp.DataPlatformAdministrationServiceStub):
+async def test_get_user_ui(app, admin_client: service_pb2_grpc.DataPlatformAdministrationServiceStub):
     """
     - create random user via grpc
     - fill in get user form and submit
@@ -70,13 +71,14 @@ async def test_get_user_ui(app, admin_client: dp.DataPlatformAdministrationServi
     app.button("get_user_button").click()
     app.run()
 
+    assert len(app.error) == 0, f"Expected no errors, but got: {[e.value for e in app.error]}"
     assert any(user_oauth_id in s.value for s in app.success)
 
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
 async def test_delete_user_ui(
-    app, admin_client: dp.DataPlatformAdministrationServiceStub
+    app, admin_client: service_pb2_grpc.DataPlatformAdministrationServiceStub
 ):
     """
     - create random user via grpc

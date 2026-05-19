@@ -6,7 +6,8 @@ Run tests for Locations tab
 """
 
 import pytest
-from ocf import dp
+
+from ocf.dp.dp_data import service_pb2_grpc
 
 from tests.integration.conftest import (
     create_location_grpc,
@@ -17,7 +18,7 @@ from tests.integration.conftest import (
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_list_locations_ui(app, data_client: dp.DataPlatformDataServiceStub):
+async def test_list_locations_ui(app, data_client: service_pb2_grpc.DataPlatformDataServiceStub):
     """
     - create some locations via grpc
     - fill in list locations form and submit
@@ -51,7 +52,7 @@ async def test_list_locations_ui(app, data_client: dp.DataPlatformDataServiceStu
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_get_location_ui(app, data_client: dp.DataPlatformDataServiceStub):
+async def test_get_location_ui(app, data_client: service_pb2_grpc.DataPlatformDataServiceStub):
     """
     - create a location via grpc
     - fill in get location form and submit
@@ -74,7 +75,7 @@ async def test_get_location_ui(app, data_client: dp.DataPlatformDataServiceStub)
 
 @pytest.mark.integration
 @pytest.mark.asyncio(loop_scope="session")
-async def test_create_location_ui(app, data_client: dp.DataPlatformDataServiceStub):
+async def test_create_location_ui(app, data_client: service_pb2_grpc.DataPlatformDataServiceStub):
     """
     - fill in create location form and submit
     - assert success message
@@ -91,6 +92,9 @@ async def test_create_location_ui(app, data_client: dp.DataPlatformDataServiceSt
     app.text_area("create_loc_metadata").set_value("{}")
     app.button("create_location_button").click()
     app.run()
+
+    # assert no errors in app
+    assert len(app.error) == 0, f"Expected no errors, but got: {[e.value for e in app.error]}"
 
     # Assert success message in UI
     assert any("created" in s.value.lower() for s in app.success)

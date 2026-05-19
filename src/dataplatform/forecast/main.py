@@ -7,9 +7,9 @@ import datetime
 
 import pandas as pd
 import streamlit as st
-from grpclib.client import Channel
-
-from ocf import dp
+import grpc.aio
+from ocf.dp.dp import common_pb2
+from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
 
 from dataplatform.forecast.constant import metrics, observer_names
 from dataplatform.forecast.backend import fetch_observations, fetch_timeseries
@@ -49,9 +49,10 @@ async def async_dp_forecast_page() -> None:
     st.title("Data Platform Forecast Page")
     st.write("This is the forecast page from the Data Platform module.")
 
-    async with Channel(host=data_platform_host, port=data_platform_port) as channel:
-        client = dp.DataPlatformDataServiceStub(channel)
-
+    channel = grpc.aio.insecure_channel(f"{data_platform_host}:{data_platform_port}"):
+    client = service_pb2_grpc.DataPlatformDataServiceStub(channel)
+    
+    try:
         cfg = await setup_page(client)
         st.divider()
         st.subheader("1. Fetch Data")
@@ -76,7 +77,7 @@ async def async_dp_forecast_page() -> None:
                     start_date=cfg.start_date,
                     end_date=cfg.end_date,
                     observers=observer_names,
-                    energy_source=dp.EnergySource.SOLAR,
+                    energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
                 )
 
                 fetch_duration = (datetime.datetime.now() - start_time).total_seconds()
@@ -241,4 +242,7 @@ async def async_dp_forecast_page() -> None:
             st.info(
                 "Configure your filters in the sidebar and click 'Fetch Forecast & Observations' to begin."
             )
+
+    finally:
+        await channel.close()
 

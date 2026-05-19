@@ -2,8 +2,9 @@
 
 import streamlit as st
 import json
-from ocf import dp
+from ocf.dp.dp_admin import messages_pb2, service_pb2_grpc
 from grpclib.exceptions import GRPCError
+from google.protobuf.json_format import MessageToDict
 
 
 async def organisation_section(admin_client):
@@ -22,10 +23,10 @@ async def organisation_section(admin_client):
             st.warning("⚠️ Please enter an organisation name")
         else:
             try:
-                response = await admin_client.get_organisation(
-                    dp.GetOrganisationRequest(org_name=org_name)
+                response = await admin_client.GetOrganisation(
+                    messages_pb2.GetOrganisationRequest(org_name=org_name)
                 )
-                response_dict = response.to_dict()
+                response_dict = MessageToDict(response)
                 st.success(f"✅ Found organisation: {org_name}")
                 st.write(response_dict)
 
@@ -61,12 +62,12 @@ async def organisation_section(admin_client):
                     metadata = (
                         json.loads(metadata_json) if metadata_json.strip() else {}
                     )
-                    response = await admin_client.create_organisation(
-                        dp.CreateOrganisationRequest(
+                    response = await admin_client.CreateOrganisation(
+                        messages_pb2.CreateOrganisationRequest(
                             org_name=new_org_name, metadata=metadata
                         )
                     )
-                    response_dict = response.to_dict()
+                    response_dict = MessageToDict(response)
                     st.success(
                         f"✅ Organisation '{new_org_name}' created successfully!"
                     )
@@ -104,8 +105,8 @@ async def organisation_section(admin_client):
                 st.warning("⚠️ Please confirm deletion by checking the box above")
             else:
                 try:
-                    await admin_client.delete_organisation(
-                        dp.DeleteOrganisationRequest(org_name=del_org_name)
+                    await admin_client.DeleteOrganisation(
+                        messages_pb2.DeleteOrganisationRequest(org_name=del_org_name)
                     )
                     st.success(
                         f"✅ Organisation '{del_org_name}' deleted successfully!"
