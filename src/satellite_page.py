@@ -189,7 +189,7 @@ def satellite_page():
         df = df[["time", "variable", variable_name]]
 
         print("pivot on time")
-        df = df.pivot("time", columns="variable")
+        df = df.pivot(index="time", columns="variable")
         df.columns = [c[1] for c in df.columns]
 
         print("Making plot")
