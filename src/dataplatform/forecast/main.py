@@ -49,7 +49,7 @@ async def async_dp_forecast_page() -> None:
     st.title("Data Platform Forecast Page")
     st.write("This is the forecast page from the Data Platform module.")
 
-    channel = grpc.aio.insecure_channel(f"{data_platform_host}:{data_platform_port}"):
+    channel = grpc.aio.insecure_channel(f"{data_platform_host}:{data_platform_port}")
     client = service_pb2_grpc.DataPlatformDataServiceStub(channel)
     
     try:
