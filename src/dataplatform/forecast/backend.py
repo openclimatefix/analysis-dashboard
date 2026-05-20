@@ -1,5 +1,6 @@
 """Backend logic for the Data Platform Forecasting Explorer app, including data fetching and processing."""
 
+import numpy as np
 import asyncio
 import datetime
 
@@ -239,7 +240,9 @@ async def fetch_all_forecasts(
                 for f in forecast_values
             ]
         )
-        .pipe(lambda df: df.join(pd.json_normalize(df["other_statistics_fractions"])))
+        .pipe(lambda df: df.join(
+            pd.json_normalize(df["other_statistics_fractions"].tolist()).set_index(df.index)
+        ))
         .drop(
             "other_statistics_fractions",
             axis=1,
@@ -247,8 +250,11 @@ async def fetch_all_forecasts(
         .assign(
             **{
                 f"{k}_watts": lambda df, k=k: (
-                    df[k] * df["effective_capacity_watts"].astype(float)
-                ).astype(int)
+                    pd.to_numeric(df[k], errors="coerce") *
+                    pd.to_numeric(df["effective_capacity_watts"], errors="coerce")
+                )
+                .round()
+                .astype("Int64")
                 for k in chunk.values[0].other_statistics_fractions.keys()
             },
         )
@@ -258,22 +264,28 @@ async def fetch_all_forecasts(
         .assign(
             **{
                 "p50_watts": lambda df: (
-                    df["p50_fraction"] * df["effective_capacity_watts"].astype(float)
-                ).astype(int),
+                    pd.to_numeric(df["p50_fraction"], errors="coerce") *
+                    pd.to_numeric(df["effective_capacity_watts"], errors="coerce")
+                )
+                .round()
+                .astype("Int64"),
+
                 "target_timestamp_utc": lambda df: (
-                    pd.to_datetime(df["init_timestamp"], utc=True)
-                    + pd.to_timedelta(df["horizon_mins"], unit="m")
+                    pd.to_datetime(df["init_timestamp"], utc=True, errors="coerce")
+                    + pd.to_timedelta(pd.to_numeric(df["horizon_mins"], errors="coerce"), unit="m")
                 ),
                 "initialization_timestamp_utc": lambda df: pd.to_datetime(
                     df["init_timestamp"],
                     utc=True,
+                    errors="coerce"
                 ),
                 "created_timestamp_utc": lambda df: pd.to_datetime(
                     df["created_timestamp_utc"],
                     utc=True,
+                    errors="coerce"
                 ),
                 "forecaster_name": lambda df: df["forecaster_fullname"].apply(
-                    lambda x: x.split(":")[0] if ":" in x else x
+                    lambda x: x.split(":")[0] if isinstance(x, str) and ":" in x else x
                 ),
             },
         )
