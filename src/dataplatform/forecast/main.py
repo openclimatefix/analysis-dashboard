@@ -12,7 +12,11 @@ from ocf.dp.dp import common_pb2
 from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
 
 from dataplatform.forecast.constant import metrics, observer_names
-from dataplatform.forecast.backend import fetch_observations, fetch_timeseries
+from dataplatform.forecast.backend import (
+    fetch_observations,
+    fetch_timeseries,
+    fetch_all_forecasts,
+)
 from dataplatform.forecast.plot import (
     plot_forecast_metric_per_day,
     plot_forecast_metric_vs_horizon_minutes,
@@ -38,6 +42,7 @@ def init_session_state():
     if "locked_params" not in st.session_state:
         st.session_state.locked_params = None
 
+
 def dp_forecast_page() -> None:
     """Wrapper function that is not async to call the main async function."""
     init_session_state()
@@ -51,11 +56,11 @@ async def async_dp_forecast_page() -> None:
 
     channel = grpc.aio.insecure_channel(f"{data_platform_host}:{data_platform_port}")
     client = service_pb2_grpc.DataPlatformDataServiceStub(channel)
-    
+
     try:
         cfg = await setup_page(client)
         st.divider()
-        st.subheader("1. Fetch Data")
+        st.subheader("View Forecasts & Observations")
 
         if st.button("Fetch Forecast & Observations", type="primary"):
             with st.spinner("Fetching data from gRPC API..."):
@@ -94,7 +99,6 @@ async def async_dp_forecast_page() -> None:
                     f"in `{fetch_duration:.2f}` seconds."
                 )
 
-        # Display fetch stats if they exist
         if st.session_state.fetch_time_stats:
             st.success(st.session_state.fetch_time_stats)
 
@@ -136,17 +140,37 @@ async def async_dp_forecast_page() -> None:
             st.divider()
             st.header("Accuracy & Metrics")
             st.write(
-                "Calculating metrics requires merging forecasts with observations. This is CPU intensive."
+                "Calculating metrics requires fetching all the forecasts for the given time frame. It can take a while."
             )
 
             align_t0s_ui = st.checkbox(
                 "Align t0s (Only common t0s across all forecaster are used)", value=True
             )
 
-            if st.button("🧮 Calculate Metrics"):
-                with st.spinner("Aligning data and computing metrics..."):
+            if st.button("Calculate Metrics"):
+                with st.spinner(
+                    "Fetching data across all horizons and computing metrics..."
+                ):
+                    start_time = datetime.datetime.now(tz=datetime.UTC)
+                    all_horizons_df = await fetch_all_forecasts(
+                        client=client,
+                        location_uuid=lcfg.location.location_uuid,
+                        start_date=lcfg.start_date,
+                        end_date=lcfg.end_date,
+                        forecasters=lcfg.forecasters,
+                    )
+                    fetch_duration = (
+                        datetime.datetime.now(tz=datetime.UTC) - start_time
+                    ).total_seconds()
+                    st.session_state.fetch_time_stats = (
+                        f"Fetched `{len(all_horizons_df)}` forecast rows "
+                        f"in `{fetch_duration:.2f}` seconds."
+                    )
+                    if st.session_state.fetch_time_stats:
+                        st.success(st.session_state.fetch_time_stats)
+
                     merged_df = pd.merge(
-                        all_forecast_data_df,
+                        all_horizons_df,
                         all_observations_df,
                         on="target_timestamp_utc",
                         suffixes=("", "_observation"),
@@ -177,7 +201,7 @@ async def async_dp_forecast_page() -> None:
                 st.subheader("Metric vs Forecast Horizon")
 
                 show_sem = False
-                if cfg.metric == "MAE": # This is not locked on purpose
+                if cfg.metric == "MAE":  # This is not locked on purpose
                     show_sem = st.checkbox(
                         "Show Uncertainty",
                         value=True,
@@ -189,7 +213,7 @@ async def async_dp_forecast_page() -> None:
                 fig2 = plot_forecast_metric_vs_horizon_minutes(
                     summary_df,
                     list({f.forecaster_name for f in lcfg.forecasters}),
-                    cfg.metric, # This is not locked on purpose
+                    cfg.metric,  # This is not locked on purpose
                     lcfg.scale_factor,
                     lcfg.units,
                     show_sem,
@@ -231,10 +255,12 @@ async def async_dp_forecast_page() -> None:
                 st.subheader("Daily Metrics Plots")
                 fig3 = plot_forecast_metric_per_day(
                     merged_df=merged_df,
-                    forecaster_names=list({f.forecaster_name for f in lcfg.forecasters}),
+                    forecaster_names=list(
+                        {f.forecaster_name for f in lcfg.forecasters}
+                    ),
                     scale_factor=lcfg.scale_factor,
                     units=lcfg.units,
-                    selected_metric=cfg.metric, # This is also not locked on purpose
+                    selected_metric=cfg.metric,  # This is also not locked on purpose
                 )
                 st.plotly_chart(fig3)
 
@@ -245,4 +271,3 @@ async def async_dp_forecast_page() -> None:
 
     finally:
         await channel.close()
-

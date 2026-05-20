@@ -8,6 +8,7 @@ import streamlit as st
 
 from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
 from ocf.dp.dp import common_pb2
+from google.protobuf.json_format import MessageToDict
 
 
 async def fetch_timeseries(
@@ -30,8 +31,7 @@ async def fetch_timeseries(
         current_end = min(current_start + datetime.timedelta(days=7), end_date)
         time_windows.append(
             messages_pb2.TimeWindow(
-                start_timestamp_utc=current_start,
-                end_timestamp_utc=current_end
+                start_timestamp_utc=current_start, end_timestamp_utc=current_end
             )
         )
         current_start = current_end
@@ -41,7 +41,7 @@ async def fetch_timeseries(
     async def fetch_one(
         forecaster_obj: messages_pb2.Forecaster,
         window: messages_pb2.TimeWindow,
-        init_time: datetime.datetime | None
+        init_time: datetime.datetime | None,
     ):
         req = messages_pb2.GetForecastAsTimeseriesRequest(
             location_uuid=location_uuid,
@@ -57,14 +57,23 @@ async def fetch_timeseries(
             rows = []
             for val in resp.values:
                 row = {
-                    "target_timestamp_utc": val.target_timestamp_utc.ToDatetime(tzinfo=datetime.UTC),
-                    "initialization_timestamp_utc": val.initialization_timestamp_utc.ToDatetime(tzinfo=datetime.UTC),
-                    "created_timestamp_utc": val.created_timestamp_utc.ToDatetime(tzinfo=datetime.UTC),
+                    "target_timestamp_utc": val.target_timestamp_utc.ToDatetime(
+                        tzinfo=datetime.UTC
+                    ),
+                    "initialization_timestamp_utc": val.initialization_timestamp_utc.ToDatetime(
+                        tzinfo=datetime.UTC
+                    ),
+                    "created_timestamp_utc": val.created_timestamp_utc.ToDatetime(
+                        tzinfo=datetime.UTC
+                    ),
                     "effective_capacity_watts": val.effective_capacity_watts,
                     "forecaster_name": forecaster_obj.forecaster_name,
                     "location_uuid": resp.location_uuid,
                     "horizon_mins": (
-                        val.target_timestamp_utc.ToDatetime(tzinfo=datetime.UTC) - val.initialization_timestamp_utc.ToDatetime(tzinfo=datetime.UTC)
+                        val.target_timestamp_utc.ToDatetime(tzinfo=datetime.UTC)
+                        - val.initialization_timestamp_utc.ToDatetime(
+                            tzinfo=datetime.UTC
+                        )
                     ).total_seconds()
                     // 60,
                     "p50_watts": int(
@@ -89,7 +98,12 @@ async def fetch_timeseries(
             )
             return []
 
-    tasks = [fetch_one(f, w, t) for f in forecasters for t in times_to_fetch for w in time_windows]
+    tasks = [
+        fetch_one(f, w, t)
+        for f in forecasters
+        for t in times_to_fetch
+        for w in time_windows
+    ]
 
     results = await asyncio.gather(*tasks)
     all_rows = [item for sublist in results for item in sublist]
@@ -127,12 +141,10 @@ async def fetch_observations(
         current_end = min(current_start + datetime.timedelta(days=7), end_date)
         time_windows.append(
             messages_pb2.TimeWindow(
-                start_timestamp_utc=current_start,
-                end_timestamp_utc=current_end
+                start_timestamp_utc=current_start, end_timestamp_utc=current_end
             )
         )
         current_start = current_end
-
 
     # Run requests concurrently for all selected observers
     async def fetch_one(obs_name: str, window: messages_pb2.TimeWindow):
@@ -149,7 +161,9 @@ async def fetch_observations(
             for val in resp.values:
                 rows.append(
                     {
-                        "target_timestamp_utc": val.timestamp_utc.ToDatetime(tzinfo=datetime.UTC),
+                        "target_timestamp_utc": val.timestamp_utc.ToDatetime(
+                            tzinfo=datetime.UTC
+                        ),
                         "value_fraction": val.value_fraction,
                         "effective_capacity_watts": val.effective_capacity_watts,
                         "observer_name": obs_name,
@@ -164,7 +178,9 @@ async def fetch_observations(
             st.error(f"Failed to fetch observations for {obs_name}: {e}")
             return []
 
-    results = await asyncio.gather(*[fetch_one(obs, w) for obs in observers for w in time_windows])
+    results = await asyncio.gather(
+        *[fetch_one(obs, w) for obs in observers for w in time_windows]
+    )
     all_rows = [item for sublist in results for item in sublist]
 
     obs_columns = [
@@ -175,11 +191,108 @@ async def fetch_observations(
         "location_uuid",
         "value_watts",
     ]
-    df = pd.DataFrame(all_rows, columns=obs_columns) if all_rows else pd.DataFrame(columns=obs_columns)
+    df = (
+        pd.DataFrame(all_rows, columns=obs_columns)
+        if all_rows
+        else pd.DataFrame(columns=obs_columns)
+    )
 
     if not df.empty:
         df["target_timestamp_utc"] = pd.to_datetime(df["target_timestamp_utc"])
-        df = df.sort_values(["observer_name", "target_timestamp_utc"]).reset_index(drop=True)
+        df = df.sort_values(["observer_name", "target_timestamp_utc"]).reset_index(
+            drop=True
+        )
 
     return df
 
+
+async def fetch_all_forecasts(
+    client: service_pb2_grpc.DataPlatformDataServiceStub,
+    location_uuid: str,
+    start_date: datetime.datetime,
+    end_date: datetime.datetime,
+    forecasters: list[messages_pb2.Forecaster],
+) -> pd.DataFrame:
+    """Fetches all forecasts for all t0s within a time window using stream_forecast_data."""
+
+    req = messages_pb2.StreamForecastDataRequest(
+        location_uuids=[location_uuid],
+        energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
+        time_window=messages_pb2.StreamForecastDataRequest.TimeWindow(
+            start_timestamp_utc=start_date, end_timestamp_utc=end_date
+        ),
+        forecasters=forecasters,
+    )
+
+    forecast_values = []
+    async for chunk in client.StreamForecastData(req):
+        forecast_values.extend(chunk.values)
+
+    df = (
+        pd.DataFrame.from_dict(
+            [
+                MessageToDict(
+                    f,
+                    always_print_fields_with_no_presence=True,
+                    preserving_proto_field_name=True,
+                )
+                for f in forecast_values
+            ]
+        )
+        .pipe(lambda df: df.join(pd.json_normalize(df["other_statistics_fractions"])))
+        .drop(
+            "other_statistics_fractions",
+            axis=1,
+        )
+        .assign(
+            **{
+                f"{k}_watts": lambda df, k=k: (
+                    df[k] * df["effective_capacity_watts"].astype(float)
+                ).astype(int)
+                for k in chunk.values[0].other_statistics_fractions.keys()
+            },
+        )
+        .drop(
+            columns=[k for k in chunk.values[0].other_statistics_fractions.keys()],
+        )
+        .assign(
+            **{
+                "p50_watts": lambda df: (
+                    df["p50_fraction"] * df["effective_capacity_watts"].astype(float)
+                ).astype(int),
+                "target_timestamp_utc": lambda df: (
+                    pd.to_datetime(df["init_timestamp"], utc=True)
+                    + pd.to_timedelta(df["horizon_mins"], unit="m")
+                ),
+                "initialization_timestamp_utc": lambda df: pd.to_datetime(
+                    df["init_timestamp"],
+                    utc=True,
+                ),
+                "created_timestamp_utc": lambda df: pd.to_datetime(
+                    df["created_timestamp_utc"],
+                    utc=True,
+                ),
+                "forecaster_name": lambda df: df["forecaster_fullname"].apply(
+                    lambda x: x.split(":")[0] if ":" in x else x
+                ),
+            },
+        )
+        .drop(
+            columns=[
+                "p50_fraction",
+                "init_timestamp",
+                "forecaster_fullname",
+            ],
+        )
+        .sort_values(
+            by=[
+                "location_uuid",
+                "forecaster_name",
+                "initialization_timestamp_utc",
+                "created_timestamp_utc",
+                "target_timestamp_utc",
+            ]
+        )
+    )
+
+    return df
