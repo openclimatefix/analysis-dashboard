@@ -6,6 +6,7 @@ import pytest
 from grpclib.exceptions import GRPCError
 from grpclib.const import Status
 from ocf import dp
+from streamlit.testing.v1 import AppTest
 
 from dataplatform.adjuster import get_observer_names, get_week_average_deltas
 from dataplatform.forecast.constant import observer_names as default_observer_names
@@ -13,6 +14,12 @@ from tests.integration.conftest import (
     create_location_grpc,
     list_locations_grpc,
     random_location_name,
+)
+
+_ADJUSTER_TEST_FORECASTER_NAME = "test_adjuster"
+_ADJUSTER_TEST_FORECASTER_VERSION = "1.3.0"
+_ADJUSTER_TEST_FORECASTER_LABEL = (
+    f"{_ADJUSTER_TEST_FORECASTER_NAME}:{_ADJUSTER_TEST_FORECASTER_VERSION}"
 )
 
 
@@ -95,3 +102,44 @@ async def test_get_week_average_deltas_not_found_for_all_default_observers(data_
                 pivot_timestamp_utc=pivot,
             )
         assert exc_info.value.status == Status.NOT_FOUND
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio(loop_scope="session")
+async def test_async_dp_adjuster_page(data_client):
+    """
+    - create a NATION location via grpc
+    - create a forecaster via grpc
+    - run the adjuster Streamlit page
+    - change location type sidebar selectbox to NATION
+    - select the created location and forecaster in the UI
+    - assert no exception
+    - assert no "no locations found" warning (SITE location exists)
+    - assert fetch error shown (no adjuster source data in the test DB)
+    """
+    location_name = random_location_name()
+    await create_location_grpc(
+        data_client,
+        location_name,
+        location_type=dp.LocationType.NATION,
+    )
+    await data_client.create_forecaster(
+        dp.CreateForecasterRequest(
+            name=_ADJUSTER_TEST_FORECASTER_NAME,
+            version=_ADJUSTER_TEST_FORECASTER_VERSION,
+        )
+    )
+
+    app = AppTest.from_file("src/dataplatform/adjuster.py")
+    app.run()
+
+    app.selectbox("adjuster_location_type").set_value(dp.LocationType.NATION)
+    app.run()
+
+    app.selectbox("adjuster_location").set_value(location_name)
+    app.selectbox("adjuster_forecaster").set_value(_ADJUSTER_TEST_FORECASTER_LABEL)
+    app.run()
+
+    assert not app.exception
+    assert not any("no locations found" in w.value.lower() for w in app.warning)
+    assert any("failed to fetch" in e.value.lower() for e in app.error)

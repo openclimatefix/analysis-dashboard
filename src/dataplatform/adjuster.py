@@ -19,10 +19,6 @@ from dataplatform.forecast.cache import key_builder_remove_client
 from dataplatform.forecast.constant import cache_seconds, observer_names
 from dataplatform.forecast.setup import get_forecasters, get_location_names
 
-data_platform_host = os.getenv("DATA_PLATFORM_HOST", "localhost")
-data_platform_port = int(os.getenv("DATA_PLATFORM_PORT", "50051"))
-
-
 @cached(ttl=cache_seconds, cache=Cache.MEMORY, key_builder=key_builder_remove_client)
 async def get_observer_names(client: dp.DataPlatformDataServiceStub) -> list[str]:
     """Get all observer names from the Data Platform."""
@@ -68,6 +64,8 @@ async def _async_dp_adjuster_page() -> None:
         "and plots them against forecast horizon.",
     )
 
+    data_platform_host = os.getenv("DATA_PLATFORM_HOST", "localhost")
+    data_platform_port = int(os.getenv("DATA_PLATFORM_PORT", "50051"))
     async with Channel(host=data_platform_host, port=data_platform_port) as channel:
         client = dp.DataPlatformDataServiceStub(channel)
 
@@ -79,7 +77,10 @@ async def _async_dp_adjuster_page() -> None:
             dp.LocationType.SITE,
         ]
         location_type = st.sidebar.selectbox(
-            "Select a Location Type", location_types, index=0,
+            "Select a Location Type",
+            location_types,
+            index=0,
+            key="adjuster_location_type",
         )
         location_names = {
             k: v for k, v in (await get_location_names(client)).items()
@@ -89,7 +90,10 @@ async def _async_dp_adjuster_page() -> None:
             st.warning("No locations found for the selected location type.")
             return
         selected_location_name = st.sidebar.selectbox(
-            "Select a Location", location_names.keys(), index=0,
+            "Select a Location",
+            location_names.keys(),
+            index=0,
+            key="adjuster_location",
         )
         selected_location = location_names[selected_location_name]
 
@@ -104,7 +108,10 @@ async def _async_dp_adjuster_page() -> None:
             0,
         )
         selected_forecaster_key = st.sidebar.selectbox(
-            "Select a Forecaster", forecaster_keys, index=default_index,
+            "Select a Forecaster",
+            forecaster_keys,
+            index=default_index,
+            key="adjuster_forecaster",
         )
         selected_forecaster = forecaster_labels[selected_forecaster_key]
 
@@ -116,14 +123,23 @@ async def _async_dp_adjuster_page() -> None:
             else 0
         )
         selected_observer_name = st.sidebar.selectbox(
-            "Select an Observer", all_observer_names, index=default_obs_index,
+            "Select an Observer",
+            all_observer_names,
+            index=default_obs_index,
+            key="adjuster_observer",
         )
 
         # Pivot datetime — date + init time of day
         now = datetime.now(tz=UTC)
-        pivot_date = st.sidebar.date_input("Pivot date (UTC)", now.date())
+        pivot_date = st.sidebar.date_input(
+            "Pivot date (UTC)",
+            now.date(),
+            key="adjuster_pivot_date",
+        )
         pivot_time = st.sidebar.time_input(
-            "Init time of day (UTC)", time(hour=now.hour, minute=0),
+            "Init time of day (UTC)",
+            time(hour=now.hour, minute=0),
+            key="adjuster_pivot_time",
         )
         pivot_timestamp_utc = datetime.combine(pivot_date, pivot_time).replace(
             tzinfo=UTC,
@@ -222,3 +238,7 @@ async def _async_dp_adjuster_page() -> None:
         ),
         mime="text/csv",
     )
+
+# Required for the tests to run this as a script
+if __name__ == "__main__":
+    dp_adjuster_page()
