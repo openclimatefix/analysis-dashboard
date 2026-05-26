@@ -5,6 +5,7 @@ UK analysis dashboard for OCF
 import streamlit as st
 
 from auth import check_password
+from dataplatform.adjuster import dp_adjuster_page
 from dataplatform.forecast.main import dp_forecast_page
 from pvsite_forecast import pvsite_forecast_page
 from sites_toolbox import sites_toolbox_page
@@ -34,6 +35,7 @@ if check_password():
         "Data Platform": [
             st.Page(dp_forecast_page, title="Data Platform Forecast"),
             st.Page(dataplatform_toolbox_page, title="Data Platform Toolbox"),
+            st.Page(dp_adjuster_page, title="DP Adjuster"),
         ],
         "Sites": [
             st.Page(pvsite_forecast_page, title="Site Forecast"),
