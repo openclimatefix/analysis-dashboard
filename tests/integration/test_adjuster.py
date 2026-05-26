@@ -2,10 +2,10 @@
 
 from datetime import UTC, datetime
 
+import grpc
 import pytest
-from grpclib.exceptions import GRPCError
-from grpclib.const import Status
-from ocf import dp
+from ocf.dp.dp import common_pb2
+from ocf.dp.dp_data import messages_pb2
 from streamlit.testing.v1 import AppTest
 
 from dataplatform.adjuster import get_observer_names, get_week_average_deltas
@@ -60,10 +60,12 @@ async def test_get_week_average_deltas_not_found_without_location_source(data_cl
         loc for loc in list_response.locations if loc.location_name == location_name
     )
 
-    forecaster = dp.Forecaster(forecaster_name="pvnet_v2", forecaster_version="1.0")
+    forecaster = messages_pb2.Forecaster(
+        forecaster_name="pvnet_v2", forecaster_version="1.0",
+    )
     pivot = datetime(2024, 1, 15, 9, 0, tzinfo=UTC)
 
-    with pytest.raises(GRPCError) as exc_info:
+    with pytest.raises(grpc.aio.AioRpcError) as exc_info:
         await get_week_average_deltas(
             client=data_client,
             location=location,
@@ -72,7 +74,7 @@ async def test_get_week_average_deltas_not_found_without_location_source(data_cl
             pivot_timestamp_utc=pivot,
         )
 
-    assert exc_info.value.status == Status.NOT_FOUND
+    assert exc_info.value.code() == grpc.StatusCode.NOT_FOUND
 
 
 @pytest.mark.integration
@@ -89,11 +91,13 @@ async def test_get_week_average_deltas_not_found_for_all_default_observers(data_
         loc for loc in list_response.locations if loc.location_name == location_name
     )
 
-    forecaster = dp.Forecaster(forecaster_name="pvnet_v2", forecaster_version="1.0")
+    forecaster = messages_pb2.Forecaster(
+        forecaster_name="pvnet_v2", forecaster_version="1.0",
+    )
     pivot = datetime(2024, 6, 1, 10, 30, tzinfo=UTC)
 
     for observer_name in default_observer_names:
-        with pytest.raises(GRPCError) as exc_info:
+        with pytest.raises(grpc.aio.AioRpcError) as exc_info:
             await get_week_average_deltas(
                 client=data_client,
                 location=location,
@@ -101,7 +105,7 @@ async def test_get_week_average_deltas_not_found_for_all_default_observers(data_
                 observer_name=observer_name,
                 pivot_timestamp_utc=pivot,
             )
-        assert exc_info.value.status == Status.NOT_FOUND
+        assert exc_info.value.code() == grpc.StatusCode.NOT_FOUND
 
 
 @pytest.mark.integration
@@ -121,10 +125,10 @@ async def test_async_dp_adjuster_page(data_client):
     await create_location_grpc(
         data_client,
         location_name,
-        location_type=dp.LocationType.NATION,
+        location_type=common_pb2.LocationType.LOCATION_TYPE_NATION,
     )
-    await data_client.create_forecaster(
-        dp.CreateForecasterRequest(
+    await data_client.CreateForecaster(
+        messages_pb2.CreateForecasterRequest(
             name=_ADJUSTER_TEST_FORECASTER_NAME,
             version=_ADJUSTER_TEST_FORECASTER_VERSION,
         )
@@ -133,7 +137,9 @@ async def test_async_dp_adjuster_page(data_client):
     app = AppTest.from_file("src/dataplatform/adjuster.py")
     app.run()
 
-    app.selectbox("adjuster_location_type").set_value(dp.LocationType.NATION)
+    app.selectbox("adjuster_location_type").set_value(
+        common_pb2.LocationType.LOCATION_TYPE_NATION,
+    )
     app.run()
 
     app.selectbox("adjuster_location").set_value(location_name)
