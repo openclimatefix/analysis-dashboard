@@ -219,7 +219,7 @@ async def fetch_all_forecasts(
     req = messages_pb2.StreamForecastDataRequest(
         location_uuids=[location_uuid],
         energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
-        time_window=messages_pb2.StreamForecastDataRequest.TimeWindow(
+        time_window=messages_pb2.TimeWindow(
             start_timestamp_utc=start_date, end_timestamp_utc=end_date
         ),
         forecasters=forecasters,
