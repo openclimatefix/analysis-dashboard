@@ -82,7 +82,7 @@ async def get_forecast_data_one_forecaster(
         stream_forecast_data_request = messages_pb2.StreamForecastDataRequest(
             location_uuid=location.location_uuid,
             energy_source=common_pb2.EnergySource.ENERGY_SOURCE_SOLAR,
-            time_window=messages_pb2.StreamForecastDataRequest.TimeWindow(
+            time_window=messages_pb2.TimeWindow(
                 start_timestamp_utc=temp_start_date,
                 end_timestamp_utc=temp_end_date,
             ),
