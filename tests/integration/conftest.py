@@ -11,7 +11,6 @@ import os
 from streamlit.testing.v1 import AppTest
 from ocf.dp.dp import common_pb2
 from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
-from ocf.dp.dp_admin import messages_pb2 as dp_admin_messages_pb2, service_pb2_grpc as dp_admin_service_pb2_grpc
 import grpc.aio
 
 DATA_PLATFORM_GRPC_PORT = 50051
@@ -69,11 +68,6 @@ async def dp_channel():
             channel = grpc.aio.insecure_channel(f"{host}:{port}")
             yield channel
             await channel.close()
-
-
-@pytest_asyncio.fixture(scope="session")
-async def admin_client(dp_channel):
-    return dp_admin_service_pb2_grpc.DataPlatformAdministrationServiceStub(dp_channel)
 
 
 @pytest_asyncio.fixture(scope="session")

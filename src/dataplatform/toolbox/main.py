@@ -3,14 +3,9 @@
 import asyncio
 import grpc.aio
 import streamlit as st
-from dataplatform.toolbox.organisation import organisation_section
-from dataplatform.toolbox.users import users_section
-from dataplatform.toolbox.user_organisation import user_organisation_section
 from dataplatform.toolbox.location import locations_section
-from dataplatform.toolbox.policy import policies_section
 from ocf.dp.dp import common_pb2
 from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
-from ocf.dp.dp_admin import messages_pb2 as dp_admin_messages_pb2, service_pb2_grpc as dp_admin_service_pb2_grpc
 import os
 
 # Color scheme (matching existing toolbox)
@@ -32,7 +27,6 @@ async def async_dataplatform_toolbox_page():
     port = os.environ.get("DATA_PLATFORM_PORT", "50051")
     channel = grpc.aio.insecure_channel(f"{host}:{int(port)}")
     try:
-        admin_client = dp_admin_service_pb2_grpc.DataPlatformAdministrationServiceStub(channel)
         data_client = service_pb2_grpc.DataPlatformDataServiceStub(channel)
 
         st.markdown(
@@ -52,20 +46,7 @@ async def async_dataplatform_toolbox_page():
         )
 
         with tab1:
-            await organisation_section(admin_client)
-
-        with tab2:
-            await users_section(admin_client)
-
-        with tab3:
-            await user_organisation_section(admin_client)
-
-        with tab4:
             await locations_section(data_client)
-
-        with tab5:
-            await policies_section(admin_client, data_client)
-
     finally:
         await channel.close()
 
