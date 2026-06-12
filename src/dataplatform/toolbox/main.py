@@ -35,13 +35,9 @@ async def async_dataplatform_toolbox_page():
         )
 
         # Create tabs for different sections
-        tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        tab1, = st.tabs(
             [
-                "🏢 Organisations",
-                "👤 Users",
-                "🔗 User + Organisation",
-                "📍 Locations",
-                "📋 Policies",
+                "Locations",
             ]
         )
 
