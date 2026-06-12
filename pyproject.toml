@@ -75,7 +75,7 @@ extra-index-url = ["https://pypi.org/simple"]
 
 [tool.uv.sources]
 
-dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.31.1/dp_sdk-0.31.1-py3-none-any.whl" }
+dp-sdk = { url = "https://github.com/openclimatefix/data-platform/releases/download/v0.32.0/dp_sdk-0.32.0-py3-none-any.whl" }
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
