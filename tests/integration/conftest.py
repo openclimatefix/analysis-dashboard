@@ -81,50 +81,8 @@ def app():
     test_app.run()
     return test_app
 
-
-def random_org_name():
-    return "org-test-" + str(uuid.uuid4())
-
-
-def random_user_oauth():
-    return "user-oauth-id-" + str(uuid.uuid4())
-
-
 def random_location_name():
     return f"ui_location_{uuid.uuid4().hex}"
-
-
-def random_policy_name():
-    return f"policy-test-{uuid.uuid4()}"
-
-
-async def create_org_grpc(admin_client, org_name: str):
-    await admin_client.CreateOrganisation(
-        dp_admin_messages_pb2.CreateOrganisationRequest(org_name=org_name, metadata={})
-    )
-
-
-async def get_org_grpc(admin_client, org_name: str):
-    return await admin_client.GetOrganisation(
-        dp_admin_messages_pb2.GetOrganisationRequest(org_name=org_name)
-    )
-
-
-async def create_user_grpc(admin_client, user_oauth_id: str, org_name: str):
-    await admin_client.CreateUser(
-        dp_admin_messages_pb2.CreateUserRequest(oauth_id=user_oauth_id, organisation=org_name, metadata={})
-    )
-
-
-async def get_user_grpc(admin_client, user_oauth_id: str):
-    return await admin_client.GetUser(dp_admin_messages_pb2.GetUserRequest(oauth_id=user_oauth_id))
-
-
-async def add_user_to_org_grpc(admin_client, user_oauth_id: str, org_name: str):
-    return await admin_client.AddUserToOrganisation(
-        dp_admin_messages_pb2.AddUserToOrganisationRequest(org_name=org_name, user_oauth_id=user_oauth_id)
-    )
-
 
 async def create_location_grpc(
     data_client,
@@ -147,44 +105,3 @@ async def create_location_grpc(
 async def list_locations_grpc(data_client):
     return await data_client.ListLocations(messages_pb2.ListLocationsRequest())
 
-
-async def create_policy_group_grpc(admin_client, policy_name: str):
-    await admin_client.CreateLocationPolicyGroup(
-        dp_admin_messages_pb2.CreateLocationPolicyGroupRequest(name=policy_name)
-    )
-
-
-async def get_policy_group_grpc(admin_client, policy_name: str):
-    return await admin_client.GetLocationPolicyGroup(
-        dp_admin_messages_pb2.GetLocationPolicyGroupRequest(location_policy_group_name=policy_name)
-    )
-
-
-async def add_policy_to_group_grpc(
-    admin_client,
-    policy_name: str,
-    location_uuid: str,
-    energy_source=common_pb2.EnergySource.ENERGY_SOURCE_WIND,
-    permission=common_pb2.Permission.PERMISSION_WRITE,
-):
-    await admin_client.AddLocationPoliciesToGroup(
-        dp_admin_messages_pb2.AddLocationPoliciesToGroupRequest(
-            location_policy_group_name=policy_name,
-            location_policies=[
-                dp_admin_messages_pb2.LocationPolicy(
-                    location_id=location_uuid,
-                    energy_source=energy_source,
-                    permission=permission,
-                )
-            ],
-        )
-    )
-
-
-async def add_policy_to_org_grpc(admin_client, org_name, policy_name):
-    await admin_client.AddLocationPolicyGroupToOrganisation(
-        dp_admin_messages_pb2.AddLocationPolicyGroupToOrganisationRequest(
-            org_name=org_name,
-            location_policy_group_name=policy_name,
-        )
-    )
