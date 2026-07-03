@@ -147,13 +147,10 @@ def batch_page():
         else:
             st.info("Key 'nwp' not found in batch.")
 
-
         st.subheader(f"Site Time Series")
         keys = ['time_cos', 'time_sin', 'date_cos','date_sin', 'solar_azimuth', 'solar_elevation', 'generation']
         site_times = [pd.to_datetime(ts) for ts in tensor_batch["time_utc"][batch_id]]
         time_variables = np.array([tensor_batch[key][batch_id].flatten() for key in keys]).transpose()
-        print(time_variables.shape)
-        print(site_times)
         st.pyplot(plot_line_chart(
             site_times,
             time_variables,
