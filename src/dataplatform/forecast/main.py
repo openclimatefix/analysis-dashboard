@@ -270,10 +270,8 @@ async def async_dp_forecast_page() -> None:
                          "the forecasted plevel value.")
                 fig4 = plot_quantile_plot(
                     merged_df=merged_df,
-                    forecaster_names=list(
-                        {f.forecaster_name for f in lcfg.forecasters}
-                    ),
-                )
+                    forecaster_names=[f.forecaster_name for f in lcfg.forecasters],
+                    )
                 st.plotly_chart(fig4)
 
         else:
