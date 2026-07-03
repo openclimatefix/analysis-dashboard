@@ -9,7 +9,7 @@ import pandas as pd
 import streamlit as st
 import grpc.aio
 from ocf.dp.dp import common_pb2
-from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
+from ocf.dp.dp_data import service_pb2_grpc
 
 from dataplatform.forecast.constant import metrics, observer_names
 from dataplatform.forecast.backend import (
@@ -23,6 +23,7 @@ from dataplatform.forecast.plot import (
     plot_forecast_time_series,
     make_summary_data,
     make_summary_data_metric_vs_horizon_minutes,
+    plot_quantile_plot
 )
 from dataplatform.forecast.setup import setup_page
 
@@ -255,14 +256,21 @@ async def async_dp_forecast_page() -> None:
                 st.subheader("Daily Metrics Plots")
                 fig3 = plot_forecast_metric_per_day(
                     merged_df=merged_df,
-                    forecaster_names=list(
-                        {f.forecaster_name for f in lcfg.forecasters}
-                    ),
+                    forecaster_names=[f.forecaster_name for f in lcfg.forecasters],
                     scale_factor=lcfg.scale_factor,
                     units=lcfg.units,
                     selected_metric=cfg.metric,  # This is also not locked on purpose
                 )
                 st.plotly_chart(fig3)
+
+                st.subheader("Quantile Plots")
+                st.text("We plot the probability of the observed value being less than "
+                         "the forecasted plevel value.")
+                fig4 = plot_quantile_plot(
+                    merged_df=merged_df,
+                    forecaster_names=[f.forecaster_name for f in lcfg.forecasters],
+                    )
+                st.plotly_chart(fig4)
 
         else:
             st.info(
