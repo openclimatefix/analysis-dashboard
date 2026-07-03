@@ -6,7 +6,6 @@ import dataclasses
 import pandas as pd
 import streamlit as st
 from aiocache import Cache, cached
-from ocf.dp.dp import common_pb2
 from ocf.dp.dp_data import messages_pb2, service_pb2_grpc
 
 from dataplatform.forecast.cache import key_builder_remove_client

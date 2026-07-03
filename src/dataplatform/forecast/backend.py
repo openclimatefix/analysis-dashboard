@@ -1,6 +1,5 @@
 """Backend logic for the Data Platform Forecasting Explorer app, including data fetching and processing."""
 
-import numpy as np
 import asyncio
 import datetime
 
