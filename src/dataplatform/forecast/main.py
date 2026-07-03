@@ -266,7 +266,8 @@ async def async_dp_forecast_page() -> None:
                 st.plotly_chart(fig3)
 
                 st.subheader("Quantile Plots")
-                st.text("We plot the probability of the observed value being less than the plevel value.")
+                st.text("We plot the probability of the observed value being less than "
+                         "the forecasted plevel value.")
                 fig4 = plot_quantile_plot(
                     merged_df=merged_df,
                     forecaster_names=list(
