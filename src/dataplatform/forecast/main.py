@@ -256,9 +256,7 @@ async def async_dp_forecast_page() -> None:
                 st.subheader("Daily Metrics Plots")
                 fig3 = plot_forecast_metric_per_day(
                     merged_df=merged_df,
-                    forecaster_names=list(
-                        {f.forecaster_name for f in lcfg.forecasters}
-                    ),
+                    forecaster_names=[f.forecaster_name for f in lcfg.forecasters],
                     scale_factor=lcfg.scale_factor,
                     units=lcfg.units,
                     selected_metric=cfg.metric,  # This is also not locked on purpose
