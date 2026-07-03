@@ -394,3 +394,60 @@ def make_summary_data_metric_vs_horizon_minutes(
 
     return summary_df
 
+def plot_quantile_plot(
+        merged_df: pd.DataFrame,
+        forecaster_names: list):
+
+    quantiles_probs = {}
+    for forecaster_name in forecaster_names:
+
+        forecaster_df = merged_df[merged_df["forecaster_name"] == forecaster_name]
+        # get rid of night time zeros
+        forecaster_df = forecaster_df[forecaster_df["value_watts"] != 0]
+        quantiles_probs[forecaster_name] = {}
+
+        values = []
+        for plevel in [10,50,90]:
+            if f'p{plevel}_watts' in forecaster_df.columns:
+                v = (forecaster_df[f'p{plevel}_watts'] >= forecaster_df['value_watts']).mean()
+                values.append({'plevel': plevel/100, 'value': v})
+
+        quantiles_probs[forecaster_name] = pd.DataFrame(data=values)
+
+
+    fig = go.Figure()
+    for i, forecaster_name in enumerate(forecaster_names):
+        forecaster_df = quantiles_probs[forecaster_name]
+        fig.add_trace(
+            go.Scatter(
+                x=forecaster_df["plevel"],
+                y=forecaster_df["value"],
+                name=forecaster_name,
+                line={"color": colours[i % len(colours)]},
+            ),
+        )
+    
+    # lets also put a straight line on from 0,0 to 1,1 and colour it white
+    fig.add_trace(
+        go.Scatter(
+            x=[0, 1],
+            y=[0, 1],
+            name="Perfect Forecast",
+            line={"color": "white", "dash": "dash"},
+        )
+    )
+
+    fig.update_layout(
+        title="Quantile plot",
+        xaxis_title="Quantile",
+        yaxis_title="Fraction below (forecast < observed)",
+    )
+
+    # update the range of the y and x axis to 0 and 1
+    fig.update_xaxes(range=[0, 1])
+    fig.update_yaxes(range=[0, 1])
+
+    return fig
+
+    
+
