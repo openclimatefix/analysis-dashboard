@@ -427,8 +427,9 @@ def plot_quantile_plot(
 
         values = []
         for plevel in [10,50,90]:
-            v = (forecaster_df[f'p{plevel}_watts'] >= forecaster_df['value_watts']).mean()
-            values.append({'plevel': plevel/100, 'value': v})
+            if f'p{plevel}_watts' in forecaster_df.columns:
+                v = (forecaster_df[f'p{plevel}_watts'] >= forecaster_df['value_watts']).mean()
+                values.append({'plevel': plevel/100, 'value': v})
 
         quantiles_probs[forecaster_name] = pd.DataFrame(data=values)
 
