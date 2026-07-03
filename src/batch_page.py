@@ -3,10 +3,12 @@ import torch
 import matplotlib.pyplot as plt
 import math
 import pandas as pd
+import numpy as np
 import fsspec
 
 
 # Plot helper functions
+batch_id = 0
 
 def plot_image_grid(channels, labels, cols=4, cmap="viridis", size=3):
     """
@@ -83,8 +85,8 @@ def batch_page():
 
         # Satellite plots
         if all(key in tensor_batch for key in ("satellite_actual", "satellite_time_utc")):
-            satellite_tensor = tensor_batch["satellite_actual"][0]  # [time, channels, H, W]
-            satellite_times = [pd.to_datetime(ts) for ts in tensor_batch["satellite_time_utc"][0]]
+            satellite_tensor = tensor_batch["satellite_actual"][batch_id]  # [time, channels, H, W]
+            satellite_times = [pd.to_datetime(ts) for ts in tensor_batch["satellite_time_utc"][batch_id]]
             # This is the assumed order of channels as we normally list them
             channel_labels = [
                 "IR_016", "IR_039", "IR_087", "IR_097", "IR_108", "IR_120", "IR_134", "VIS006",
@@ -120,9 +122,10 @@ def batch_page():
         if "nwp" in tensor_batch:
             for set_name, nwp_entry in tensor_batch["nwp"].items():
                 st.subheader(f"NWP: {set_name} average values over forecast steps")
-                nwp_steps = nwp_entry["nwp_step"].flatten()
+               
+                nwp_steps = nwp_entry["nwp_step"][batch_id]
                 channel_names = nwp_entry["nwp_channel_names"]
-                nwp_tensor = nwp_entry["nwp"][0]  # [time, channels, H, W]
+                nwp_tensor = nwp_entry["nwp"][batch_id]  # [time, channels, H, W]
 
                 # Spatial-averaged time series
                 mean_time_series = nwp_tensor.mean(dim=(-2, -1)).cpu().numpy()
@@ -136,7 +139,7 @@ def batch_page():
 
                 # Spatial plot at first timestep
                 st.subheader(f"NWP: {set_name} spatial slice, channel values at first step")
-                first_step_images = nwp_tensor[0]
+                first_step_images = nwp_tensor[batch_id]
                 st.pyplot(plot_image_grid(
                     first_step_images,
                     channel_names,
@@ -144,22 +147,19 @@ def batch_page():
         else:
             st.info("Key 'nwp' not found in batch.")
 
-        # Site time series
-        if all(key in tensor_batch for key in ("site", "site_time_utc")):
-            st.subheader("Site Time Series")
-            site_times = [pd.to_datetime(ts) for ts in tensor_batch["site_time_utc"][0]]
-            site_values = tensor_batch["site"].flatten()
-            st.pyplot(plot_line_chart(
-                site_times,
-                site_values,
-                ["Site"],
-                x_label="Time (UTC)",
-                y_label="Site Value",
-                legend_columns=1
-            ))
-        else:
-            missing = [k for k in ("site", "site_time_utc") if k not in tensor_batch]
-            st.info(f"Missing keys for site plot: {missing}")
+        st.subheader(f"Site Time Series")
+        keys = ['time_cos', 'time_sin', 'date_cos','date_sin', 'solar_azimuth', 'solar_elevation', 'generation']
+        site_times = [pd.to_datetime(ts) for ts in tensor_batch["time_utc"][batch_id]]
+        time_variables = np.array([tensor_batch[key][batch_id].flatten() for key in keys]).transpose()
+        st.pyplot(plot_line_chart(
+            site_times,
+            time_variables,
+            keys,
+            x_label="Time (UTC)",
+            y_label="Value",
+            legend_columns=1
+        ))
 
     except Exception as error:
         st.error(f"Error processing batch: {error}")
+        raise error
