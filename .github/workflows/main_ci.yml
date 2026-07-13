@@ -67,14 +67,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Create and populate secrets.toml file
-        env:
-          APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
-        run: |
-          touch src/.streamlit/secrets.toml
-          echo "password = \"$APP_PASSWORD\"" >> src/.streamlit/secrets.toml
-
-
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
 
