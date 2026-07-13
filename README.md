@@ -43,10 +43,11 @@ cd analysis-dashboard
 uv sync
 ```
 
-3. Create a login secret:
+3. Set the Auth0 environment variables used for the Google login (only `@openclimatefix.org` accounts are allowed in):
 
 ```shell
-echo 'password = "example"' > src/.streamlit/secrets.toml
+export AUTH0_CLIENT_ID=your-auth0-client-id
+export AUTH0_DOMAIN=your-auth0-domain
 ```
 
 4. Run the app:
@@ -54,6 +55,10 @@ echo 'password = "example"' > src/.streamlit/secrets.toml
 ```shell
 cd src && uv run streamlit run main.py
 ```
+
+> **Note:** the Google login opens in a popup window. If you see a
+> "Popup blocked" message, allow popups for the dashboard URL
+> (e.g. `http://localhost:8501`) in your browser settings and try again.
 
 ### **Manual Installation (Legacy)**
 
@@ -65,11 +70,7 @@ In the main project folder, install from pyproject.toml:
 pip install -e .
 ```
 
-Create a login secret:
-
-```shell
-echo 'password = "example"' > src/.streamlit/secrets.toml
-```
+Set the Auth0 environment variables (see the uv section above).
 
 Run app:
 
@@ -135,25 +136,20 @@ cd analysis-dashboard
 # DB_URL=your-database-url      # Optional, if not available, you can skip this line
 REGION=india                  # Choose 'india' or 'uk'
 ENVIRONMENT=development       # or 'production'
-password=example              # Set your password here
 SHOW_PVNET_GSP_SUM=0          # Set this to 1 if you want to show pvnet_gsp_sum model
+AUTH0_CLIENT_ID=your-auth0-client-id
+AUTH0_DOMAIN=your-auth0-domain
 ```
 
-3. Create a `secrets.toml` file in the `src/.streamlit` directory and add the following line:
-
-```shell
-echo 'password = "example"' > src/.streamlit/secrets.toml
-```
-
-4. Build the Docker image and start the app:
+3. Build the Docker image and start the app:
 
 ```shell
 docker-compose up --build
 ```
 
-5. Open your browser and go to `http://localhost:8501` to view the app.
+4. Open your browser and go to `http://localhost:8501` to view the app.
 
-6. To stop the app, press `Ctrl+C` in the terminal, and then run:
+5. To stop the app, press `Ctrl+C` in the terminal, and then run:
 
 ```shell
 docker-compose down
@@ -175,7 +171,7 @@ docker-compose down
 
 ### auth.py
 
-`auth.py` contains code for the basic authenticaion that's been put in place.
+`auth.py` contains code for the auth0 authenticaion.
 
 ### pvsite_forecast.py
 
@@ -215,7 +211,8 @@ With any push to `main`, in order to deploy changes, the `Terraform Cloud` varia
 ## Environmental Variables
 
 - DB_URL: The database url which will be queried for forecasts
-- password: The password for accessing the code
+- AUTH0_CLIENT_ID: The Auth0 client ID
+- AUTH0_DOMAIN: The Auth0 tenant domain
 - SHOW_PVNET_GSP_SUM: Option to show `pvnet_gsp_sum` model or not. This defaults to zero
 - REGION: Option can be UK or India. This effects the default values on the NWP and Satellite pages
 - ENVIRONMENT: Option can be `development` or `production`.
