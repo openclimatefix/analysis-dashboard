@@ -25,7 +25,6 @@ jobs:
   # Job for building container image
   # * Builds and pushes an OCI Container image to the registry defined in the environment variables
   # * Only runs if branch_ci pass
-  # Need to add secret to docker file
   build-container:
     runs-on: ubuntu-latest
     permissions:
@@ -51,13 +50,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create and populate secrets.toml file
-        env:
-          APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
-        run: |
-          touch src/.streamlit/secrets.toml
-          echo "password = \"$APP_PASSWORD\"" >> src/.streamlit/secrets.toml
 
       # Tag the built image according to the event type
       # The event is a branch commit, so use the commit sha
