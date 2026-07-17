@@ -15,19 +15,61 @@ from pvsite_datamodel.sqlmodels import StatusSQL
 ENV = os.getenv("ENVIRONMENT", "development")
 STATUS_API_URL = "https://status.quartz.energy" if ENV == "production" else "https://status-dev.quartz.energy"
 
-def get_colour(status) -> str:
-    """Get the colour for the status
+# Map the dashboard's selectable status targets to Status API product keys.
+UK_PRODUCTS = {"National": "gb-solar", "Sites": "asset-solar", "NL": "nl-solar"}
+
+
+def get_colour_for_value(value) -> str:
+    """Get the colour for a status value
 
     green = ok
     orange = warning
     red = error
     """
     colour = "green"
-    if status.status == "warning":
+    if value == "warning":
         colour = "orange"
-    elif status.status == "error":
+    elif value == "error":
         colour = "red"
     return colour
+
+
+def get_colour(status) -> str:
+    """Get the colour for a status object (has a `.status` attribute)."""
+    return get_colour_for_value(status.status)
+
+
+@st.cache_data(ttl=60)  # cache for 1 minute
+def get_product_status(key):
+    """Fetch the current status for a product from the Status API."""
+    response = requests.get(f"{STATUS_API_URL}/products/{key}", timeout=10)
+    response.raise_for_status()
+    return response.json()  # {key, name, status, message, source, updatedAt}
+
+
+def put_product_status(key, status_level, message, token):
+    """Set a product's status via the Status API admin PUT action.
+
+    Requires a JWT bearer token with the read:admin scope.
+    """
+    response = requests.put(
+        f"{STATUS_API_URL}/products/{key}/status",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"status": status_level, "message": message},
+        timeout=10,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def format_updated_at(value):
+    """Format the API's ISO `updatedAt` string as a UTC timestamp for display."""
+    if not value:
+        return "–"
+    try:
+        return pd.to_datetime(value, utc=True).strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        return value
 
 
 # Region setting to determine which options to show
@@ -87,23 +129,99 @@ def write_new_status(session, status, status_level, value, national_or_sites="Na
     session.add(s)
     session.commit()
 
+def display_update_status_api(key, product_name):
+    """Display the update-status form backed by the Status API PUT action."""
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col1:
+        st.markdown("""<div class="label">New status</div>""", unsafe_allow_html=True)
+        status_level = st.selectbox(
+            "New status?", ("ok", "warning", "error"), label_visibility="collapsed",
+        )
+    with col2:
+        st.markdown("""<div class="label">Enter a message</div>""", unsafe_allow_html=True)
+        value = st.text_input("Message", label_visibility="collapsed")
+    with col3:
+        st.markdown("""<div class="label">&nbsp;</div>""", unsafe_allow_html=True)
+        if st.button("Update", key="general_status_button"):
+            token = st.session_state.get("access_token")
+            if not token:
+                st.error("You must be logged in via Auth0 to update the status.")
+                return
+            try:
+                put_product_status(key, status_level, value, token)
+            except requests.exceptions.HTTPError as e:
+                resp = e.response
+                code = resp.status_code if resp is not None else None
+                body = resp.text if resp is not None else str(e)
+                if code == 401:
+                    # token rejected: invalid signature / audience / expired
+                    st.error(f"Status API rejected the token (401). Response: {body}")
+                elif code == 403:
+                    # authenticated but missing the required admin permission
+                    st.error(
+                        f"Token accepted but not authorised to set status (403). Response: {body}"
+                    )
+                else:
+                    st.error(f"Failed to update status ({code}): {body}")
+                return
+            except Exception as e:
+                st.error(f"Failed to update status: {e}")
+                return
+
+            st.success(f"Status updated to {status_level} with message: {value}")
+            # drop the cached read so the new value shows on rerun
+            get_product_status.clear()
+            st.rerun()
+
+
+def ocf_status_api():
+    """Show and update OCF product statuses via the Status API (UK/EU)."""
+    product_name = st.sidebar.selectbox("Select", list(UK_PRODUCTS.keys()), index=0)
+    key = UK_PRODUCTS[product_name]
+
+    try:
+        status = get_product_status(key)
+    except Exception as e:
+        st.error(f"Failed to fetch status for {product_name}: {e}")
+        return
+
+    st.markdown(
+        f'<h2 style="color:#63BCAF;font-size:24px;">OCF {status.get("name", product_name)} Status &nbsp;'
+        f'<small style="font-size: 0.875rem; font-weight: 300; color: #ffffff;">[Select product in sidebar]</small></h2>',
+        unsafe_allow_html=True,
+    )
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col1:
+        colour = get_colour_for_value(status.get("status"))
+        st.write("Status")
+        st.markdown(f":{colour}[{status.get('status')}]")
+    with col2:
+        st.write("Message")
+        st.write(status.get("message") if status.get("message") else "–")
+    with col3:
+        st.write("Last Updated (UTC)")
+        st.markdown(
+            f"<small>{format_updated_at(status.get('updatedAt'))}</small>",
+            unsafe_allow_html=True,
+        )
+
+    display_update_status_api(key, product_name)
+
+
 def ocf_status():
-    # Get database URLs
-    db_url = os.getenv("DB_URL", None)
-    db_url_sites = os.getenv("SITES_DB_URL", None)
-
-    # Add database selection in sidebar, similar to user_page.py
+    # UK/EU statuses now come from the Status API; India stays on the legacy DB path
+    # until a Status API product is spun up for it.
     if region == "uk":
-        national_or_sites = st.sidebar.selectbox("Select", ["National", "Sites"], index=0)
-    else:
-        national_or_sites = "Sites"
+        ocf_status_api()
+        return
 
-    # GENERAL STATUS SECTION
-    # Get the appropriate connection for the selected database
-    if national_or_sites == "National":
-        connection = DatabaseConnection(url=db_url, echo=True)
-    else:  # Sites
-        connection = SitesDatabaseConnection(url=db_url_sites, echo=True)
+    # --- Legacy DB-backed path (India, Sites only) ---
+    db_url_sites = os.getenv("SITES_DB_URL", None)
+    national_or_sites = "Sites"
+
+    connection = SitesDatabaseConnection(url=db_url_sites, echo=True)
 
     with connection.get_session() as session:
         # Get general status
