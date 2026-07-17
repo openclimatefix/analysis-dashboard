@@ -108,16 +108,16 @@ def pvsite_forecast_page():
             "Select site by", ("site_uuid", "client_site_name")
         )
 
-        if query_method == "site_uuid":
-            site_selection_uuid = st.sidebar.selectbox(
-                "Select sites by site_uuid",
-                site_uuids,
-            )
+       if query_method == "site_uuid":
+             site_selection_uuid = st.sidebar.selectbox(
+                 "Select sites by site_uuid",
+                 site_uuids,
+             )
 
         else:
-            client_site_name = st.sidebar.selectbox(
-                "Select sites by client_site_name",
-                sorted([sites.client_location_name for sites in sites]),
+         
+resample = st.sidebar.selectbox("Resample data", [None, "15min", "30min"], None)
+,
             )
             site_selection_uuid = [
                 sites.location_uuid
@@ -332,7 +332,13 @@ def pvsite_forecast_page():
     df_forecast.set_index("forecast_datetime", inplace=True)
     df_generation.set_index("generation_datetime", inplace=True)
 
-    if resample is not None:
+     # … your df_generation setup above …
+
+    # if the user hasn’t chosen a resample interval, prompt them
+    if resample is None:
+        st.caption("Please resample to '15min' to get MAE")
+    else:
+        # actually do the resampling and merge
         df_forecast = df_forecast.resample(resample).mean()
         df_generation = df_generation.resample(resample).mean()
 
@@ -341,9 +347,10 @@ def pvsite_forecast_page():
             df_generation, left_index=True, right_index=True, how="outer"
         )
 
-        # select variables
+        # now you can reassign xx/yy or whatever follows…
         xx = df_all.index
         yy = df_all["generation_power_kw"]
+
 
     fig = go.Figure(
         layout=go.Layout(
