@@ -52,6 +52,7 @@ def make_forecast_horizon_table(all_forecast_horizons_df, y_plive_mae):
     df_mae_horizon_mean.rename(columns={"MAE": "mean"}, inplace=True)
     df_mae_horizon_std = all_forecast_horizons_df.groupby(["forecast_horizon"]).std().reset_index()
     df_mae_horizon_mean["std"] = df_mae_horizon_std["MAE"]
+    df_mae_horizon_mean["forecast_horizon"] = df_mae_horizon_mean["forecast_horizon"].apply(lambda x: round(x / 60, 1))
     pv_live_mae = np.round(np.mean(y_plive_mae), 2)
     st.write(f"PV LIVE Mae {pv_live_mae} MW (intraday - day after)")
     st.write(df_mae_horizon_mean)
