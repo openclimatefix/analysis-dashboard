@@ -10,7 +10,7 @@ from pvsite_datamodel.read.site import get_all_sites
 from pvsite_datamodel.sqlmodels import GenerationSQL, MLModelSQL
 
 def color_survived(val):
-    now = pd.Timestamp.utcnow()
+    now = pd.Timestamp.now(tz="UTC")
     color = (
         "#ee6b6e"
         if val < now - pd.Timedelta("4H")
