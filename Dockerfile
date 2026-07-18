@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     gcc \
     curl \
+    git \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install uv
@@ -18,6 +19,7 @@ WORKDIR /app
 # Copy pyproject.toml and README.md for dependency installation
 COPY pyproject.toml ./
 COPY README.md ./
+COPY .git .git
 
 # Install dependencies using uv (generate lock file during build)
 RUN uv sync
