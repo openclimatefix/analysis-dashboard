@@ -16,7 +16,7 @@ ENV = os.getenv("ENVIRONMENT", "development")
 STATUS_API_URL = "https://status.quartz.energy" if ENV == "production" else "https://status-dev.quartz.energy"
 
 # Map the dashboard's selectable status targets to Status API product keys.
-UK_PRODUCTS = {"National": "gb-solar", "Sites": "asset-solar", "NL": "nl-solar"}
+PRODUCTS = {"National": "gb-solar", "NL": "nl-solar", "Assets": "asset-solar"}
 
 
 def get_colour_for_value(value) -> str:
@@ -129,85 +129,89 @@ def write_new_status(session, status, status_level, value, national_or_sites="Na
     session.add(s)
     session.commit()
 
-def display_update_status_api(key, product_name):
-    """Display the update-status form backed by the Status API PUT action."""
-    col1, col2, col3 = st.columns([1, 2, 1])
+def submit_product_status(key, status_level, message):
+    """Send a status update to the Status API and surface any auth/other errors."""
+    token = st.session_state.get("access_token")
+    if not token:
+        st.error("You must be logged in via Auth0 to update the status.")
+        return
+    try:
+        put_product_status(key, status_level, message, token)
+    except requests.exceptions.HTTPError as e:
+        resp = e.response
+        code = resp.status_code if resp is not None else None
+        body = resp.text if resp is not None else str(e)
+        if code == 401:
+            # token rejected: invalid signature / audience / expired
+            st.error(f"Status API rejected the token (401). Response: {body}")
+        elif code == 403:
+            # authenticated but missing the required admin permission
+            st.error(f"Token accepted but not authorised to set status (403). Response: {body}")
+        else:
+            st.error(f"Failed to update status ({code}): {body}")
+        return
+    except Exception as e:
+        st.error(f"Failed to update status: {e}")
+        return
 
-    with col1:
-        st.markdown("""<div class="label">New status</div>""", unsafe_allow_html=True)
-        status_level = st.selectbox(
-            "New status?", ("ok", "warning", "error"), label_visibility="collapsed",
+    st.success(f"Status updated to {status_level} with message: {message}")
+    # drop the cached read so the new value shows on rerun
+    get_product_status.clear()
+    st.rerun()
+
+
+def render_product_status_card(product_name, key):
+    """Show one product's current status and an inline update form.
+
+    All widgets are keyed by the product `key` so several cards can be stacked without
+    Streamlit duplicate-widget-id clashes.
+    """
+    with st.container(border=True):
+        try:
+            status = get_product_status(key)
+        except Exception as e:
+            st.error(f"Failed to fetch status for {product_name}: {e}")
+            return
+
+        colour = get_colour_for_value(status.get("status"))
+        header_col, updated_col = st.columns([2, 3])
+        with header_col:
+            st.markdown(
+                f"**{status.get('name', product_name)}** &nbsp; :{colour}[{status.get('status')}]"
+            )
+        with updated_col:
+            st.caption(f"Last updated {format_updated_at(status.get('updatedAt'))} UTC", text_alignment="right")
+
+        st.markdown(
+            '<p style="color:#888888;font-size:12px;margin-bottom:0;">Current message</p>',
+            unsafe_allow_html=True,
         )
-    with col2:
-        st.markdown("""<div class="label">Enter a message</div>""", unsafe_allow_html=True)
-        value = st.text_input("Message", label_visibility="collapsed")
-    with col3:
-        st.markdown("""<div class="label">&nbsp;</div>""", unsafe_allow_html=True)
-        if st.button("Update", key="general_status_button"):
-            token = st.session_state.get("access_token")
-            if not token:
-                st.error("You must be logged in via Auth0 to update the status.")
-                return
-            try:
-                put_product_status(key, status_level, value, token)
-            except requests.exceptions.HTTPError as e:
-                resp = e.response
-                code = resp.status_code if resp is not None else None
-                body = resp.text if resp is not None else str(e)
-                if code == 401:
-                    # token rejected: invalid signature / audience / expired
-                    st.error(f"Status API rejected the token (401). Response: {body}")
-                elif code == 403:
-                    # authenticated but missing the required admin permission
-                    st.error(
-                        f"Token accepted but not authorised to set status (403). Response: {body}"
-                    )
-                else:
-                    st.error(f"Failed to update status ({code}): {body}")
-                return
-            except Exception as e:
-                st.error(f"Failed to update status: {e}")
-                return
+        st.write(status.get("message") if status.get("message") else "–")
 
-            st.success(f"Status updated to {status_level} with message: {value}")
-            # drop the cached read so the new value shows on rerun
-            get_product_status.clear()
-            st.rerun()
+        status_col, message_col, button_col = st.columns([1, 2, 1])
+        with status_col:
+            status_level = st.selectbox(
+                "New status", ("ok", "warning", "error"), key=f"status_level_{key}",
+            )
+        with message_col:
+            message = st.text_input("Message", key=f"status_message_{key}")
+        with button_col:
+            # spacer so the button lines up with the inputs (past their labels)
+            st.markdown("<div style='height: 1.75rem'></div>", unsafe_allow_html=True)
+            update = st.button("Update", key=f"status_update_{key}", use_container_width=True)
+
+        if update:
+            submit_product_status(key, status_level, message)
 
 
 def ocf_status_api():
     """Show and update OCF product statuses via the Status API (UK/EU)."""
-    product_name = st.sidebar.selectbox("Select", list(UK_PRODUCTS.keys()), index=0)
-    key = UK_PRODUCTS[product_name]
-
-    try:
-        status = get_product_status(key)
-    except Exception as e:
-        st.error(f"Failed to fetch status for {product_name}: {e}")
-        return
-
     st.markdown(
-        f'<h2 style="color:#63BCAF;font-size:24px;">OCF {status.get("name", product_name)} Status &nbsp;'
-        f'<small style="font-size: 0.875rem; font-weight: 300; color: #ffffff;">[Select product in sidebar]</small></h2>',
+        '<h2 style="color:#63BCAF;font-size:24px;">OCF Product Statuses</h2>',
         unsafe_allow_html=True,
     )
-
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col1:
-        colour = get_colour_for_value(status.get("status"))
-        st.write("Status")
-        st.markdown(f":{colour}[{status.get('status')}]")
-    with col2:
-        st.write("Message")
-        st.write(status.get("message") if status.get("message") else "–")
-    with col3:
-        st.write("Last Updated (UTC)")
-        st.markdown(
-            f"<small>{format_updated_at(status.get('updatedAt'))}</small>",
-            unsafe_allow_html=True,
-        )
-
-    display_update_status_api(key, product_name)
+    for product_name, key in PRODUCTS.items():
+        render_product_status_card(product_name, key)
 
 
 def ocf_status():
@@ -251,86 +255,83 @@ def ocf_status():
         display_update_status(status, session, national_or_sites=national_or_sites)
 
 def example_status_messages():
-
+    """Example status messages, grouped into tabs and shown as copy-ready blocks."""
     st.markdown(
-        f'<h2 style="color:#63BCAF;font-size:24px;">{"Example messages"}</h2>',
+        '<h2 style="color:#63BCAF;font-size:24px;">Example messages</h2>',
         unsafe_allow_html=True,
     )
 
+    major_tab, minor_tab, maintenance_tab, providers_tab, resolved_tab = st.tabs(
+        [
+            ":red[Major issue]",
+            ":orange[Minor issue]",
+            ":orange[Maintenance]",
+            ":orange[Data providers]",
+            ":green[Resolved]",
+        ]
+    )
+
+    with major_tab:
+        st.code(
+            "We are currently investigating a major issue with the forecast, and will aim "
+            "to resolve them as soon as possible. Please exercise caution when using the "
+            "current forecast.",
+            wrap_lines=True,
+        )
+
+    with minor_tab:
+        st.code(
+            "We are currently investigating minor issues with the forecast, and will aim "
+            "to resolve them as soon as possible.",
+            wrap_lines=True,
+        )
+
+    with maintenance_tab:
+        st.code(
+            "We are upgrading our infrastructure between {start_datetime} and "
+            "{end_datetime}, and there may be some minor downtime. We hope to keep "
+            "disruption to a minimum.",
+            wrap_lines=True,
+        )
+
+    with providers_tab:
+        st.code(
+            "We are currently experiencing issues with a third-party NWP data provider, "
+            "which may affect the forecast. We hope to resolve this as soon as possible.",
+            wrap_lines=True,
+        )
+        st.code(
+            "We are currently experiencing issues with a third-party satellite data "
+            "provider, which may affect the forecast. We hope to resolve this as soon as "
+            "possible.",
+            wrap_lines=True,
+        )
+        st.code(
+            "A solar eclipse is expected at {datetime}, please exercise caution around the "
+            "forecast during this time.",
+            wrap_lines=True,
+        )
+
+    with resolved_tab:
+        st.code(
+            "The {minor / major} issue with the forecast from {datetime} to {datetime} is "
+            "now resolved. This was due to {reason}.",
+            wrap_lines=True,
+        )
+        st.code(
+            "The {minor / major} issue with the forecast from {datetime} to {datetime} "
+            "{reason} has now been resolved.",
+            wrap_lines=True,
+        )
+        st.code(
+            "The {minor / major} issue with the forecast from {datetime} to {datetime} has "
+            "now been resolved as of {fixed_date}.",
+            wrap_lines=True,
+        )
+
     st.markdown(
-        f'<h3 style="color:#FF8F73;font-size:22px;">{"Investigating a major issue"}</h3>',
-        unsafe_allow_html=True,
-    )
-
-    st.write(
-        "We are currently investigating a major issue with the forecast, and will aim to "
-        "resolve them as soon as possible. "
-        "Please exercise caution when using the current forecast.",
-    )
-
-    st.markdown(
-        f'<h3 style="color:#FAA056;font-size:22px;">{"Investigating a minor issue"}</h3>',
-        unsafe_allow_html=True,
-    )
-
-    st.write(
-        "We are currently investigating minor issues with the forecast, "
-        "and will aim to resolve them as soon as possible.",
-    )
-
-    st.markdown(
-        f'<h3 style="color:#FAA056;font-size:22px;">{"Pre event issue"}</h3>',
-        unsafe_allow_html=True,
-    )
-
-    st.write(
-        "We are upgrading our infrastructure between 2025-04-28 17:00 and 2025-04-28 19:00, "
-        "and there maybe be some minor downtime. We hope to keep disruption to a minimum. ",
-    )
-
-    st.markdown(
-        f'<h3 style="color:#FAA056;font-size:22px;">{"Specific errors"}</h3>',
-        unsafe_allow_html=True,
-    )
-
-    st.write(
-        "We are currently experiencing issues with a third-party NWP data provider, "
-        "which may affect the forecast. We hope to resolve this as soon as possible.",
-    )
-
-    st.write(
-        "We are currently experiencing issues with a third-party satellite data provider, "
-        "which may affect the forecast. We hope to resolve this as soon as possible.",
-    )
-
-    st.write(
-        "A solar eclipse is expected at {datetime}, please exercise caution around the "
-        "forecast during this time. ",
-    )
-
-    st.markdown(
-        f'<h3 style="color:#ffd053;font-size:22px;">{"Post incident issues"}</h3>',
-        unsafe_allow_html=True,
-    )
-    # example messages
-    st.write(
-        "The {minor / major} issue with the forecast from {datetime} to {datetime} "
-        "is now resolved. This was due to {reason}.",
-    )
-
-    st.write(
-        "The {minor / major} issue with the forecast from {datetime} to {datetime} "
-        "{reason} has now been resolved.",
-    )
-
-    st.write(
-        "The {minor / major} issue with the forecast from {datetime} to {datetime} "
-        "has now been resolved as of {fixed_date}.",
-    )
-
-    st.write(
-        "More information can be found in  "
-        "[notion](https://www.notion.so/openclimatefix/Useful-Status-messages-d746d92701c8474293aedb12797b2d32)"  # noqa
+        "More examples in "
+        "[Notion](https://www.notion.so/openclimatefix/Useful-Status-messages-d746d92701c8474293aedb12797b2d32).",  # noqa
     )
 
 
@@ -501,12 +502,11 @@ def status_page():
     col1, col2 = st.columns([1, 1])
 
     with col1:
-        # Data providers status
-        data_providers_status()
-
-
-    with col2:
         ocf_status()
         example_status_messages()
+
+    with col2:
+        # Data providers status
+        data_providers_status()
 
 
