@@ -138,11 +138,34 @@ async def setup_page(client: service_pb2_grpc.DataPlatformDataServiceStub) -> Pa
         )
         t0_dict = {t.strftime("%Y-%m-%d %H:%M"): t for t in all_t0s}
 
+        # Picking t0s one by one is fine for a handful, but stepping through a whole day
+        # needs all of them, so offer bulk select/clear. These must run before the
+        # multiselect, since a widget's state can't be set once it has been instantiated.
+        t0_key = "dp_forecast_selected_t0s"
+        select_all_col, clear_col = st.sidebar.columns(2)
+        if select_all_col.button("Select all t0s"):
+            # Exclude t0s in the future — the Data Platform rejects those with a validation
+            # error, and there's no forecast to step through for them anyway.
+            now_utc = dt.datetime.now(tz=dt.UTC)
+            st.session_state[t0_key] = [k for k, v in t0_dict.items() if v <= now_utc]
+        if clear_col.button("Clear t0s"):
+            st.session_state[t0_key] = []
+
+        multiselect_kwargs = {}
+        if t0_key not in st.session_state:
+            multiselect_kwargs["default"] = list(t0_dict.keys())[:5]
+
         selected_t0_strs = st.sidebar.multiselect(
             "Desired t0s",
             options=list(t0_dict.keys()),
-            default=list(t0_dict.keys())[:5],
+            key=t0_key,
+            **multiselect_kwargs,
         )
+        # Each t0 is a separate gRPC call per forecaster, so flag when that gets expensive.
+        if len(selected_t0_strs) > 48:
+            st.sidebar.caption(
+                f"{len(selected_t0_strs)} t0s selected — fetching may take a while."
+            )
         selected_t0s = [t0_dict[t_str] for t_str in selected_t0_strs]
 
     default_unit_index = 2  # MW
