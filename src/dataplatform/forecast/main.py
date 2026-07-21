@@ -11,7 +11,13 @@ import grpc.aio
 from ocf.dp.dp import common_pb2
 from ocf.dp.dp_data import service_pb2_grpc
 
-from dataplatform.forecast.constant import metrics, observer_names
+from dataplatform.forecast.constant import (
+    metrics,
+    observer_names,
+    t0_chart_min_height,
+    t0_chart_screen_fraction,
+    theme_background,
+)
 from dataplatform.forecast.backend import (
     fetch_observations,
     fetch_timeseries,
@@ -21,6 +27,7 @@ from dataplatform.forecast.plot import (
     plot_forecast_metric_per_day,
     plot_forecast_metric_vs_horizon_minutes,
     plot_forecast_time_series,
+    plot_forecast_time_series_by_t0,
     make_summary_data,
     make_summary_data_metric_vs_horizon_minutes,
     plot_quantile_plot
@@ -29,6 +36,55 @@ from dataplatform.forecast.setup import setup_page
 
 data_platform_host = os.getenv("DATA_PLATFORM_HOST", "localhost")
 data_platform_port = int(os.getenv("DATA_PLATFORM_PORT", "50051"))
+
+
+def render_animated_chart(fig) -> None:
+    """Render a figure that uses Plotly animation frames, inside an iframe.
+
+    st.plotly_chart persists the figure to Streamlit element state on every update and
+    re-reads it when the component remounts (e.g. toggling fullscreen). Animation frames
+    don't survive that round trip, so the slider silently stops redrawing. Rendering the
+    figure as standalone HTML keeps the frames registered with Plotly directly.
+    """
+    chart_html = fig.to_html(
+        include_plotlyjs="cdn",
+        full_html=False,
+        auto_play=False,
+        default_height="100%",
+        config={"displaylogo": False, "responsive": True},
+    )
+    # Size the chart to a fraction of the viewer's screen so it fits laptops and big monitors
+    # alike. window.innerHeight is the iframe's own height here (circular), so we key off
+    # window.screen.availHeight, which is readable cross-origin. st.iframe(height="content")
+    # then tracks the resulting height via its ResizeObserver.
+    sizing_script = f"""
+    <script>
+    (function () {{
+      function sizeChart() {{
+        var gd = document.querySelector('.plotly-graph-div');
+        if (!gd || !window.Plotly) {{ return false; }}
+        var target = Math.max(
+          {t0_chart_min_height},
+          Math.round(window.screen.availHeight * {t0_chart_screen_fraction})
+        );
+        window.Plotly.relayout(gd, {{height: target}});
+        return true;
+      }}
+      // Plotly (from the CDN) and the graph div may not exist yet, so retry briefly.
+      var tries = 0;
+      var timer = setInterval(function () {{
+        if (sizeChart() || ++tries > 40) {{ clearInterval(timer); }}
+      }}, 50);
+      window.addEventListener('resize', sizeChart);
+    }})();
+    </script>
+    """
+    st.iframe(
+        f'<html><head><meta charset="utf-8"></head>'
+        f'<body style="margin:0;background-color:{theme_background};">'
+        f"{chart_html}{sizing_script}</body></html>",
+        height="content",
+    )
 
 
 def init_session_state():
@@ -123,20 +179,53 @@ async def async_dp_forecast_page() -> None:
             show_probabilistic = st.checkbox("Show Probabilistic Forecasts", value=True)
 
             lcfg = st.session_state.locked_config
-            fig = plot_forecast_time_series(
-                all_forecast_data_df=all_forecast_data_df,
-                all_observations_df=all_observations_df,
-                forecaster_names=list({f.forecaster_name for f in lcfg.forecasters}),
-                observer_names=observer_names,
-                scale_factor=lcfg.scale_factor,
-                units=lcfg.units,
-                selected_forecast_type=lcfg.forecast_type,
-                selected_forecast_horizon=lcfg.forecast_horizon,
-                selected_t0s=lcfg.t0s,
-                show_probabilistic=show_probabilistic,
-                strict_horizon_filtering=lcfg.strict_horizon_filtering,
-            )
-            st.plotly_chart(fig)
+            forecaster_names = list({f.forecaster_name for f in lcfg.forecasters})
+
+            # Stepping through t0s one at a time only makes sense for the t0 forecast type,
+            # where we have a forecast per initialisation time to step through.
+            step_through_t0s = False
+            if lcfg.forecast_type == "t0" and lcfg.t0s:
+                step_through_t0s = st.checkbox(
+                    "Step through t0s",
+                    value=False,
+                    help="Show one t0 at a time with a slider, to see how the forecast "
+                    "evolved through the day.",
+                )
+
+            if step_through_t0s:
+                show_trail = st.checkbox(
+                    "Show faded trail of earlier t0s",
+                    value=True,
+                    help="Draws every earlier t0 faintly behind the current one, so drift "
+                    "accumulates visibly.",
+                )
+                fig = plot_forecast_time_series_by_t0(
+                    all_forecast_data_df=all_forecast_data_df,
+                    all_observations_df=all_observations_df,
+                    forecaster_names=forecaster_names,
+                    observer_names=observer_names,
+                    scale_factor=lcfg.scale_factor,
+                    units=lcfg.units,
+                    selected_t0s=lcfg.t0s,
+                    show_probabilistic=show_probabilistic,
+                    show_trail=show_trail,
+                )
+                render_animated_chart(fig)
+            else:
+                fig = plot_forecast_time_series(
+                    all_forecast_data_df=all_forecast_data_df,
+                    all_observations_df=all_observations_df,
+                    forecaster_names=forecaster_names,
+                    observer_names=observer_names,
+                    scale_factor=lcfg.scale_factor,
+                    units=lcfg.units,
+                    selected_forecast_type=lcfg.forecast_type,
+                    selected_forecast_horizon=lcfg.forecast_horizon,
+                    selected_t0s=lcfg.t0s,
+                    show_probabilistic=show_probabilistic,
+                    strict_horizon_filtering=lcfg.strict_horizon_filtering,
+                )
+                st.plotly_chart(fig)
 
             st.divider()
             st.header("Accuracy & Metrics")
