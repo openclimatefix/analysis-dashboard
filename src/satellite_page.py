@@ -1,7 +1,7 @@
 import plotly.graph_objects as go
 import streamlit as st
 import xarray as xr
-import os, fsspec
+import os, fsspec, hashlib, zipfile
 from datetime import datetime, timedelta
 from data_paths import all_satellite_paths
 
@@ -14,17 +14,22 @@ satellite_key_list = list(all_satellite_paths[region].keys()) + ["Other"]
 
 def get_data(zarr_file):
 
+    # only allow remote object store paths
+    if not zarr_file.startswith(("s3://")):
+        raise ValueError(f"Invalid zarr path '{zarr_file}', it must start with s3://")
+
     # hash filename
-    hash_filename = f'./data/{zarr_file.replace("/","")}'
-    hash_filename_unzip = hash_filename.replace(".zip", "")
+    file_hash = hashlib.sha256(zarr_file.encode()).hexdigest()[:32]
+    hash_filename = f"./data/{file_hash}.zip"
+    hash_filename_unzip = f"./data/{file_hash}.zarr"
 
     # file exits open this
     download = True
 
-    if os.path.exists(hash_filename):
+    if os.path.exists(hash_filename_unzip):
         print("Satellite file exists")
 
-        downloaded_datetime = os.path.getmtime(hash_filename)
+        downloaded_datetime = os.path.getmtime(hash_filename_unzip)
         downloaded_datetime = datetime.fromtimestamp(downloaded_datetime)
         print(downloaded_datetime)
 
@@ -33,8 +38,7 @@ def get_data(zarr_file):
             download = True
 
             # remove file
-            fs = fsspec.open(hash_filename).fs
-            fs.rm(hash_filename, recursive=True)
+            fs = fsspec.open(hash_filename_unzip).fs
             fs.rm(hash_filename_unzip, recursive=True)
         else:
             download = False
@@ -49,10 +53,15 @@ def get_data(zarr_file):
         fs.get(zarr_file, hash_filename, recursive=True)
         print("Downloaded")
 
-    if not os.path.exists(hash_filename_unzip):
         print("Unzipping")
-        os.system(f"unzip -qqo {hash_filename} -d {hash_filename_unzip}")
-    ds = xr.open_dataset(hash_filename_unzip)
+        with zipfile.ZipFile(hash_filename) as zip_file:
+            zip_file.extractall(hash_filename_unzip)
+
+        #remove the .zip after unzipping
+        print(f"Removing {hash_filename}")
+        os.remove(hash_filename)
+
+    ds = xr.open_dataset(hash_filename_unzip, engine="zarr")
     print("Loading")
 
     return ds
