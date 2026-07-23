@@ -20,6 +20,11 @@ def make_time_series_trace(
 
     Include p10 and p90 shading if show_probabilistic is True.
     """
+    if not forecaster_df.empty and "target_timestamp_utc" in forecaster_df.columns:
+        forecaster_df = forecaster_df.sort_values("target_timestamp_utc").drop_duplicates(
+            subset=["target_timestamp_utc"]
+        )
+
     fig.add_trace(
         go.Scatter(
             x=forecaster_df["target_timestamp_utc"],
@@ -78,12 +83,19 @@ def plot_forecast_time_series(
 
     This make a plot of the raw forecasts and observations, for mulitple forecast.
     """
+    if selected_forecast_type in ["Current", "Horizon"]:
+        if not all_forecast_data_df.empty and "target_timestamp_utc" in all_forecast_data_df.columns:
+            all_forecast_data_df["target_timestamp_round"] = pd.to_datetime(
+                all_forecast_data_df["target_timestamp_utc"]
+            ).dt.round("15min")
+            target_col = "target_timestamp_round"
+        else:
+            target_col = "target_timestamp_utc"
+
     if selected_forecast_type == "Current":
-        # Choose current forecast
-        # this is done by selecting the unique target_timestamp_utc with the the lowest horizonMins
-        # it should also be unique for each forecasterFullName
+        # Choose current forecast by selecting unique target timestamp with lowest horizon_mins
         current_forecast_df = all_forecast_data_df.loc[
-            all_forecast_data_df.groupby(["target_timestamp_utc", "forecaster_name"])[
+            all_forecast_data_df.groupby([target_col, "forecaster_name"])[
                 "horizon_mins"
             ].idxmin()
         ]
@@ -98,7 +110,7 @@ def plot_forecast_time_series(
                 all_forecast_data_df["horizon_mins"] >= selected_forecast_horizon
             ]
         current_forecast_df = current_forecast_df.loc[
-            current_forecast_df.groupby(["target_timestamp_utc", "forecaster_name"])[
+            current_forecast_df.groupby([target_col, "forecaster_name"])[
                 "horizon_mins"
             ].idxmin()
         ]
@@ -107,28 +119,35 @@ def plot_forecast_time_series(
             all_forecast_data_df["initialization_timestamp_utc"].isin(selected_t0s)
         ]
 
+    if not current_forecast_df.empty and "target_timestamp_utc" in current_forecast_df.columns:
+        current_forecast_df = current_forecast_df.sort_values("target_timestamp_utc")
+
     # plot the results
     fig = go.Figure()
     for observer_name in observer_names:
-        obs_df = all_observations_df[all_observations_df["observer_name"] == observer_name]
-
-        if observer_name == "pvlive_in_day":
-            # dashed white line
-            line = {"color": "white", "dash": "dash"}
-        elif observer_name == "pvlive_day_after":
-            line = {"color": "white"}
+        if not all_observations_df.empty and "observer_name" in all_observations_df.columns:
+            obs_df = all_observations_df[all_observations_df["observer_name"] == observer_name]
         else:
-            line = {}
+            obs_df = pd.DataFrame()
 
-        fig.add_trace(
-            go.Scatter(
-                x=obs_df["target_timestamp_utc"],
-                y=obs_df["value_watts"] / scale_factor,
-                mode="lines",
-                name=observer_name,
-                line=line,
-            ),
-        )
+        if not obs_df.empty and "target_timestamp_utc" in obs_df.columns:
+            if observer_name == "pvlive_in_day":
+                # dashed white line
+                line = {"color": "white", "dash": "dash"}
+            elif observer_name == "pvlive_day_after":
+                line = {"color": "white"}
+            else:
+                line = {}
+
+            fig.add_trace(
+                go.Scatter(
+                    x=obs_df["target_timestamp_utc"],
+                    y=obs_df["value_watts"] / scale_factor,
+                    mode="lines",
+                    name=observer_name,
+                    line=line,
+                ),
+            )
 
     for i, forecaster_name in enumerate(forecaster_names):
         forecaster_df = current_forecast_df[
