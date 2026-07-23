@@ -118,10 +118,6 @@ def plot_forecast_time_series(
         current_forecast_df = all_forecast_data_df[
             all_forecast_data_df["initialization_timestamp_utc"].isin(selected_t0s)
         ]
-
-    if not current_forecast_df.empty and "target_timestamp_utc" in current_forecast_df.columns:
-        current_forecast_df = current_forecast_df.sort_values("target_timestamp_utc")
-
     # plot the results
     fig = go.Figure()
     for observer_name in observer_names:
