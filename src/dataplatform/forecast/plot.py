@@ -20,6 +20,9 @@ def make_time_series_trace(
 
     Include p10 and p90 shading if show_probabilistic is True.
     """
+    if not forecaster_df.empty and "target_timestamp_utc" in forecaster_df.columns:
+        forecaster_df = forecaster_df.sort_values("target_timestamp_utc")
+
     fig.add_trace(
         go.Scatter(
             x=forecaster_df["target_timestamp_utc"],
@@ -78,12 +81,21 @@ def plot_forecast_time_series(
 
     This make a plot of the raw forecasts and observations, for mulitple forecast.
     """
+    target_col = "target_timestamp_utc"
+    if (
+        selected_forecast_type in ["Current", "Horizon"]
+        and not all_forecast_data_df.empty
+        and "target_timestamp_utc" in all_forecast_data_df.columns
+    ):
+        all_forecast_data_df["target_timestamp_round"] = pd.to_datetime(
+            all_forecast_data_df["target_timestamp_utc"]
+        ).dt.round("15min")
+        target_col = "target_timestamp_round"
+
     if selected_forecast_type == "Current":
-        # Choose current forecast
-        # this is done by selecting the unique target_timestamp_utc with the the lowest horizonMins
-        # it should also be unique for each forecasterFullName
+        # Choose current forecast by selecting unique target timestamp with lowest horizon_mins
         current_forecast_df = all_forecast_data_df.loc[
-            all_forecast_data_df.groupby(["target_timestamp_utc", "forecaster_name"])[
+            all_forecast_data_df.groupby([target_col, "forecaster_name"])[
                 "horizon_mins"
             ].idxmin()
         ]
@@ -98,7 +110,7 @@ def plot_forecast_time_series(
                 all_forecast_data_df["horizon_mins"] >= selected_forecast_horizon
             ]
         current_forecast_df = current_forecast_df.loc[
-            current_forecast_df.groupby(["target_timestamp_utc", "forecaster_name"])[
+            current_forecast_df.groupby([target_col, "forecaster_name"])[
                 "horizon_mins"
             ].idxmin()
         ]
@@ -106,7 +118,6 @@ def plot_forecast_time_series(
         current_forecast_df = all_forecast_data_df[
             all_forecast_data_df["initialization_timestamp_utc"].isin(selected_t0s)
         ]
-
     # plot the results
     fig = go.Figure()
     for observer_name in observer_names:
