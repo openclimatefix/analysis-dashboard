@@ -13,3 +13,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 uv.lock.bak
+
+#cache files
+src/data/*.zip
+src/data/*.zarr/
