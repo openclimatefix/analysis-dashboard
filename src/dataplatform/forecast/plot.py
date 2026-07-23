@@ -81,14 +81,16 @@ def plot_forecast_time_series(
 
     This make a plot of the raw forecasts and observations, for mulitple forecast.
     """
-    if selected_forecast_type in ["Current", "Horizon"]:
-        if not all_forecast_data_df.empty and "target_timestamp_utc" in all_forecast_data_df.columns:
-            all_forecast_data_df["target_timestamp_round"] = pd.to_datetime(
-                all_forecast_data_df["target_timestamp_utc"]
-            ).dt.round("15min")
-            target_col = "target_timestamp_round"
-        else:
-            target_col = "target_timestamp_utc"
+    target_col = "target_timestamp_utc"
+    if (
+        selected_forecast_type in ["Current", "Horizon"]
+        and not all_forecast_data_df.empty
+        and "target_timestamp_utc" in all_forecast_data_df.columns
+    ):
+        all_forecast_data_df["target_timestamp_round"] = pd.to_datetime(
+            all_forecast_data_df["target_timestamp_utc"]
+        ).dt.round("15min")
+        target_col = "target_timestamp_round"
 
     if selected_forecast_type == "Current":
         # Choose current forecast by selecting unique target timestamp with lowest horizon_mins
