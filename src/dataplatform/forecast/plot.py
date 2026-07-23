@@ -21,9 +21,7 @@ def make_time_series_trace(
     Include p10 and p90 shading if show_probabilistic is True.
     """
     if not forecaster_df.empty and "target_timestamp_utc" in forecaster_df.columns:
-        forecaster_df = forecaster_df.sort_values("target_timestamp_utc").drop_duplicates(
-            subset=["target_timestamp_utc"]
-        )
+        forecaster_df = forecaster_df.sort_values("target_timestamp_utc")
 
     fig.add_trace(
         go.Scatter(
