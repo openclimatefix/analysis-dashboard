@@ -125,29 +125,25 @@ def plot_forecast_time_series(
     # plot the results
     fig = go.Figure()
     for observer_name in observer_names:
-        if not all_observations_df.empty and "observer_name" in all_observations_df.columns:
-            obs_df = all_observations_df[all_observations_df["observer_name"] == observer_name]
+        obs_df = all_observations_df[all_observations_df["observer_name"] == observer_name]
+
+        if observer_name == "pvlive_in_day":
+            # dashed white line
+            line = {"color": "white", "dash": "dash"}
+        elif observer_name == "pvlive_day_after":
+            line = {"color": "white"}
         else:
-            obs_df = pd.DataFrame()
+            line = {}
 
-        if not obs_df.empty and "target_timestamp_utc" in obs_df.columns:
-            if observer_name == "pvlive_in_day":
-                # dashed white line
-                line = {"color": "white", "dash": "dash"}
-            elif observer_name == "pvlive_day_after":
-                line = {"color": "white"}
-            else:
-                line = {}
-
-            fig.add_trace(
-                go.Scatter(
-                    x=obs_df["target_timestamp_utc"],
-                    y=obs_df["value_watts"] / scale_factor,
-                    mode="lines",
-                    name=observer_name,
-                    line=line,
-                ),
-            )
+        fig.add_trace(
+            go.Scatter(
+                x=obs_df["target_timestamp_utc"],
+                y=obs_df["value_watts"] / scale_factor,
+                mode="lines",
+                name=observer_name,
+                line=line,
+            ),
+        )
 
     for i, forecaster_name in enumerate(forecaster_names):
         forecaster_df = current_forecast_df[
